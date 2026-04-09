@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import List
 from urllib.parse import quote_plus
 
@@ -40,7 +41,7 @@ class Settings(BaseSettings):
     ADMIN_LAST_NAME: str = "Administrator"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(Path(__file__).resolve().parents[2] / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore",
