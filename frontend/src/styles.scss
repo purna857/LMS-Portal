@@ -1,0 +1,591 @@
+@use '@angular/material' as mat;
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&display=swap');
+
+html {
+  color-scheme: light;
+  @include mat.core();
+
+  $theme: mat.define-theme(
+    (
+      color: (
+        theme-type: light,
+        primary: mat.$azure-palette,
+        tertiary: mat.$orange-palette
+      ),
+      typography: (
+        brand-family: 'Outfit, sans-serif',
+        plain-family: 'Outfit, sans-serif'
+      ),
+      density: (
+        scale: 0
+      )
+    )
+  );
+
+  @include mat.all-component-themes($theme);
+}
+
+:root {
+  --bg: #ffffff;
+  --bg-accent: #f5f8fd;
+  --surface: #ffffff;
+  --surface-soft: #ffffff;
+  --surface-alt: #ffffff;
+  --surface-dark: #132033;
+  --border: rgba(148, 163, 184, 0.2);
+  --border-strong: rgba(148, 163, 184, 0.32);
+  --text: #162033;
+  --muted: #627187;
+  --primary: #2563eb;
+  --primary-strong: #1d4ed8;
+  --primary-soft: #dbeafe;
+  --primary-ink: #0f2e72;
+  --accent: #14b8a6;
+  --accent-soft: #d9fbf5;
+  --success: #1f845a;
+  --warning: #b76e00;
+  --danger: #c83c3c;
+  --shadow-xs: 0 8px 20px rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 14px 32px rgba(15, 23, 42, 0.08);
+  --shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+  --shadow-lg: 0 34px 80px rgba(15, 23, 42, 0.16);
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --shell-width: 290px;
+  --shell-width-collapsed: 104px;
+  --content-max: 1480px;
+  --transition-base: 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.5;
+  background: var(--bg);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.page-section {
+  display: grid;
+  gap: 1.2rem;
+  padding: 0.1rem;
+  font-family: 'IBM Plex Serif', serif;
+}
+
+.page-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.dashboard-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.9fr);
+  gap: 1rem;
+}
+
+.dashboard-hero__main,
+.dashboard-hero__main app-page-header {
+  display: block;
+  height: 100%;
+}
+
+.dashboard-hero__main .page-header {
+  height: 100%;
+}
+
+.dashboard-hero__side {
+  display: grid;
+  gap: 0.9rem;
+  align-content: start;
+}
+
+.dashboard-kpi-card {
+  display: grid;
+  gap: 0.8rem;
+  height: 100%;
+}
+
+.dashboard-kpi-card__eyebrow {
+  margin: 0;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.dashboard-kpi-card__value {
+  margin: 0;
+  font-size: clamp(1.48rem, 1.7vw, 1.9rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.dashboard-kpi-card__label {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.dashboard-kpi-card__chart {
+  min-height: 210px;
+}
+
+.dashboard-kpi-card__list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.dashboard-kpi-card__item {
+  display: grid;
+  gap: 0.15rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.7);
+}
+
+.dashboard-kpi-card__item strong {
+  font-size: 0.88rem;
+}
+
+.dashboard-kpi-card__item span {
+  color: var(--muted);
+  font-size: 0.73rem;
+  line-height: 1.35;
+}
+
+.dashboard-metrics {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.dashboard-split {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+}
+
+.surface-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(37, 99, 235, 0.1) !important;
+  border-radius: 22px !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05) !important;
+  font-family: 'IBM Plex Serif', serif !important;
+}
+
+.toolbar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.toolbar-grid__actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 56px;
+  flex-wrap: wrap;
+}
+
+.table-wrap {
+  overflow: auto;
+  border-radius: var(--radius-md);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.data-table th {
+  color: var(--muted);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  background: #f7faff;
+  font-family: 'IBM Plex Serif', serif;
+}
+
+.data-table td,
+.data-table th {
+  white-space: nowrap;
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.72);
+}
+
+.data-table td:first-child,
+.data-table th:first-child {
+  padding-left: 1rem !important;
+}
+
+.data-table td:last-child,
+.data-table th:last-child {
+  padding-right: 1rem !important;
+}
+
+.data-table tbody tr {
+  transition: background-color var(--transition-base), transform var(--transition-base);
+}
+
+.data-table tbody tr:hover {
+  background: #f5f9ff;
+}
+
+.cell-title {
+  display: grid;
+}
+
+.cell-title span {
+  margin-top: 0.28rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 168px;
+  padding: 1.2rem;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  font-family: 'IBM Plex Serif', serif;
+  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.stat-card:hover,
+.surface-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 48px rgba(15, 23, 42, 0.08);
+  border-color: rgba(37, 99, 235, 0.18);
+}
+
+.mat-mdc-card {
+  border-radius: 22px !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05) !important;
+  background: #ffffff !important;
+  font-family: 'IBM Plex Serif', serif !important;
+}
+
+.mat-mdc-card-header {
+  padding: 1.1rem 1.2rem 0.45rem !important;
+}
+
+.mat-mdc-card-content,
+.mat-mdc-card-actions {
+  padding-left: 1.2rem !important;
+  padding-right: 1.2rem !important;
+}
+
+.mat-mdc-card-actions {
+  padding-bottom: 0.95rem !important;
+}
+
+.mat-mdc-card-title {
+  font-size: 0.92rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+  font-family: 'IBM Plex Serif', serif !important;
+}
+
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+.mat-mdc-text-field-wrapper {
+  border-radius: 18px !important;
+  background: #ffffff !important;
+}
+
+.mat-mdc-form-field-focus-overlay {
+  background: rgba(37, 99, 235, 0.05) !important;
+}
+
+.mdc-text-field--outlined {
+  --mdc-outlined-text-field-outline-color: rgba(148, 163, 184, 0.28);
+  --mdc-outlined-text-field-hover-outline-color: rgba(37, 99, 235, 0.45);
+  --mdc-outlined-text-field-focus-outline-color: var(--primary);
+  --mdc-outlined-text-field-focus-outline-width: 2px;
+}
+
+.mat-mdc-raised-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-outlined-button {
+  border-radius: 16px !important;
+}
+
+.mat-mdc-unelevated-button {
+  box-shadow: 0 18px 30px rgba(37, 99, 235, 0.18) !important;
+}
+
+.mat-mdc-chip {
+  border-radius: 999px !important;
+}
+
+.mat-mdc-progress-bar {
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-shape: 18px;
+}
+
+.mat-mdc-menu-panel,
+.mat-mdc-dialog-surface {
+  border-radius: 24px !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.mat-mdc-dialog-surface {
+  background: var(--surface) !important;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(90deg, rgba(226, 232, 240, 0.92), rgba(241, 245, 249, 0.92), rgba(226, 232, 240, 0.92));
+  background-size: 200% 100%;
+  animation: skeleton-wave 1.5s linear infinite;
+}
+
+.skeleton--line {
+  height: 0.95rem;
+}
+
+.skeleton--title {
+  height: 1.3rem;
+}
+
+.skeleton--card {
+  min-height: 170px;
+}
+
+.visual-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 320px;
+  padding: 1.15rem;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  font-family: 'IBM Plex Serif', serif;
+}
+
+.mini-chart {
+  display: flex;
+  align-items: end;
+  gap: 0.65rem;
+  min-height: 180px;
+}
+
+.mini-chart__bar {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 18px 18px 8px 8px;
+  background: #2563eb;
+  box-shadow: inset 0 -10px 18px rgba(255, 255, 255, 0.16);
+}
+
+.activity-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.activity-list__item {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 0.9rem;
+  align-items: start;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.78);
+}
+
+.activity-list__item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.activity-list__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #e8f0ff;
+  color: var(--primary);
+}
+
+.activity-list__meta {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.section-cluster {
+  display: grid;
+  gap: var(--space-5);
+}
+
+@keyframes skeleton-wave {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .page-section {
+    gap: var(--space-5);
+  }
+
+  .surface-card,
+  .stat-card,
+  .visual-card {
+    border-radius: 20px;
+  }
+
+  .mat-mdc-card-header,
+  .mat-mdc-card-content,
+  .mat-mdc-card-actions {
+    padding-left: var(--space-5) !important;
+    padding-right: var(--space-5) !important;
+  }
+}
+
+@media (max-width: 1080px) {
+  .dashboard-hero,
+  .dashboard-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lms-dialog-panel {
+  max-width: min(94vw, 880px) !important;
+  max-height: calc(100vh - 24px) !important;
+}
+
+.lms-dialog-panel.cdk-overlay-pane {
+  max-width: min(94vw, 880px) !important;
+  max-height: calc(100vh - 24px) !important;
+}
+
+.lms-dialog-panel .mat-mdc-dialog-container {
+  display: flex !important;
+  max-height: calc(100vh - 24px) !important;
+}
+
+.lms-dialog-panel .mat-mdc-dialog-surface {
+  border-radius: 28px !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.16) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: calc(100vh - 24px) !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.lms-dialog-panel .mat-mdc-dialog-title {
+  margin: 0 !important;
+  padding: 1.25rem 1.25rem 0 !important;
+  font-size: 1.55rem !important;
+  line-height: 1.15 !important;
+}
+
+.lms-dialog-panel .mat-mdc-dialog-content {
+  padding: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
+.lms-dialog-panel .mat-mdc-dialog-actions {
+  margin: 0 !important;
+  flex: 0 0 auto !important;
+  min-height: 76px !important;
+  background: #fff !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.16) !important;
+  padding: 0.8rem 1rem 1rem !important;
+}
+
+.lms-dialog-panel .mat-mdc-form-field {
+  width: 100%;
+}
+
+.lms-dialog-panel .mat-mdc-text-field-wrapper {
+  background: #fff !important;
+}
+
+.lms-dialog-panel .mdc-text-field--outlined {
+  --mdc-outlined-text-field-container-shape: 18px;
+}
+
+.lms-dialog-panel .mat-mdc-raised-button,
+.lms-dialog-panel .mat-mdc-unelevated-button {
+  border-radius: 16px !important;
+}
+
+.lms-dialog-panel .mat-mdc-dialog-container {
+  padding: 16px !important;
+}
+
+.lms-dialog-panel .mdc-dialog__container,
+.lms-dialog-panel .mat-mdc-dialog-inner-container {
+  max-height: calc(100vh - 24px) !important;
+  min-height: 0 !important;
+}

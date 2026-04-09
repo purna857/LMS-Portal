@@ -1,0 +1,22 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" fill="#08111F"/>
+  <rect x="68" y="74" width="1144" height="572" rx="28" fill="#0F1B31"/>
+  <rect x="116" y="122" width="1048" height="476" rx="24" fill="#12233F"/>
+  <circle cx="324" cy="286" r="146" fill="#10203A"/>
+  <ellipse cx="324" cy="227" rx="122" ry="38" fill="#93C5FD"/>
+  <path d="M202 227V365C202 385.987 256.621 403 324 403C391.379 403 446 385.987 446 365V227" fill="#60A5FA"/>
+  <ellipse cx="324" cy="365" rx="122" ry="38" fill="#3B82F6"/>
+  <ellipse cx="324" cy="296" rx="122" ry="38" fill="#BFDBFE"/>
+  <rect x="558" y="174" width="490" height="46" rx="23" fill="#DBEAFE"/>
+  <rect x="558" y="246" width="420" height="24" rx="12" fill="#E2E8F0"/>
+  <rect x="558" y="288" width="384" height="24" rx="12" fill="#E2E8F0"/>
+  <rect x="558" y="330" width="448" height="24" rx="12" fill="#E2E8F0"/>
+  <rect x="558" y="390" width="238" height="132" rx="24" fill="#0C4A6E"/>
+  <rect x="822" y="390" width="226" height="132" rx="24" fill="#1D4ED8"/>
+  <text x="600" y="440" fill="#F8FAFC" font-family="IBM Plex Serif, serif" font-size="42" font-weight="700">SQL</text>
+  <text x="854" y="440" fill="#F8FAFC" font-family="IBM Plex Serif, serif" font-size="42" font-weight="700">DATA</text>
+  <rect x="156" y="530" width="314" height="46" rx="23" fill="#2563EB"/>
+  <rect x="490" y="530" width="230" height="46" rx="23" fill="#E2E8F0"/>
+  <text x="156" y="116" fill="#F8FAFC" font-family="IBM Plex Serif, serif" font-size="34" font-weight="700">Data SQL Foundations</text>
+  <text x="156" y="620" fill="#F8FAFC" font-family="IBM Plex Serif, serif" font-size="30" font-weight="700">Querying, joins, and reporting</text>
+</svg>

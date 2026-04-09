@@ -1,0 +1,80 @@
+<section class="auth-page">
+  <div class="auth-shell">
+    <mat-card class="auth-card auth-card--showcase">
+      <div class="auth-card__intro">
+        <p class="auth-card__eyebrow">LMS Portal Suite</p>
+        <h1>Learning operations in one connected workspace</h1>
+        <p>
+          Sign in to access the role-based LMS experience for administration, course delivery, student learning,
+          assessments, progress tracking, and announcements.
+        </p>
+      </div>
+
+      <div class="auth-showcase__metrics">
+        @for (item of highlights; track item.title) {
+          <article class="auth-showcase__metric">
+            <h2>{{ item.title }}</h2>
+            <p>{{ item.description }}</p>
+          </article>
+        }
+      </div>
+
+      <div class="auth-showcase__grid">
+        @for (item of capabilities; track item.title) {
+          <article class="auth-showcase__panel">
+            <h3>{{ item.title }}</h3>
+            <ul>
+              @for (point of item.points; track point) {
+                <li>{{ point }}</li>
+              }
+            </ul>
+          </article>
+        }
+      </div>
+    </mat-card>
+
+    <mat-card class="auth-card auth-card--form">
+      <div class="auth-card__brand">
+        <div class="auth-card__brand-mark">L</div>
+        <span>LMS Portal</span>
+      </div>
+
+      <div class="auth-card__intro auth-card__intro--compact">
+        <h2>Sign in</h2>
+        <p>Enter your account credentials to continue into the LMS dashboard.</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" type="email" autocomplete="username" placeholder="student1@lms.local" />
+          @if (isInvalid('email')) {
+            <mat-error>{{ getErrorMessage('email') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input matInput formControlName="password" type="password" autocomplete="current-password" placeholder="Enter your password" />
+          @if (isInvalid('password')) {
+            <mat-error>{{ getErrorMessage('password') }}</mat-error>
+          }
+        </mat-form-field>
+
+        @if (errorMessage()) {
+          <p class="auth-form__error">{{ errorMessage() }}</p>
+        }
+
+        <button mat-flat-button color="primary" type="submit" [disabled]="loading()">
+          {{ loading() ? 'Signing in...' : 'Sign in to LMS' }}
+        </button>
+      </form>
+
+      <div class="auth-card__footer">
+        <a routerLink="/auth/forgot-password">Forgot password?</a>
+        <span>New here?</span>
+        <a routerLink="/auth/signup">Create an account</a>
+      </div>
+    </mat-card>
+  </div>
+</section>

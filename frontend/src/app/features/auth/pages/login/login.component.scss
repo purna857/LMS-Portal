@@ -1,0 +1,270 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&display=swap');
+
+.auth-page {
+  height: 100vh;
+  overflow: hidden;
+  padding: clamp(1rem, 2vw, 1.35rem);
+  background: #f3f7ff;
+  font-family: 'IBM Plex Serif', serif !important;
+}
+
+.auth-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 0.98fr) minmax(0, 0.92fr);
+  gap: 0.85rem;
+  width: min(100%, 980px);
+  height: calc(100vh - 2rem);
+  margin: 0 auto;
+  align-items: stretch;
+}
+
+.auth-card {
+  border-radius: 28px;
+  border: 1px solid rgba(37, 99, 235, 0.08);
+  background: #ffffff;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  font-family: 'IBM Plex Serif', serif !important;
+}
+
+.auth-card--showcase {
+  padding: clamp(1.15rem, 1.9vw, 1.45rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-card--form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(1.4rem, 2vw, 1.75rem);
+}
+
+.auth-card__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  margin: 0 0 0.8rem;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.auth-card__intro {
+  max-width: 720px;
+}
+
+.auth-card__intro h1,
+.auth-card__intro h2,
+.auth-card__intro p {
+  margin-top: 0;
+}
+
+.auth-card__intro h1 {
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.55rem, 2.5vw, 2.1rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.auth-card__intro h2 {
+  margin-bottom: 0.6rem;
+  font-size: clamp(1.65rem, 2.4vw, 2.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.auth-card__intro p {
+  margin-bottom: 0;
+  color: #53657f;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.auth-card__intro--compact {
+  margin-top: 1.05rem;
+}
+
+.auth-card__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  align-self: center;
+  color: #17315d;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-card__brand-mark {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 18px;
+  background: #3b82f6;
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 800;
+  box-shadow: 0 14px 28px rgba(59, 130, 246, 0.28);
+}
+
+.auth-showcase__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.auth-showcase__metric,
+.auth-showcase__panel {
+  border: 1px solid rgba(37, 99, 235, 0.08);
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.05);
+}
+
+.auth-showcase__metric {
+  padding: 0.85rem 0.9rem 0.9rem;
+}
+
+.auth-showcase__metric h2,
+.auth-showcase__panel h3 {
+  margin: 0 0 0.35rem;
+  color: #16233b;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.auth-showcase__metric p {
+  margin: 0;
+  color: #61738d;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.auth-showcase__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+}
+
+.auth-showcase__panel {
+  padding: 0.9rem 1rem 0.85rem;
+}
+
+.auth-showcase__panel ul {
+  margin: 0;
+  padding-left: 1rem;
+  color: #5f708a;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  line-height: 1.38;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1.2rem;
+}
+
+.auth-form__error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.auth-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.auth-card__footer a {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+button {
+  min-height: 48px;
+  border-radius: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  font-family: 'IBM Plex Serif', serif !important;
+}
+
+:host ::ng-deep .auth-form .mat-mdc-form-field {
+  width: 100%;
+  font-family: 'IBM Plex Serif', serif !important;
+}
+
+:host ::ng-deep .auth-form .mdc-text-field--outlined {
+  border-radius: 15px;
+  background: #ffffff;
+}
+
+:host ::ng-deep .auth-form .mdc-notched-outline__leading,
+:host ::ng-deep .auth-form .mdc-notched-outline__notch,
+:host ::ng-deep .auth-form .mdc-notched-outline__trailing {
+  border-color: rgba(37, 99, 235, 0.16) !important;
+}
+
+:host ::ng-deep .auth-form .mdc-text-field--focused .mdc-notched-outline__leading,
+:host ::ng-deep .auth-form .mdc-text-field--focused .mdc-notched-outline__notch,
+:host ::ng-deep .auth-form .mdc-text-field--focused .mdc-notched-outline__trailing {
+  border-color: #3b82f6 !important;
+}
+
+:host ::ng-deep .auth-form .mat-mdc-input-element,
+:host ::ng-deep .auth-form .mdc-floating-label,
+:host ::ng-deep .auth-form .mat-mdc-button,
+:host ::ng-deep .auth-form .mat-mdc-form-field-subscript-wrapper {
+  font-family: 'IBM Plex Serif', serif !important;
+}
+
+@media (max-width: 1024px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .auth-card--form {
+    order: -1;
+  }
+
+  .auth-showcase__metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-page {
+    padding: 1rem;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .auth-card--showcase,
+  .auth-card--form {
+    padding: 1.2rem;
+  }
+
+  .auth-showcase__grid {
+    grid-template-columns: 1fr;
+  }
+}

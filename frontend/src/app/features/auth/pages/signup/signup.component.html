@@ -1,0 +1,138 @@
+<section class="auth-page">
+  <mat-card class="auth-card auth-card--wide">
+    <div class="auth-card__intro">
+      <p class="auth-card__eyebrow">Join LMS Portal</p>
+      <h1>{{ pageTitle() }}</h1>
+      <p>{{ pageDescription() }}</p>
+    </div>
+
+    <div class="signup-toggle">
+      <button
+        mat-stroked-button
+        type="button"
+        [class.signup-toggle__active]="mode() === 'student'"
+        (click)="switchMode('student')">
+        Student
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
+        [class.signup-toggle__active]="mode() === 'instructor'"
+        (click)="switchMode('instructor')">
+        Instructor
+      </button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form auth-form--grid">
+      <mat-form-field appearance="outline">
+        <mat-label>First name</mat-label>
+        <input matInput formControlName="first_name" />
+        @if (isInvalid('first_name')) {
+          <mat-error>{{ getErrorMessage('first_name') }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Last name</mat-label>
+        <input matInput formControlName="last_name" />
+        @if (isInvalid('last_name')) {
+          <mat-error>{{ getErrorMessage('last_name') }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="auth-form__full">
+        <mat-label>Email</mat-label>
+        <input matInput formControlName="email" type="email" autocomplete="email" />
+        @if (isInvalid('email')) {
+          <mat-error>{{ getErrorMessage('email') }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Phone</mat-label>
+        <input matInput formControlName="phone" />
+        @if (isInvalid('phone')) {
+          <mat-error>{{ getErrorMessage('phone') }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Experience years</mat-label>
+        <input matInput formControlName="experience_years" type="number" />
+        @if (isInvalid('experience_years')) {
+          <mat-error>{{ getErrorMessage('experience_years') }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Password</mat-label>
+        <input matInput formControlName="password" type="password" autocomplete="new-password" />
+        @if (isInvalid('password')) {
+          <mat-error>{{ getErrorMessage('password') }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Confirm password</mat-label>
+        <input matInput formControlName="confirm_password" type="password" autocomplete="new-password" />
+        @if (isInvalid('confirm_password') || (form.value.confirm_password && form.value.password !== form.value.confirm_password)) {
+          <mat-error>{{ getErrorMessage('confirm_password') }}</mat-error>
+        }
+      </mat-form-field>
+
+      @if (mode() === 'instructor') {
+        <mat-form-field appearance="outline" class="auth-form__full">
+          <mat-label>Professional headline</mat-label>
+          <input matInput formControlName="headline" />
+          @if (isInvalid('headline')) {
+            <mat-error>{{ getErrorMessage('headline') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="auth-form__full">
+          <mat-label>Bio</mat-label>
+          <textarea matInput rows="3" formControlName="bio"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="auth-form__full">
+          <mat-label>Expertise</mat-label>
+          <textarea matInput rows="2" formControlName="expertise"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>LinkedIn URL</mat-label>
+          <input matInput formControlName="linkedin_url" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Portfolio URL</mat-label>
+          <input matInput formControlName="portfolio_url" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="auth-form__full">
+          <mat-label>Resume URL</mat-label>
+          <input matInput formControlName="resume_file_url" />
+        </mat-form-field>
+      }
+
+      @if (successMessage()) {
+        <p class="auth-form__success auth-form__full">{{ successMessage() }}</p>
+      }
+
+      @if (errorMessage()) {
+        <p class="auth-form__error auth-form__full">{{ errorMessage() }}</p>
+      }
+
+      <div class="auth-form__actions auth-form__full">
+        <button mat-flat-button color="primary" type="submit" [disabled]="loading()">
+          {{ loading() ? 'Submitting...' : (mode() === 'student' ? 'Create account' : 'Submit application') }}
+        </button>
+      </div>
+    </form>
+
+    <div class="auth-card__footer">
+      <span>Already have an account?</span>
+      <a routerLink="/auth/login">Sign in</a>
+    </div>
+  </mat-card>
+</section>
