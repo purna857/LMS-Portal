@@ -1,0 +1,294 @@
+<section class="page-section quiz-page">
+  <app-page-header
+    eyebrow="Student"
+    title="Quiz Center"
+    description="Launch exam-style quizzes, move through a question palette, and review every attempt from one polished workspace.">
+  </app-page-header>
+
+  @if (!selectedQuiz()) {
+    <mat-card class="surface-card quiz-hero">
+      <mat-card-content>
+        <div class="quiz-hero__copy">
+          <p class="quiz-hero__eyebrow">Quiz practice zone</p>
+          <h2>Pick a course, open a quiz, and stay in full exam flow.</h2>
+          <p>
+            Use the palette to jump between questions, mark items for review, and submit when you are ready.
+            The layout stays focused on speed, clarity, and real test-taking rhythm.
+          </p>
+        </div>
+        <div class="quiz-hero__stats">
+          <div>
+            <span>Selected course</span>
+            <strong>{{ selectedCourseTitle() }}</strong>
+          </div>
+          <div>
+            <span>Live quizzes</span>
+            <strong>{{ filteredQuizzes().length }}</strong>
+          </div>
+          <div>
+            <span>Current attempt</span>
+            <strong>{{ selectedQuiz()?.title || 'Choose a quiz' }}</strong>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <div class="quiz-shell" [class.quiz-shell--attempt]="!!selectedQuiz() || detailLoading()">
+    @if (!selectedQuiz() && !detailLoading()) {
+      <div class="quiz-shell__rail">
+        <mat-card class="surface-card filter-card">
+          <mat-card-content>
+            <form [formGroup]="courseForm" class="toolbar-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Course</mat-label>
+                <mat-select formControlName="course_id">
+                  @for (course of enrolledCourses(); track course.course_id) {
+                    <mat-option [value]="course.course_id">{{ course.title }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <div class="toolbar-grid__actions">
+                <button mat-stroked-button type="button" (click)="loadQuizzes()">Refresh</button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="surface-card quiz-list-card">
+          <mat-card-header>
+            <div class="quiz-list-card__header">
+              <div>
+                <mat-card-title>Available quizzes</mat-card-title>
+                <p>Exam-ready sets for the selected course.</p>
+              </div>
+              <span>{{ filteredQuizzes().length }} found</span>
+            </div>
+          </mat-card-header>
+          <mat-card-content>
+            @if (catalogLoading()) {
+              <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+            }
+
+            @if (filteredQuizzes().length) {
+              <div class="quiz-list">
+                @for (quiz of filteredQuizzes(); track quiz.id) {
+                  <div class="quiz-tile">
+                    <button type="button" class="quiz-tile__launch" (click)="selectQuiz(quiz)">
+                      <div class="quiz-tile__top">
+                        <div class="quiz-tile__copy">
+                          <p class="quiz-tile__eyebrow">{{ selectedCourseTitle() }}</p>
+                          <strong>{{ quiz.title }}</strong>
+                        </div>
+                        <mat-chip-set>
+                          <mat-chip [highlighted]="quiz.status === 'published'">{{ quiz.status }}</mat-chip>
+                          <mat-chip>{{ quiz.max_attempts }} attempts</mat-chip>
+                        </mat-chip-set>
+                      </div>
+                      <p class="quiz-tile__description">
+                        {{ quiz.description || 'Practice set with question palette navigation and attempt tracking.' }}
+                      </p>
+                      <div class="quiz-tile__meta">
+                        <span>{{ quiz.question_count }} questions</span>
+                        <span>{{ quiz.total_points }} points</span>
+                        <span>{{ quiz.shuffle_questions ? 'Shuffled' : 'Ordered' }}</span>
+                      </div>
+                    </button>
+                    <div class="quiz-tile__footer">
+                      <span>{{ quiz.published_at ? 'Published' : 'Draft' }}</span>
+                      <div class="quiz-tile__footer-actions">
+                        <button mat-stroked-button type="button" (click)="selectQuiz(quiz)">Open</button>
+                        <a mat-button [routerLink]="['/app/student/results']">History</a>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <app-empty-state
+                icon="quiz"
+                title="No quizzes available"
+                description="Published quizzes for the selected course will appear here.">
+              </app-empty-state>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    }
+
+    @if (detailLoading() || selectedQuiz()) {
+      <div class="quiz-shell__board">
+        @if (detailLoading()) {
+          <mat-card class="surface-card board-loading">
+            <mat-card-content>
+              <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+              <app-empty-state
+                icon="quiz"
+                title="Loading quiz workspace"
+                description="Fetching questions, answers, and attempt history for the selected quiz.">
+              </app-empty-state>
+            </mat-card-content>
+          </mat-card>
+        } @else {
+          @if (selectedQuiz(); as quiz) {
+            <mat-card class="surface-card exam-window">
+              <mat-card-content>
+                <div class="exam-window__header">
+                  <div class="exam-window__brand">
+                    <span>Quiz Section</span>
+                    <strong>{{ quiz.title }}</strong>
+                  </div>
+                  <div class="exam-window__clock">
+                    <span>Time Left</span>
+                    <strong>{{ timeRemainingLabel() }}</strong>
+                  </div>
+                  <div class="exam-window__progress">
+                    <span>{{ progressPercent() }}% complete</span>
+                    <strong>{{ answeredCount() }}/{{ examQuestions().length || 0 }}</strong>
+                  </div>
+                </div>
+
+                <div class="exam-window__sections">
+                  <div class="exam-window__section exam-window__section--active">Question Paper</div>
+                  <div class="exam-window__section">Instructions</div>
+                </div>
+
+                <div class="exam-window__body">
+                  <section class="exam-paper">
+                    <div class="exam-paper__top">
+                      <div>
+                        <p>Section 1</p>
+                        <strong>Question {{ activeQuestionIndex() + 1 }} of {{ examQuestions().length }}</strong>
+                      </div>
+                      <div class="exam-paper__status">
+                        <span>{{ answeredCount() }} answered</span>
+                        <span>{{ notVisitedCount() }} not visited</span>
+                      </div>
+                    </div>
+
+                    @if (showInstructions()) {
+                      <div class="instructions-panel">
+                        <strong>Instructions</strong>
+                        <p>{{ quiz.instructions || quiz.description || 'Choose the best answer, mark any question for review, and use Save & Next to continue.' }}</p>
+                      </div>
+                    }
+
+                    @if (currentQuestion(); as question) {
+                      <div class="question-panel">
+                        <p class="question-panel__eyebrow">Question No. {{ activeQuestionIndex() + 1 }}</p>
+                        <h4>{{ question.question_text }}</h4>
+                        <div class="question-panel__meta">
+                          <span>{{ question.points }} points</span>
+                          <span>{{ question.allow_multiple_answers ? 'Multiple answers' : 'Single answer' }}</span>
+                        </div>
+                      </div>
+
+                      <div class="option-grid option-grid--exam">
+                        @for (option of question.options; track option.id; let optionIndex = $index) {
+                          <button
+                            type="button"
+                            class="option-card option-card--exam"
+                            [class.option-card--selected]="isSelected(question.id, option.id)"
+                            (click)="selectOption(question.id, option.id, question.allow_multiple_answers)">
+                            <span class="option-card__index">{{ optionLetter(optionIndex) }}</span>
+                            <span class="option-card__text">{{ option.option_text }}</span>
+                          </button>
+                        }
+                      </div>
+                    } @else {
+                      <app-empty-state
+                        icon="quiz"
+                        title="This quiz has no questions yet"
+                        description="The quiz is visible, but there are no questions to answer right now.">
+                      </app-empty-state>
+                    }
+
+                    <div class="exam-actions exam-actions--paper">
+                      <button mat-stroked-button type="button" (click)="markReviewAndNext()" [disabled]="!currentQuestion()">
+                        Mark for Review &amp; Next
+                      </button>
+                      <button mat-stroked-button type="button" (click)="clearCurrentAnswer()" [disabled]="!currentQuestion()">
+                        Clear Response
+                      </button>
+                      <button mat-flat-button color="primary" type="button" (click)="saveAndNext()">
+                        Save &amp; Next
+                      </button>
+                    </div>
+                  </section>
+
+                  <aside class="exam-sidebar">
+                    <div class="sidebar-card sidebar-card--timer">
+                      <span>Time Left</span>
+                      <strong>{{ timeRemainingLabel() }}</strong>
+                      <p>Suggested {{ suggestedDurationMinutes() }} min</p>
+                    </div>
+
+                    <div class="sidebar-card sidebar-card--legend">
+                      <div class="sidebar-card__title">Legend</div>
+                      <div class="legend-list">
+                        <div class="legend-item">
+                          <span class="legend-badge legend-badge--answered">{{ answeredCount() }}</span>
+                          <span class="legend-label">Answered</span>
+                        </div>
+                        <div class="legend-item">
+                          <span class="legend-badge legend-badge--not-answered">{{ remainingCount() }}</span>
+                          <span class="legend-label">Not Answered</span>
+                        </div>
+                        <div class="legend-item">
+                          <span class="legend-badge legend-badge--review">{{ flaggedCount() }}</span>
+                          <span class="legend-label">Marked</span>
+                        </div>
+                        <div class="legend-item">
+                          <span class="legend-badge legend-badge--not-visited">{{ notVisitedCount() }}</span>
+                          <span class="legend-label">Not Visited</span>
+                        </div>
+                      </div>
+                      <p class="sidebar-card__note">You are viewing {{ quiz.status === 'published' ? 'a published' : 'an available' }} section.</p>
+                    </div>
+
+                    <div class="sidebar-card sidebar-card--palette">
+                      <div class="sidebar-card__title">Question Palette</div>
+                      <div class="palette-grid">
+                        @for (item of questionNavigator(); track item.question.id) {
+                          <button
+                            type="button"
+                            class="palette-button"
+                            [class.palette-button--answered]="item.answered"
+                            [class.palette-button--review]="item.flagged"
+                            [class.palette-button--current]="item.current"
+                            [class.palette-button--visited]="item.visited"
+                            (click)="activateQuestion(item.index)">
+                            <span>{{ item.index + 1 }}</span>
+                          </button>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="sidebar-actions">
+                      <button mat-stroked-button type="button" (click)="scrollQuestionPaper()">Question Paper</button>
+                      <button
+                        mat-stroked-button
+                        type="button"
+                        [attr.aria-pressed]="showInstructions()"
+                        (click)="toggleInstructions()">
+                        Instructions
+                      </button>
+                      <button mat-stroked-button type="button" (click)="openProfile()">Profile</button>
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        type="button"
+                        (click)="submitAttempt()">
+                        Submit Test
+                      </button>
+                    </div>
+                  </aside>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+        }
+      </div>
+    }
+  </div>
+</section>

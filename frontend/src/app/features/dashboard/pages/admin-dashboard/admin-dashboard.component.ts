@@ -58,7 +58,7 @@ import { materialImports } from '@app/shared/material/material-imports';
             <div class="dashboard-kpi-card__ring">
               <app-dashboard-chart
                 type="doughnut"
-                [height]="250"
+                [height]="200"
                 [data]="distributionChartData()"
                 [options]="doughnutChartOptions()">
               </app-dashboard-chart>
@@ -293,12 +293,12 @@ import { materialImports } from '@app/shared/material/material-imports';
       position: relative;
       display: grid;
       place-items: center;
-      min-height: 220px;
+      min-height: 190px;
     }
 
     .dashboard-kpi-card__ring-value {
       position: absolute;
-      font-size: 1.95rem;
+      font-size: 1.7rem;
       font-weight: 800;
       letter-spacing: -0.05em;
     }
@@ -461,11 +461,11 @@ export class AdminDashboardComponent {
     maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
-      tooltip: { backgroundColor: '#162033', titleFont: { family: 'IBM Plex Serif' }, bodyFont: { family: 'IBM Plex Serif' } }
+      tooltip: { backgroundColor: '#162033', titleFont: { family: 'IBM Plex Sans' }, bodyFont: { family: 'IBM Plex Sans' } }
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: '#627187', font: { family: 'IBM Plex Serif' } } },
-      y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.16)' }, ticks: { color: '#627187', font: { family: 'IBM Plex Serif' } } }
+      x: { grid: { display: false }, ticks: { color: '#627187', font: { family: 'IBM Plex Sans' } } },
+      y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.16)' }, ticks: { color: '#627187', font: { family: 'IBM Plex Sans' } } }
     }
   });
   readonly doughnutChartOptions = signal<ChartConfiguration<'doughnut'>['options']>({
@@ -474,7 +474,7 @@ export class AdminDashboardComponent {
     cutout: '72%',
     plugins: {
       legend: { display: false },
-      tooltip: { backgroundColor: '#162033', titleFont: { family: 'IBM Plex Serif' }, bodyFont: { family: 'IBM Plex Serif' } }
+      tooltip: { backgroundColor: '#162033', titleFont: { family: 'IBM Plex Sans' }, bodyFont: { family: 'IBM Plex Sans' } }
     }
   });
 

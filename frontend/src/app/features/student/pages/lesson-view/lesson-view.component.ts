@@ -68,15 +68,25 @@ import { materialImports } from '@app/shared/material/material-imports';
                     }
 
                     @if (!(lesson.lesson_type === 'video' && lesson.video_url)) {
-                      <div class="player-stage__overlay">
-                        <button type="button" class="player-stage__play" aria-label="Open lesson">
-                          <span class="material-symbols-outlined">play_arrow</span>
-                        </button>
-                        <div class="player-stage__copy">
-                          <span>{{ lesson.lesson_type === 'video' ? 'Video lecture' : 'Course lesson' }}</span>
-                          <strong>{{ lesson.title }}</strong>
+                      @if (lessonDetails(lesson); as lessonDisplay) {
+                        <div class="player-stage__overlay">
+                          <div class="player-stage__badge">{{ lessonDisplay.label }}</div>
+                          <div class="player-stage__card">
+                            <div
+                              class="player-stage__icon"
+                              [class.player-stage__icon--video]="lesson.lesson_type === 'video'"
+                              [class.player-stage__icon--resource]="lesson.lesson_type === 'resource_link'"
+                              [class.player-stage__icon--notes]="lesson.lesson_type === 'text'">
+                              <span class="material-symbols-outlined">{{ lessonDisplay.icon }}</span>
+                            </div>
+                            <div class="player-stage__copy">
+                              <span>{{ lessonDisplay.label }}</span>
+                              <strong>{{ lesson.title }}</strong>
+                              <p>{{ lessonDisplay.description }}</p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      }
                     }
                   }
                 </div>
@@ -97,7 +107,7 @@ import { materialImports } from '@app/shared/material/material-imports';
                       <h1>{{ lesson.title }}</h1>
                       <div class="lesson-summary__meta">
                         <span>{{ currentLessonNumber() }} of {{ orderedLessons().length }}</span>
-                        <span>{{ lesson.lesson_type.replace('_', ' ') }}</span>
+                        <span>{{ lessonDetails(lesson).label }}</span>
                         <span>{{ lesson.duration_minutes || 0 }} min</span>
                         <span>{{ progress()?.completed_lessons ?? 0 }}/{{ progress()?.total_lessons ?? 0 }} lessons complete</span>
                       </div>
@@ -188,7 +198,7 @@ import { materialImports } from '@app/shared/material/material-imports';
               <div class="curriculum-panel__top">
                 <div>
                   <h2>Course content</h2>
-                  <span>{{ modules().length }} sections • {{ orderedLessons().length }} lectures</span>
+                  <span>{{ modules().length }} sections &middot; {{ orderedLessons().length }} lectures</span>
                 </div>
                 <strong>{{ remainingLessonsCount() }} left</strong>
               </div>
@@ -212,25 +222,29 @@ import { materialImports } from '@app/shared/material/material-imports';
 
                     <div class="lecture-list">
                       @for (lesson of (lessonsByModule()[module.id] || []); track lesson.id; let lessonIndex = $index) {
-                        <a
-                          class="lecture-item"
-                          [class.lecture-item--complete]="completedLessonIds().has(lesson.id)"
-                          [class.lecture-item--active]="selectedLesson()?.id === lesson.id"
-                          [routerLink]="['/app/student/learning', courseDetail.id, 'lessons', lesson.id]">
-                          <div class="lecture-item__icon">
-                            @if (completedLessonIds().has(lesson.id)) {
-                              <span class="material-symbols-outlined lecture-item__check">check_circle</span>
-                            } @else {
-                              <span class="material-symbols-outlined">
-                                {{ lesson.lesson_type === 'video' ? 'play_circle' : lesson.lesson_type === 'resource_link' ? 'description' : 'menu_book' }}
-                              </span>
-                            }
-                          </div>
-                          <div class="lecture-item__copy">
-                            <strong>{{ lessonIndex + 1 }}. {{ lesson.title }}</strong>
-                            <span>{{ lesson.lesson_type === 'video' ? 'Lecture' : lesson.lesson_type === 'resource_link' ? 'Resource' : 'Lesson' }} • {{ lesson.duration_minutes || 0 }} min</span>
-                          </div>
-                        </a>
+                        @if (lessonDetails(lesson); as lessonDisplay) {
+                          <a
+                            class="lecture-item"
+                            [class.lecture-item--complete]="completedLessonIds().has(lesson.id)"
+                            [class.lecture-item--active]="selectedLesson()?.id === lesson.id"
+                            [routerLink]="['/app/student/learning', courseDetail.id, 'lessons', lesson.id]">
+                            <div
+                              class="lecture-item__icon"
+                              [class.lecture-item__icon--video]="lesson.lesson_type === 'video'"
+                              [class.lecture-item__icon--resource]="lesson.lesson_type === 'resource_link'"
+                              [class.lecture-item__icon--notes]="lesson.lesson_type === 'text'">
+                              @if (completedLessonIds().has(lesson.id)) {
+                                <span class="material-symbols-outlined lecture-item__check">check_circle</span>
+                              } @else {
+                                <span class="material-symbols-outlined">{{ lessonDisplay.icon }}</span>
+                              }
+                            </div>
+                            <div class="lecture-item__copy">
+                              <strong>{{ lessonIndex + 1 }}. {{ lesson.title }}</strong>
+                              <span>{{ lessonDisplay.label }} &middot; {{ lesson.duration_minutes || 0 }} min</span>
+                            </div>
+                          </a>
+                        }
                       }
                     </div>
                   </mat-expansion-panel>
@@ -251,7 +265,7 @@ import { materialImports } from '@app/shared/material/material-imports';
   styles: [`
     :host {
       display: block;
-      font-family: 'IBM Plex Serif', serif !important;
+      font-family: 'IBM Plex Sans', sans-serif !important;
     }
 
     .player-page {
@@ -263,21 +277,34 @@ import { materialImports } from '@app/shared/material/material-imports';
     .player-shell {
       display: grid;
       gap: 0;
-      border: 1px solid #dde6f2;
-      border-radius: 28px;
-      background: #fff;
+      border: 1px solid rgba(221, 230, 242, 0.92);
+      border-radius: 32px;
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
       overflow: hidden;
-      box-shadow: 0 22px 48px rgba(15, 23, 42, 0.08);
+      box-shadow: 0 26px 60px rgba(15, 23, 42, 0.09);
     }
 
     .player-shell__header {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
       padding: 1rem 1.3rem;
-      background: linear-gradient(135deg, #151723 0%, #1c2031 100%);
+      background: linear-gradient(135deg, #111827 0%, #1e2233 55%, #171b29 100%);
       color: #fff;
+      overflow: hidden;
+    }
+
+    .player-shell__header::after {
+      content: '';
+      position: absolute;
+      inset: auto -4rem -6rem auto;
+      width: 16rem;
+      height: 16rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, rgba(59, 130, 246, 0.04) 40%, transparent 72%);
+      pointer-events: none;
     }
 
     .player-shell__brand,
@@ -387,43 +414,91 @@ import { materialImports } from '@app/shared/material/material-imports';
       inset: 0;
       display: grid;
       place-items: center;
-      gap: 1rem;
+      gap: 0.9rem;
       padding: 2rem;
-      background: linear-gradient(180deg, rgba(8, 8, 14, 0.18) 0%, rgba(8, 8, 14, 0.52) 100%);
+      background:
+        linear-gradient(180deg, rgba(8, 8, 14, 0.18) 0%, rgba(8, 8, 14, 0.56) 100%),
+        radial-gradient(circle at top, rgba(59, 130, 246, 0.14), transparent 42%);
+      backdrop-filter: blur(4px);
       text-align: center;
     }
 
-    .player-stage__play {
-      display: grid;
-      place-items: center;
-      width: 90px;
-      height: 90px;
-      border: 0;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.96);
-      color: #111118;
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
-      cursor: pointer;
+    .player-stage__badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.38rem 0.82rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
     }
 
-    .player-stage__play .material-symbols-outlined {
-      font-size: 3rem;
+    .player-stage__card {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 1rem;
+      width: min(100%, 540px);
+      padding: 1.1rem 1.2rem;
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(9, 16, 32, 0.58);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    }
+
+    .player-stage__icon {
+      display: grid;
+      place-items: center;
+      width: 4.5rem;
+      height: 4.5rem;
+      border-radius: 1.4rem;
+      color: #fff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), 0 14px 24px rgba(15, 23, 42, 0.22);
+    }
+
+    .player-stage__icon--video {
+      background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+    }
+
+    .player-stage__icon--resource {
+      background: linear-gradient(135deg, #0891b2 0%, #0ea5e9 100%);
+    }
+
+    .player-stage__icon--notes {
+      background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+    }
+
+    .player-stage__icon .material-symbols-outlined {
+      font-size: 2rem;
     }
 
     .player-stage__copy span {
       display: block;
-      color: rgba(255, 255, 255, 0.74);
+      color: rgba(255, 255, 255, 0.72);
       font-size: 0.82rem;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.12em;
+      font-weight: 700;
     }
 
     .player-stage__copy strong {
       display: block;
       margin-top: 0.45rem;
       color: #fff;
-      font-size: 1.2rem;
+      font-size: clamp(1.15rem, 1.8vw, 1.45rem);
       line-height: 1.3;
+    }
+
+    .player-stage__copy p {
+      margin: 0.45rem 0 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.92rem;
+      line-height: 1.7;
     }
 
     .player-stage__tabs {
@@ -458,7 +533,7 @@ import { materialImports } from '@app/shared/material/material-imports';
       display: grid;
       gap: 1.1rem;
       padding: 2rem;
-      background: #fff;
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
     }
 
     .lesson-summary__header {
@@ -543,14 +618,19 @@ import { materialImports } from '@app/shared/material/material-imports';
     }
 
     .lesson-summary__content {
+      padding: 1rem 1.05rem;
       color: #374151;
       font-size: 1rem;
       line-height: 1.75;
       white-space: pre-wrap;
+      border: 1px solid #e6edf7;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
     }
 
     .lesson-summary__content--muted {
       color: #6b7280;
+      background: #f8fbff;
     }
 
     .tab-panel {
@@ -575,7 +655,7 @@ import { materialImports } from '@app/shared/material/material-imports';
       display: grid;
       align-content: start;
       border-left: 1px solid #e6edf7;
-      background: #f8fafc;
+      background: linear-gradient(180deg, #f8fafc 0%, #f4f7fc 100%);
       max-height: calc(100vh - 190px);
       overflow: auto;
     }
@@ -620,10 +700,10 @@ import { materialImports } from '@app/shared/material/material-imports';
     }
 
     :host ::ng-deep .curriculum-accordion .mat-expansion-panel {
-      border: 1px solid #e0e7f1;
-      border-radius: 18px !important;
+      border: 1px solid #dfe8f4;
+      border-radius: 20px !important;
       overflow: hidden;
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.05);
       background: #fff;
     }
 
@@ -647,7 +727,7 @@ import { materialImports } from '@app/shared/material/material-imports';
 
     .lecture-list {
       display: grid;
-      padding: 0.2rem 1rem 0.85rem;
+      padding: 0.2rem 0.95rem 0.85rem;
     }
 
     .lecture-item {
@@ -655,15 +735,17 @@ import { materialImports } from '@app/shared/material/material-imports';
       grid-template-columns: 36px minmax(0, 1fr);
       gap: 0.7rem;
       align-items: start;
-      padding: 0.9rem 0;
+      padding: 0.85rem 0.8rem;
       color: inherit;
       text-decoration: none;
       border-top: 1px solid #eef2f7;
+      border-radius: 16px;
+      transition: background-color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
     }
 
     .lecture-item:first-child {
       border-top: 0;
-      padding-top: 0;
+      margin-top: 0.15rem;
     }
 
     .lecture-item__icon {
@@ -671,9 +753,25 @@ import { materialImports } from '@app/shared/material/material-imports';
       place-items: center;
       width: 36px;
       height: 36px;
-      border-radius: 999px;
+      border-radius: 12px;
       background: #eef4fb;
       color: #172033;
+      transition: transform var(--transition-base), box-shadow var(--transition-base), background-color var(--transition-base), color var(--transition-base);
+    }
+
+    .lecture-item__icon--video {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(79, 70, 229, 0.12));
+      color: #1d4ed8;
+    }
+
+    .lecture-item__icon--resource {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.14), rgba(8, 145, 178, 0.12));
+      color: #0369a1;
+    }
+
+    .lecture-item__icon--notes {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.14), rgba(139, 92, 246, 0.12));
+      color: #6d28d9;
     }
 
     .lecture-item__copy {
@@ -693,7 +791,7 @@ import { materialImports } from '@app/shared/material/material-imports';
     }
 
     .lecture-item--complete .lecture-item__icon {
-      background: #ecfdf3;
+      background: linear-gradient(135deg, #ecfdf3 0%, #d1fae5 100%);
       color: #16a34a;
     }
 
@@ -711,7 +809,18 @@ import { materialImports } from '@app/shared/material/material-imports';
     }
 
     .lecture-item--active {
-      background: linear-gradient(90deg, rgba(37, 99, 235, 0.06), transparent);
+      background: linear-gradient(90deg, rgba(37, 99, 235, 0.08), transparent);
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+    }
+
+    .lecture-item:hover {
+      transform: translateY(-1px);
+      background: linear-gradient(90deg, rgba(226, 236, 255, 0.8), rgba(248, 250, 252, 0.92));
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.06);
+    }
+
+    .lecture-item:hover .lecture-item__icon {
+      transform: translateY(-1px);
     }
 
     @media (max-width: 1280px) {
@@ -800,6 +909,29 @@ export class LessonViewComponent {
   readonly remainingLessonsCount = computed(() =>
     Math.max(this.orderedLessons().length - this.completedLessonIds().size, 0)
   );
+
+  readonly lessonDetails = (lesson: Lesson) => {
+    switch (lesson.lesson_type) {
+      case 'video':
+        return {
+          icon: 'play_circle',
+          label: 'Video lecture',
+          description: 'Watch the walkthrough and follow the recording at your own pace.'
+        };
+      case 'resource_link':
+        return {
+          icon: 'description',
+          label: 'Resource',
+          description: 'Open the attached reading, reference file, or supporting material.'
+        };
+      default:
+        return {
+          icon: 'sticky_note_2',
+          label: 'Notes',
+          description: 'Review the lesson notes, key takeaways, and follow-up actions.'
+        };
+    }
+  };
 
   constructor() {
     this.route.paramMap

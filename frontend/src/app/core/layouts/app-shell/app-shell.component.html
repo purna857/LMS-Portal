@@ -73,7 +73,7 @@
       @if (toolbarSearchVisible()) {
         <div class="shell-toolbar__center">
           <mat-form-field appearance="outline" subscriptSizing="dynamic" class="shell-toolbar__search">
-            <span matTextPrefix class="material-symbols-outlined shell-toolbar__search-icon">search</span>
+            <span matIconPrefix class="material-symbols-outlined shell-toolbar__search-icon">search</span>
             <input
               matInput
               [value]="workspaceSearch.query()"
@@ -118,7 +118,13 @@
         </div>
       </mat-menu>
 
-      <button mat-button [matMenuTriggerFor]="profileMenu" class="shell-toolbar__profile">
+      <button
+        #profileButton
+        #profileTrigger="matMenuTrigger"
+        mat-button
+        [matMenuTriggerFor]="profileMenu"
+        class="shell-toolbar__profile"
+        (menuOpened)="syncProfileMenuWidth(profileButton, profileTrigger)">
         <span class="shell-toolbar__avatar">{{ initials() }}</span>
         <span class="shell-toolbar__identity">
           <strong>{{ displayName() }}</strong>
@@ -131,19 +137,24 @@
         xPosition="before"
         yPosition="below"
         [overlapTrigger]="false">
-        <div class="shell-menu__panel shell-menu__panel--compact">
-          <p class="shell-menu__eyebrow">Signed in as</p>
-          <strong class="shell-menu__title">{{ displayName() }}</strong>
-          <span class="shell-menu__subtitle">{{ roleLabel() | titlecase }}</span>
+        <div class="shell-menu__actions">
+          <button mat-menu-item class="shell-menu__action" routerLink="/app/profile">
+            <span class="shell-menu__action-content">
+              <span class="shell-menu__action-icon material-symbols-outlined" aria-hidden="true">person</span>
+              <span class="shell-menu__action-copy">
+                <strong>Profile</strong>
+              </span>
+            </span>
+          </button>
+          <button mat-menu-item class="shell-menu__action shell-menu__action--danger" (click)="logout()">
+            <span class="shell-menu__action-content">
+              <span class="shell-menu__action-icon material-symbols-outlined" aria-hidden="true">logout</span>
+              <span class="shell-menu__action-copy">
+                <strong>Logout</strong>
+              </span>
+            </span>
+          </button>
         </div>
-        <button mat-menu-item class="shell-menu__action" routerLink="/app/profile">
-          <span class="material-symbols-outlined">person</span>
-          <span>Profile</span>
-        </button>
-        <button mat-menu-item class="shell-menu__action" (click)="logout()">
-          <span class="material-symbols-outlined">logout</span>
-          <span>Logout</span>
-        </button>
       </mat-menu>
     </mat-toolbar>
 

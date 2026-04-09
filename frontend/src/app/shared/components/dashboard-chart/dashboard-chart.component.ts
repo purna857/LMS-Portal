@@ -30,7 +30,7 @@ Chart.register(...registerables);
     .dashboard-chart {
       position: relative;
       width: 100%;
-      min-height: 220px;
+      min-height: 180px;
     }
 
     canvas {

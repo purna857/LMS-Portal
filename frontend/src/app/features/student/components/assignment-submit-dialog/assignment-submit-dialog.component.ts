@@ -27,7 +27,6 @@ export interface AssignmentSubmitDialogData {
 
     <mat-dialog-content class="dialog-shell">
       <section class="dialog-summary">
-        <span class="dialog-summary__eyebrow">Student submission</span>
         <strong>{{ data.assignment.title }}</strong>
         <p>
           Upload a file, add a written response, include a submission link, or combine them in a single delivery.
@@ -39,7 +38,7 @@ export interface AssignmentSubmitDialogData {
           <mat-label>Submission text</mat-label>
           <textarea
             matInput
-            rows="5"
+            rows="4"
             formControlName="submission_text"
             placeholder="Paste notes, code snippets, or a concise summary of the work you completed.">
           </textarea>
@@ -98,49 +97,38 @@ export interface AssignmentSubmitDialogData {
 
     .dialog-shell {
       display: grid;
-      gap: 0.85rem;
-      width: min(92vw, 720px);
-      max-width: 720px;
-      padding-top: 0.15rem;
+      gap: 1rem;
+      width: min(92vw, 680px);
+      max-width: 680px;
+      padding-top: 0.05rem;
     }
 
     .dialog-summary {
       display: grid;
-      gap: 0.45rem;
-      padding: 0.65rem 1rem 0;
-    }
-
-    .dialog-summary__eyebrow {
-      display: inline-flex;
-      width: fit-content;
-      padding: 0.28rem 0.7rem;
-      border-radius: 999px;
-      background: #eef4ff;
-      color: var(--primary);
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      font-size: 0.68rem;
-      font-weight: 700;
+      gap: 0.5rem;
+      padding: 0.35rem 1rem 0.1rem;
     }
 
     .dialog-summary strong {
-      font-size: 1rem;
+      font-size: 1.12rem;
+      line-height: 1.35;
     }
 
     .dialog-summary p {
       margin: 0;
       color: var(--muted);
-      line-height: 1.55;
+      line-height: 1.72;
+      max-width: 56ch;
     }
 
     .dialog-grid {
       display: grid;
-      gap: 0.75rem;
+      gap: 0.8rem;
       padding: 0 1rem 0;
     }
 
     .dialog-grid textarea[matInput] {
-      min-height: 72px;
+      min-height: 64px;
     }
 
     .dialog-grid__full {
@@ -149,17 +137,27 @@ export interface AssignmentSubmitDialogData {
 
     .upload-panel {
       display: grid;
-      gap: 0.65rem;
-      padding: 0.8rem;
+      gap: 0.55rem;
+      padding: 0.82rem 0.9rem;
       border: 1px solid rgba(37, 99, 235, 0.14);
-      border-radius: 22px;
+      border-radius: 20px;
       background: #f8fbff;
     }
 
+    .upload-panel__copy {
+      display: grid;
+      gap: 0.18rem;
+    }
+
+    .upload-panel__copy strong {
+      font-size: 0.96rem;
+      line-height: 1.3;
+    }
+
     .upload-panel__copy p {
-      margin: 0.25rem 0 0;
+      margin: 0;
       color: var(--muted);
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       line-height: 1.45;
     }
 
@@ -174,7 +172,7 @@ export interface AssignmentSubmitDialogData {
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
-      padding: 0.75rem 0.9rem;
+      padding: 0.6rem 0.85rem;
       border-radius: 18px;
       background: #fff;
       border: 1px solid rgba(148, 163, 184, 0.18);
@@ -187,6 +185,7 @@ export interface AssignmentSubmitDialogData {
 
     .upload-placeholder .material-symbols-outlined {
       color: var(--primary);
+      font-size: 1.15rem;
     }
 
     .uploaded-file strong,
@@ -201,7 +200,12 @@ export interface AssignmentSubmitDialogData {
     }
 
     .dialog-actions {
-      padding: 0;
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
+      padding: 0.95rem 0 1rem;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), #ffffff 38%);
+      backdrop-filter: blur(12px);
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush

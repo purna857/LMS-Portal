@@ -24,7 +24,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       border-radius: 22px;
       background: #ffffff;
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-      font-family: 'IBM Plex Serif', serif;
+      font-family: 'IBM Plex Sans', sans-serif !important;
     }
 
     .page-header__copy {

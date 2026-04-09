@@ -141,7 +141,7 @@ interface LearningLibraryItem {
   styles: [`
     :host {
       display: block;
-      font-family: 'IBM Plex Serif', serif !important;
+      font-family: 'IBM Plex Sans', sans-serif !important;
     }
 
     .learning-library-page {
@@ -166,7 +166,7 @@ interface LearningLibraryItem {
 
     .library-header h1 {
       margin: 0;
-      font-size: clamp(2rem, 3vw, 2.55rem);
+      font-size: clamp(1.5rem, 2vw, 2rem);
       line-height: 1;
       letter-spacing: -0.03em;
       color: #14213d;

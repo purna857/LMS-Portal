@@ -59,6 +59,14 @@ import { materialImports } from '@app/shared/material/material-imports';
                   </article>
                 }
               </div>
+            } @else if (searchActive()) {
+              <div class="hero-card__search-empty">
+                <span class="material-symbols-outlined">search_off</span>
+                <div>
+                  <strong>No dashboard matches found</strong>
+                  <p>Try a different keyword to surface enrolled courses and recent notifications.</p>
+                </div>
+              </div>
             }
           </mat-card-content>
         </mat-card>
@@ -68,7 +76,7 @@ import { materialImports } from '@app/shared/material/material-imports';
             <div class="dashboard-kpi-card__ring">
               <app-dashboard-chart
                 type="doughnut"
-                [height]="250"
+                [height]="200"
                 [data]="distributionChartData()"
                 [options]="doughnutChartOptions()">
               </app-dashboard-chart>
@@ -123,9 +131,9 @@ import { materialImports } from '@app/shared/material/material-imports';
             <mat-card-title>Continue Learning</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            @if (!loading() && filteredCourses().length) {
+            @if (!loading() && displayedCourses().length) {
               <div class="course-grid">
-                @for (course of filteredCourses(); track course.enrollment_id) {
+                @for (course of displayedCourses(); track course.enrollment_id) {
                   <article class="course-grid__card">
                     <div class="course-grid__head">
                       <div class="course-grid__thumb">{{ course.title.charAt(0) }}</div>
@@ -143,9 +151,9 @@ import { materialImports } from '@app/shared/material/material-imports';
               </div>
             } @else if (!loading()) {
               <app-empty-state
-                icon="menu_book"
-                title="No enrolled courses yet"
-                description="Browse the course catalog and enroll to begin your learning journey.">
+                [icon]="searchActive() ? 'search_off' : 'menu_book'"
+                [title]="searchActive() ? 'No courses match your search' : 'No enrolled courses yet'"
+                [description]="searchActive() ? 'Try a different keyword to narrow down your learning library.' : 'Browse the course catalog and enroll to begin your learning journey.'">
               </app-empty-state>
             }
           </mat-card-content>
@@ -187,9 +195,9 @@ import { materialImports } from '@app/shared/material/material-imports';
               </div>
             } @else if (!loading()) {
               <app-empty-state
-                icon="recommend"
-                title="Recommendations will appear here"
-                description="As you enroll and progress through courses, tailored suggestions will show up in this area.">
+                [icon]="searchActive() ? 'search_off' : 'recommend'"
+                [title]="searchActive() ? 'No matching recommendations' : 'Recommendations will appear here'"
+                [description]="searchActive() ? 'Try another keyword to uncover related courses.' : 'As you enroll and progress through courses, tailored suggestions will show up in this area.'">
               </app-empty-state>
             }
           </mat-card-content>
@@ -222,7 +230,7 @@ import { materialImports } from '@app/shared/material/material-imports';
                 </div>
               }
 
-              @for (item of filteredNotifications(); track item.id) {
+              @for (item of displayedNotifications(); track item.id) {
                 <div class="achievement-list__item">
                   <span class="material-symbols-outlined">notifications</span>
                   <div>
@@ -232,11 +240,11 @@ import { materialImports } from '@app/shared/material/material-imports';
                 </div>
               }
 
-              @if (!loading() && !filteredNotifications().length) {
+              @if (!loading() && !displayedNotifications().length) {
                 <app-empty-state
-                  icon="notifications"
-                  title="No recent updates"
-                  description="Course and platform notifications will appear here as they arrive.">
+                  [icon]="searchActive() ? 'search_off' : 'notifications'"
+                  [title]="searchActive() ? 'No notifications match your search' : 'No recent updates'"
+                  [description]="searchActive() ? 'Try another keyword to narrow your notifications.' : 'Course and platform notifications will appear here as they arrive.'">
                 </app-empty-state>
               }
             </div>
@@ -276,6 +284,42 @@ import { materialImports } from '@app/shared/material/material-imports';
       margin: 0.65rem 0 0;
       color: var(--muted);
       font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .hero-card__search-empty {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 0.8rem;
+      align-items: start;
+      margin-top: 1.1rem;
+      padding: 0.95rem 1rem;
+      border: 1px dashed rgba(37, 99, 235, 0.18);
+      border-radius: 18px;
+      background: rgba(238, 244, 255, 0.58);
+    }
+
+    .hero-card__search-empty .material-symbols-outlined {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: #eef4ff;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .hero-card__search-empty strong {
+      display: block;
+      font-size: 0.92rem;
+      line-height: 1.25;
+    }
+
+    .hero-card__search-empty p {
+      margin: 0.3rem 0 0;
+      color: var(--muted);
+      font-size: 0.78rem;
       line-height: 1.45;
     }
 
@@ -358,12 +402,12 @@ import { materialImports } from '@app/shared/material/material-imports';
       position: relative;
       display: grid;
       place-items: center;
-      min-height: 220px;
+      min-height: 190px;
     }
 
     .dashboard-kpi-card__ring-value {
       position: absolute;
-      font-size: 1.9rem;
+      font-size: 1.65rem;
       font-weight: 800;
       letter-spacing: -0.05em;
     }
@@ -506,14 +550,17 @@ export class StudentDashboardComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly firstName = signal('Learner');
   readonly progressValue = computed(() => `${this.progressSummary()?.average_progress_percentage.toFixed(1) ?? '0.0'}%`);
+  readonly searchQuery = computed(() => this.workspaceSearch.query().trim());
+  readonly normalizedSearchQuery = computed(() => this.searchQuery().toLowerCase());
+  readonly searchActive = computed(() => this.normalizedSearchQuery().length > 0);
   readonly filteredCourses = computed(() => {
-    const query = this.workspaceSearch.query().trim().toLowerCase();
+    const query = this.normalizedSearchQuery();
     if (!query) {
       return this.enrolledCourses();
     }
 
     return this.enrolledCourses().filter((course) =>
-      [course.title, course.short_description, course.slug]
+      [course.title, course.short_description, course.slug, course.primary_instructor_name, course.status]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
@@ -521,7 +568,7 @@ export class StudentDashboardComponent {
     );
   });
   readonly filteredNotifications = computed(() => {
-    const query = this.workspaceSearch.query().trim().toLowerCase();
+    const query = this.normalizedSearchQuery();
     if (!query) {
       return this.notifications();
     }
@@ -531,6 +578,14 @@ export class StudentDashboardComponent {
         .toLowerCase()
         .includes(query)
     );
+  });
+  readonly displayedCourses = computed(() => {
+    const courses = this.filteredCourses();
+    return this.searchActive() ? courses : courses.slice(0, 5);
+  });
+  readonly displayedNotifications = computed(() => {
+    const notifications = this.filteredNotifications();
+    return this.searchActive() ? notifications : notifications.slice(0, 4);
   });
   readonly heroCourses = computed(() => this.filteredCourses().slice(0, 2));
   readonly recommendedCourses = computed(() => this.filteredCourses().slice(0, 3));
@@ -548,13 +603,29 @@ export class StudentDashboardComponent {
   readonly barChartOptions = signal<ChartConfiguration<'bar' | 'line'>['options']>({
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false
+    },
+    hover: {
+      mode: 'index',
+      intersect: false
+    },
     plugins: {
       legend: { display: false },
-      tooltip: { backgroundColor: '#162033', titleFont: { family: 'IBM Plex Serif' }, bodyFont: { family: 'IBM Plex Serif' } }
+      tooltip: {
+        backgroundColor: '#162033',
+        displayColors: false,
+        titleFont: { family: 'IBM Plex Sans' },
+        bodyFont: { family: 'IBM Plex Sans' },
+        callbacks: {
+          label: (context) => `${context.dataset.label ?? 'Value'}: ${context.formattedValue}`
+        }
+      }
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: '#627187', font: { family: 'IBM Plex Serif' } } },
-      y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.16)' }, ticks: { color: '#627187', font: { family: 'IBM Plex Serif' } } }
+      x: { grid: { display: false }, ticks: { color: '#627187', font: { family: 'IBM Plex Sans' } } },
+      y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.16)' }, ticks: { color: '#627187', font: { family: 'IBM Plex Sans' } } }
     }
   });
   readonly doughnutChartOptions = signal<ChartConfiguration<'doughnut'>['options']>({
@@ -563,7 +634,7 @@ export class StudentDashboardComponent {
     cutout: '72%',
     plugins: {
       legend: { display: false },
-      tooltip: { backgroundColor: '#162033', titleFont: { family: 'IBM Plex Serif' }, bodyFont: { family: 'IBM Plex Serif' } }
+      tooltip: { backgroundColor: '#162033', titleFont: { family: 'IBM Plex Sans' }, bodyFont: { family: 'IBM Plex Sans' } }
     }
   });
   readonly metricCards = computed(() => {
@@ -598,8 +669,8 @@ export class StudentDashboardComponent {
         next: ({ stats, progressSummary, enrolledCourses, notifications, assignmentRecords }) => {
           this.stats.set(stats);
           this.progressSummary.set(progressSummary);
-          this.enrolledCourses.set(enrolledCourses.items.slice(0, 5));
-          this.notifications.set(notifications.items.slice(0, 4));
+          this.enrolledCourses.set(enrolledCourses.items);
+          this.notifications.set(notifications.items);
           this.assignmentRecords.set(assignmentRecords.items);
           this.progressChartData.set({
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
@@ -620,7 +691,9 @@ export class StudentDashboardComponent {
                 backgroundColor: 'rgba(24, 196, 184, 0.10)',
                 tension: 0.42,
                 fill: true,
-                pointRadius: 0
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointHitRadius: 16
               }
             ]
           });

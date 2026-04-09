@@ -196,6 +196,12 @@ export const appRoutes: Routes = [
         loadComponent: () => import('@app/features/student/pages/quizzes/quizzes.component').then((m) => m.StudentQuizzesComponent)
       },
       {
+        path: 'student/quizzes/:quizId',
+        canActivate: [roleGuard],
+        data: { roles: ['student'] },
+        loadComponent: () => import('@app/features/student/pages/quizzes/quizzes.component').then((m) => m.StudentQuizzesComponent)
+      },
+      {
         path: 'student/results',
         canActivate: [roleGuard],
         data: { roles: ['student'] },

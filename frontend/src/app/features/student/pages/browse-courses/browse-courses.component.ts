@@ -89,8 +89,8 @@ import { materialImports } from '@app/shared/material/material-imports';
       } @else if (!loading()) {
         <app-empty-state
           icon="travel_explore"
-          title="No courses found"
-          description="Try adjusting your filters to discover more courses in the catalog.">
+          [title]="emptyStateTitle()"
+          [description]="emptyStateDescription()">
         </app-empty-state>
       }
     </section>
@@ -177,6 +177,12 @@ export class BrowseCoursesComponent {
   });
 
   constructor() {
+    this.filtersForm.controls.level.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.loadCourses();
+      });
+
     this.loadCourses();
   }
 
@@ -201,8 +207,39 @@ export class BrowseCoursesComponent {
   }
 
   resetFilters(): void {
-    this.filtersForm.reset({ level: '', language: '' });
+    this.filtersForm.reset({ level: '', language: '' }, { emitEvent: false });
     this.workspaceSearch.clear();
     this.loadCourses();
+  }
+
+  emptyStateTitle(): string {
+    const level = this.filtersForm.controls.level.value?.trim() ?? '';
+    if (level) {
+      return `No ${this.formatLabel(level)} courses found`;
+    }
+    return 'No courses found';
+  }
+
+  emptyStateDescription(): string {
+    const level = this.filtersForm.controls.level.value?.trim() ?? '';
+    const language = this.filtersForm.controls.language.value?.trim() ?? '';
+
+    if (level && language) {
+      return `No ${this.formatLabel(level)} courses matched the selected language. Try a different level or clear the filters to browse the full catalog.`;
+    }
+
+    if (level) {
+      return `Try a different level or clear the filters to browse more ${this.formatLabel(level).toLowerCase()} courses.`;
+    }
+
+    if (language) {
+      return 'Try a different language or clear the filters to discover more courses in the catalog.';
+    }
+
+    return 'Try adjusting your filters to discover more courses in the catalog.';
+  }
+
+  private formatLabel(value: string): string {
+    return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
   }
 }

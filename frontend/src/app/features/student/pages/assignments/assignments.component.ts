@@ -306,10 +306,11 @@ export class StudentAssignmentsComponent {
   submitAssignment(assignment: Assignment): void {
     const dialogRef = this.dialog.open(AssignmentSubmitDialogComponent, {
       data: { assignment },
-      panelClass: ['lms-dialog-panel', 'lms-assignment-dialog'],
+      panelClass: ['lms-dialog-panel', 'lms-assignment-dialog', 'lms-assignment-submit-dialog'],
       width: '720px',
       maxWidth: '92vw',
-      maxHeight: '88vh',
+      maxHeight: '82vh',
+      position: { top: '24px' },
       autoFocus: false
     });
     dialogRef.afterClosed()

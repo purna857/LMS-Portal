@@ -1,5 +1,5 @@
 @use '@angular/material' as mat;
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600;700&display=swap');
 
 html {
   color-scheme: light;
@@ -13,8 +13,8 @@ html {
         tertiary: mat.$orange-palette
       ),
       typography: (
-        brand-family: 'Outfit, sans-serif',
-        plain-family: 'Outfit, sans-serif'
+        brand-family: 'IBM Plex Sans, sans-serif',
+        plain-family: 'IBM Plex Sans, sans-serif'
       ),
       density: (
         scale: 0
@@ -76,7 +76,7 @@ body {
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
 }
 
 body {
@@ -102,7 +102,7 @@ a {
   display: grid;
   gap: 1.2rem;
   padding: 0.1rem;
-  font-family: 'IBM Plex Serif', serif;
+  font-family: 'IBM Plex Sans', sans-serif !important;
 }
 
 .page-grid {
@@ -212,7 +212,7 @@ a {
   border-radius: 22px !important;
   background: #ffffff !important;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05) !important;
-  font-family: 'IBM Plex Serif', serif !important;
+  font-family: 'IBM Plex Sans', sans-serif !important;
 }
 
 .toolbar-grid {
@@ -249,7 +249,7 @@ a {
   letter-spacing: 0.12em;
   font-weight: 700;
   background: #f7faff;
-  font-family: 'IBM Plex Serif', serif;
+  font-family: 'IBM Plex Sans', sans-serif !important;
 }
 
 .data-table td,
@@ -297,7 +297,7 @@ a {
   border-radius: 22px;
   background: #ffffff;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-  font-family: 'IBM Plex Serif', serif;
+  font-family: 'IBM Plex Sans', sans-serif !important;
   transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
 }
 
@@ -312,7 +312,7 @@ a {
   border-radius: 22px !important;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05) !important;
   background: #ffffff !important;
-  font-family: 'IBM Plex Serif', serif !important;
+  font-family: 'IBM Plex Sans', sans-serif !important;
 }
 
 .mat-mdc-card-header {
@@ -333,7 +333,7 @@ a {
   font-size: 0.92rem !important;
   font-weight: 700 !important;
   letter-spacing: -0.02em;
-  font-family: 'IBM Plex Serif', serif !important;
+  font-family: 'IBM Plex Sans', sans-serif !important;
 }
 
 .mat-mdc-form-field {
@@ -419,7 +419,7 @@ a {
   border-radius: 22px;
   background: #ffffff;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-  font-family: 'IBM Plex Serif', serif;
+  font-family: 'IBM Plex Sans', sans-serif !important;
 }
 
 .mini-chart {
@@ -588,4 +588,17 @@ a {
 .lms-dialog-panel .mat-mdc-dialog-inner-container {
   max-height: calc(100vh - 24px) !important;
   min-height: 0 !important;
+}
+
+.lms-assignment-submit-dialog .mat-mdc-dialog-surface {
+  transform: scale(0.9) !important;
+  transform-origin: center top !important;
+}
+
+.lms-assignment-submit-dialog .mat-mdc-dialog-title {
+  padding: 1.4rem 1.25rem 0.2rem !important;
+  font-size: 1.7rem !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.03em !important;
 }

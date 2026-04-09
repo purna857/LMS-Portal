@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, injec
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { MatButton } from '@angular/material/button';
 
 import type { NavItem } from '@app/core/models/navigation.model';
 import { AuthService } from '@app/core/services/auth.service';
@@ -365,6 +366,27 @@ export class AppShellComponent {
         this.mainScroller()?.nativeElement.scrollTo({ top: 0, left: 0, behavior: 'auto' });
         this.navScroller()?.nativeElement.scrollTo({ top: 0, left: 0, behavior: 'auto' });
       });
+    });
+  }
+
+  syncProfileMenuWidth(button: MatButton, trigger: { updatePosition(): void }): void {
+    const nativeButton = (button as MatButton & { _elementRef: ElementRef<HTMLElement> })._elementRef.nativeElement;
+    const width = Math.max(nativeButton.offsetWidth, 0);
+    if (!width) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      const panel = document.querySelector('.mat-mdc-menu-panel.shell-menu--profile') as HTMLElement | null;
+      if (!panel) {
+        return;
+      }
+
+      panel.style.width = `${width}px`;
+      panel.style.minWidth = `${width}px`;
+      panel.style.maxWidth = `${width}px`;
+
+      requestAnimationFrame(() => trigger.updatePosition());
     });
   }
 
