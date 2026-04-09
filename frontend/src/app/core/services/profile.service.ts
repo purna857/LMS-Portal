@@ -27,7 +27,8 @@ export class ProfileService {
         first_name: profile.first_name,
         last_name: profile.last_name,
         email: profile.email,
-        status: profile.status
+        status: profile.status,
+        avatar_url: profile.profile?.avatar_url ?? null
       })));
   }
 

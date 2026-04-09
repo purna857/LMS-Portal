@@ -397,7 +397,7 @@ export class AssignmentsComponent {
         confirmLabel: 'Delete Assignment',
         confirmColor: 'warn'
       },
-      panelClass: ['lms-dialog-panel', 'lms-confirm-dialog'],
+      panelClass: ['lms-dialog-panel'],
       width: '420px',
       maxWidth: '92vw',
       maxHeight: '80vh',

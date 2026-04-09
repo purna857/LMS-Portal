@@ -256,7 +256,11 @@ export class ContentManagementComponent {
       data: {
         mode: module ? 'edit' : 'create',
         module
-      }
+      },
+      panelClass: ['lms-dialog-panel', 'lms-module-dialog'],
+      width: 'min(94vw, 620px)',
+      maxWidth: 'min(94vw, 620px)',
+      autoFocus: false
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {
@@ -286,7 +290,12 @@ export class ContentManagementComponent {
         message: `Delete "${module.title}" and all of its lessons?`,
         confirmLabel: 'Delete Module',
         confirmColor: 'warn'
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: '420px',
+      maxWidth: '92vw',
+      maxHeight: '80vh',
+      autoFocus: false
     });
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!result) {
@@ -311,7 +320,11 @@ export class ContentManagementComponent {
       data: {
         mode: lesson ? 'edit' : 'create',
         lesson
-      }
+      },
+      panelClass: ['lms-dialog-panel', 'lms-lesson-dialog'],
+      width: 'min(94vw, 720px)',
+      maxWidth: 'min(94vw, 720px)',
+      autoFocus: false
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {
@@ -341,7 +354,12 @@ export class ContentManagementComponent {
         message: `Delete "${lesson.title}" from the module?`,
         confirmLabel: 'Delete Lesson',
         confirmColor: 'warn'
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: '420px',
+      maxWidth: '92vw',
+      maxHeight: '80vh',
+      autoFocus: false
     });
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!result) {

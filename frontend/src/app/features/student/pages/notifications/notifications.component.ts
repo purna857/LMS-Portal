@@ -25,39 +25,74 @@ import { materialImports } from '@app/shared/material/material-imports';
 
       @if (loading()) {
         <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-        <div class="stack-list">
+        <div class="notifications-summary notifications-summary--skeleton">
           @for (item of [1, 2, 3]; track item) {
-            <div class="stat-card skeleton skeleton--card"></div>
+            <div class="notification-stat skeleton skeleton--card"></div>
           }
+        </div>
+      }
+
+      @if (!loading()) {
+        <div class="notifications-summary">
+          <article class="notification-stat">
+            <span class="notification-stat__label">Inbox</span>
+            <strong>{{ totalCount() }}</strong>
+            <p>Total notifications</p>
+          </article>
+          <article class="notification-stat">
+            <span class="notification-stat__label">Unread</span>
+            <strong>{{ unreadCount() }}</strong>
+            <p>Need your attention</p>
+          </article>
+          <article class="notification-stat">
+            <span class="notification-stat__label">Read</span>
+            <strong>{{ readCount() }}</strong>
+            <p>Already reviewed</p>
+          </article>
         </div>
       }
 
       @if (!loading() && filteredNotifications().length) {
         <mat-card class="surface-card notification-card">
-          <mat-card-header>
-            <mat-card-title>Inbox</mat-card-title>
+          <mat-card-header class="notification-card__header">
+            <div>
+              <mat-card-title>Inbox</mat-card-title>
+              <p class="notification-card__subtitle">Newest updates from your courses and the platform.</p>
+            </div>
+            <span class="notification-card__badge">{{ filteredNotifications().length }} visible</span>
           </mat-card-header>
           <mat-card-content>
-            <div class="stack-list">
+            <div class="notification-list">
               @for (notification of filteredNotifications(); track notification.id) {
-                <div class="stack-list__item">
-                  <div class="stack-list__copy">
-                    <div class="stack-list__eyebrow">
-                      <span>{{ notification.notification_type.replace('_', ' ') }}</span>
+                <article class="notification-item" [class.notification-item--read]="notification.is_read">
+                  <div class="notification-item__icon">
+                    <mat-icon>{{ notification.is_read ? 'drafts' : 'notifications_active' }}</mat-icon>
+                  </div>
+                  <div class="notification-item__copy">
+                    <div class="notification-item__eyebrow">
+                      <span>{{ formatNotificationType(notification.notification_type) }}</span>
                       @if (!notification.is_read) {
                         <strong>New</strong>
+                      } @else {
+                        <strong class="notification-item__eyebrow--muted">Read</strong>
                       }
                     </div>
                     <strong>{{ notification.title }}</strong>
                     <p>{{ notification.body }}</p>
-                    <span class="meta">{{ notification.created_at | date:'medium' }}</span>
+                    <div class="notification-item__meta">
+                      <span>{{ notification.created_at | date:'medium' }}</span>
+                    </div>
                   </div>
-                  @if (!notification.is_read) {
-                    <button mat-flat-button color="primary" type="button" (click)="markAsRead(notification)">Mark read</button>
-                  } @else {
-                    <mat-chip-set><mat-chip highlighted>Read</mat-chip></mat-chip-set>
-                  }
-                </div>
+                  <div class="notification-item__actions">
+                    @if (!notification.is_read) {
+                      <button class="notification-action-button" mat-flat-button color="primary" type="button" (click)="markAsRead(notification)">
+                        Mark read
+                      </button>
+                    } @else {
+                      <span class="notification-read-chip">Read</span>
+                    }
+                  </div>
+                </article>
               }
             </div>
           </mat-card-content>
@@ -72,47 +107,248 @@ import { materialImports } from '@app/shared/material/material-imports';
     </section>
   `,
   styles: [`
-    .stack-list {
+    :host {
+      display: block;
+      font-family: 'IBM Plex Sans', sans-serif !important;
+    }
+
+    .page-section {
       display: grid;
+      gap: 1.1rem;
+    }
+
+    .notifications-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 1rem;
     }
-    .stack-list__eyebrow {
+
+    .notifications-summary--skeleton {
+      min-height: 6rem;
+    }
+
+    .notification-stat {
+      display: grid;
+      gap: 0.35rem;
+      padding: 1rem 1.1rem;
+      border: 1px solid rgba(37, 99, 235, 0.11);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
+    }
+
+    .notification-stat__label,
+    .notification-card__badge {
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.68rem;
+      font-weight: 800;
+    }
+
+    .notification-stat strong {
+      font-size: clamp(1.3rem, 1.8vw, 1.8rem);
+      line-height: 1;
+      color: var(--primary-strong);
+      letter-spacing: -0.04em;
+    }
+
+    .notification-stat p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .notification-card {
+      border: 1px solid rgba(37, 99, 235, 0.1);
+      border-radius: 28px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.98));
+    }
+
+    .notification-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1.05rem 1.15rem 0;
+    }
+
+    .notification-card__subtitle {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .notification-card__badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.45rem 0.78rem;
+      border-radius: 999px;
+      background: #edf4ff;
+      white-space: nowrap;
+    }
+
+    .notification-list {
+      display: grid;
+      gap: 0.9rem;
+      padding-top: 0.9rem;
+    }
+
+    .notification-item {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 1rem;
+      padding: 1rem 1.05rem;
+      border-radius: 22px;
+      border: 1px solid rgba(37, 99, 235, 0.1);
+      background: #ffffff;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.03);
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .notification-item:hover {
+      transform: translateY(-1px);
+      border-color: rgba(37, 99, 235, 0.2);
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06);
+    }
+
+    .notification-item--read {
+      background: linear-gradient(180deg, #ffffff, #fbfdff);
+    }
+
+    .notification-item__icon {
+      display: grid;
+      place-items: center;
+      width: 3rem;
+      height: 3rem;
+      border-radius: 18px;
+      background: #edf4ff;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .notification-item__icon mat-icon {
+      width: 22px;
+      height: 22px;
+      font-size: 22px;
+      line-height: 22px;
+    }
+
+    .notification-item__copy {
+      display: grid;
+      gap: 0.45rem;
+      min-width: 0;
+    }
+
+    .notification-item__eyebrow {
       display: flex;
       justify-content: space-between;
       gap: 0.75rem;
-      margin-bottom: 0.6rem;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.1em;
       font-size: 0.74rem;
     }
-    .stack-list__eyebrow strong {
+
+    .notification-item__eyebrow strong {
       color: var(--primary-strong);
     }
-    .stack-list__item {
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      align-items: start;
-      padding: 1rem 0;
-      border-bottom: 1px solid var(--border);
+
+    .notification-item__eyebrow--muted {
+      color: var(--muted) !important;
     }
-    .stack-list__item:last-child {
-      border-bottom: 0;
-      padding-bottom: 0;
-    }
-    .stack-list__copy strong {
+
+    .notification-item__copy strong {
       font-size: 1rem;
       line-height: 1.4;
+      color: var(--primary-strong);
     }
-    .stack-list__item p,
-    .meta {
-      margin: 0.35rem 0 0;
+
+    .notification-item__copy p,
+    .notification-item__meta {
+      margin: 0;
       color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.9rem;
     }
+
+    .notification-item__meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .notification-item__actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      min-width: 8rem;
+    }
+
+    .notification-action-button {
+      min-width: 0;
+      height: 2.7rem;
+      padding: 0 1.15rem;
+      border-radius: 999px !important;
+      font-family: 'IBM Plex Sans', sans-serif !important;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #ffffff !important;
+      background: var(--primary) !important;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+    }
+
+    .notification-action-button:hover {
+      background: #1d4ed8 !important;
+    }
+
+    .notification-read-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 6rem;
+      padding: 0.62rem 0.95rem;
+      border-radius: 999px;
+      background: #edf4ff;
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 0.88rem;
+    }
+
+    @media (max-width: 960px) {
+      .notifications-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .notification-item {
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+
+      .notification-item__actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
+    }
+
     @media (max-width: 720px) {
-      .stack-list__item {
+      .notification-card__header {
         flex-direction: column;
+      }
+
+      .notification-item {
+        grid-template-columns: 1fr;
+      }
+
+      .notification-item__actions {
+        justify-content: flex-start;
+        min-width: 0;
       }
     }
   `],
@@ -126,6 +362,9 @@ export class StudentNotificationsComponent {
 
   readonly loading = signal(true);
   readonly notifications = signal<NotificationItem[]>([]);
+  readonly totalCount = computed(() => this.notifications().length);
+  readonly unreadCount = computed(() => this.notifications().filter((notification) => !notification.is_read).length);
+  readonly readCount = computed(() => this.notifications().filter((notification) => notification.is_read).length);
   readonly filteredNotifications = computed(() => {
     const query = this.workspaceSearch.query().trim().toLowerCase();
     if (!query) {
@@ -177,5 +416,16 @@ export class StudentNotificationsComponent {
           this.snackBar.open(error.error?.detail ?? 'Unable to update notification state.', 'Dismiss', { duration: 4000 });
         }
       });
+  }
+
+  formatNotificationType(value: string | null | undefined): string {
+    if (!value) {
+      return 'Notification';
+    }
+
+    return value
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 }

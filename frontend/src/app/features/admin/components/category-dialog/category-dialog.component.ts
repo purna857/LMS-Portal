@@ -20,7 +20,7 @@ export interface CategoryDialogData {
   template: `
     <h2 mat-dialog-title>{{ data.mode === 'create' ? 'Create Category' : 'Edit Category' }}</h2>
 
-    <mat-dialog-content>
+    <mat-dialog-content class="dialog-shell">
       <form [formGroup]="form" class="dialog-grid">
         <mat-form-field appearance="outline">
           <mat-label>Name</mat-label>
@@ -74,12 +74,17 @@ export interface CategoryDialogData {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
-      min-width: min(92vw, 640px);
+      width: min(94vw, 640px);
+      max-width: 640px;
       padding-top: 0.5rem;
     }
 
     .dialog-grid__full {
       grid-column: 1 / -1;
+    }
+
+    .dialog-shell {
+      overflow: hidden;
     }
 
     @media (max-width: 720px) {

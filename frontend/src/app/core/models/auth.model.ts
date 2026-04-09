@@ -5,6 +5,7 @@ export interface AuthenticatedUser {
   email: string;
   first_name: string;
   last_name: string;
+  avatar_url?: string | null;
   status: string;
   is_superuser: boolean;
   roles: UserRole[];

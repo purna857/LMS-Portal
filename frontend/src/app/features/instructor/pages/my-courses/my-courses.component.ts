@@ -230,7 +230,12 @@ export class MyCoursesComponent {
   }
 
   private openCourseEditor(data: { mode: 'create' | 'edit'; course?: CourseDetail; categories: CourseCategory[] }): void {
-    const dialogRef = this.dialog.open(CourseEditorDialogComponent, { data });
+    const dialogRef = this.dialog.open(CourseEditorDialogComponent, {
+      data,
+      width: 'min(94vw, 760px)',
+      maxWidth: 'min(94vw, 760px)',
+      panelClass: ['lms-dialog-panel', 'lms-course-editor-dialog']
+    });
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload: CourseCreatePayload | CourseUpdatePayload | undefined) => {
       if (!payload) {
         return;
@@ -264,7 +269,12 @@ export class MyCoursesComponent {
         message: `${publish ? 'Publish' : 'Move to draft'} "${course.title}"?`,
         confirmLabel: publish ? 'Publish' : 'Unpublish',
         confirmColor: publish ? 'primary' : 'warn'
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: '420px',
+      maxWidth: '92vw',
+      maxHeight: '80vh',
+      autoFocus: false
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
@@ -295,7 +305,12 @@ export class MyCoursesComponent {
         message: `Delete "${course.title}"? This also removes related course content.`,
         confirmLabel: 'Delete Course',
         confirmColor: 'warn'
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: '420px',
+      maxWidth: '92vw',
+      maxHeight: '80vh',
+      autoFocus: false
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {

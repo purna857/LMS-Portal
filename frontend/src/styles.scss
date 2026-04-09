@@ -540,7 +540,7 @@ a {
 
 .lms-dialog-panel .mat-mdc-dialog-title {
   margin: 0 !important;
-  padding: 1.25rem 1.25rem 0 !important;
+  padding: 1.45rem 1.5rem 0.85rem !important;
   font-size: 1.55rem !important;
   line-height: 1.15 !important;
 }
@@ -550,17 +550,52 @@ a {
   max-height: none !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  flex: 1 1 auto !important;
+  flex: 0 1 auto !important;
   min-height: 0 !important;
+}
+
+.lms-dialog-panel .dialog-shell,
+.lms-dialog-panel .dialog-content {
+  display: grid;
+  gap: 1.25rem;
+  padding: 0.95rem 1.5rem 1.1rem !important;
+  overflow: hidden;
+  align-content: start;
+}
+
+.lms-dialog-panel .dialog-grid {
+  display: grid;
+  gap: 1.25rem;
+  padding-top: 0.6rem;
+  padding-bottom: 0.15rem;
+}
+
+.lms-dialog-panel .dialog-grid__full {
+  grid-column: 1 / -1;
+}
+
+.lms-dialog-panel .dialog-content p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.lms-dialog-panel .mat-mdc-form-field {
+  margin-top: 0.35rem;
+  margin-bottom: 0.25rem;
+}
+
+.lms-dialog-panel .mat-mdc-form-field-subscript-wrapper {
+  padding-bottom: 0.4rem;
 }
 
 .lms-dialog-panel .mat-mdc-dialog-actions {
   margin: 0 !important;
   flex: 0 0 auto !important;
-  min-height: 76px !important;
+  min-height: 88px !important;
   background: #fff !important;
   border-top: 1px solid rgba(148, 163, 184, 0.16) !important;
-  padding: 0.8rem 1rem 1rem !important;
+  padding: 1rem 1.5rem 1.25rem !important;
 }
 
 .lms-dialog-panel .mat-mdc-form-field {
@@ -581,7 +616,7 @@ a {
 }
 
 .lms-dialog-panel .mat-mdc-dialog-container {
-  padding: 16px !important;
+  padding: 20px !important;
 }
 
 .lms-dialog-panel .mdc-dialog__container,

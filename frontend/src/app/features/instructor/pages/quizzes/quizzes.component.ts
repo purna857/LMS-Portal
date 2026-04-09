@@ -275,7 +275,13 @@ export class QuizzesComponent {
   }
 
   private presentQuizDialog(data: { mode: 'create' | 'edit'; quiz?: QuizDetail }): void {
-    const dialogRef = this.dialog.open(QuizDialogComponent, { data });
+    const dialogRef = this.dialog.open(QuizDialogComponent, {
+      data,
+      panelClass: ['lms-dialog-panel'],
+      width: 'min(94vw, 720px)',
+      maxWidth: 'min(94vw, 720px)',
+      autoFocus: false
+    });
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {
       const courseId = this.selectedCourseId();
       if (!payload || !courseId) {
@@ -316,7 +322,12 @@ export class QuizzesComponent {
         message: `Delete "${quiz.title}" and its questions?`,
         confirmLabel: 'Delete Quiz',
         confirmColor: 'warn'
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: '420px',
+      maxWidth: '92vw',
+      maxHeight: '80vh',
+      autoFocus: false
     });
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!result) {
@@ -348,7 +359,11 @@ export class QuizzesComponent {
       data: {
         mode: question ? 'edit' : 'create',
         question
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: 'min(94vw, 820px)',
+      maxWidth: 'min(94vw, 820px)',
+      autoFocus: false
     });
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {
       if (!payload) {
@@ -378,7 +393,12 @@ export class QuizzesComponent {
         message: 'Delete this question from the quiz?',
         confirmLabel: 'Delete Question',
         confirmColor: 'warn'
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: '420px',
+      maxWidth: '92vw',
+      maxHeight: '80vh',
+      autoFocus: false
     });
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!result) {

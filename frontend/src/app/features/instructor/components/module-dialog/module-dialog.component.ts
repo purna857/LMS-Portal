@@ -19,7 +19,7 @@ export interface ModuleDialogData {
   template: `
     <h2 mat-dialog-title>{{ data.mode === 'create' ? 'Create Module' : 'Edit Module' }}</h2>
 
-    <mat-dialog-content>
+    <mat-dialog-content class="dialog-shell">
       <form [formGroup]="form" class="dialog-grid">
         <mat-form-field appearance="outline" class="dialog-grid__full">
           <mat-label>Title</mat-label>
@@ -61,12 +61,17 @@ export interface ModuleDialogData {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
-      min-width: min(92vw, 620px);
+      width: min(94vw, 620px);
+      max-width: 620px;
       padding-top: 0.5rem;
     }
 
     .dialog-grid__full {
       grid-column: 1 / -1;
+    }
+
+    .dialog-shell {
+      overflow: hidden;
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush

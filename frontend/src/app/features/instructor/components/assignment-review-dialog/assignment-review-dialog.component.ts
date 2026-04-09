@@ -19,7 +19,7 @@ export interface AssignmentReviewDialogData {
   template: `
     <h2 mat-dialog-title>Review Submission</h2>
 
-    <mat-dialog-content class="dialog-content">
+    <mat-dialog-content class="dialog-shell">
       <div class="summary-card">
         <strong>{{ data.submission.student_name }}</strong>
         <p>{{ data.submission.student_email }}</p>
@@ -81,11 +81,12 @@ export interface AssignmentReviewDialogData {
     </mat-dialog-actions>
   `,
   styles: [`
-    .dialog-content {
+    .dialog-shell {
       display: grid;
       gap: 1rem;
       width: min(92vw, 620px);
       max-width: 620px;
+      overflow: hidden;
     }
 
     .dialog-grid {

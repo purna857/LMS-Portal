@@ -9,12 +9,14 @@ import type { ChartConfiguration } from 'chart.js';
 import { catchError } from 'rxjs/operators';
 
 import type {
+  CourseProgress,
   EnrolledCourseItem,
   NotificationItem,
   ProgressSummary,
   StudentAssignmentRecord,
   StudentDashboardStats
 } from '@app/features/student/models/student.models';
+import { SessionService } from '@app/core/services/session.service';
 import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { StudentPortalService } from '@app/features/student/services/student-portal.service';
 import { DashboardChartComponent } from '@app/shared/components/dashboard-chart/dashboard-chart.component';
@@ -27,56 +29,44 @@ import { materialImports } from '@app/shared/material/material-imports';
   imports: [CommonModule, RouterLink, DashboardChartComponent, EmptyStateComponent, ...materialImports],
   template: `
     <section class="page-section dashboard-page">
-      <div class="dashboard-hero dashboard-hero--student">
-        <mat-card class="surface-card hero-card">
-          <mat-card-content>
-            <p class="hero-card__eyebrow">Student Workspace</p>
-            <h1>Good afternoon, {{ firstName() }}!</h1>
-            <p class="hero-card__description">
-              You're on a roll — {{ progressValue() }} toward your current learning goal across active courses.
-            </p>
+      <div class="overview-top-row">
+            <mat-card class="surface-card student-hero-card">
+        <mat-card-content>
+          <p class="student-hero-card__eyebrow">Student</p>
+          <h1>Good Evening, {{ displayName() }}</h1>
+          <p class="student-hero-card__description">
+            Track your learning momentum, upcoming classes, assignments, and progress from one calm workspace.
+          </p>
 
-            @if (heroCourses().length) {
-              <div class="spotlight-grid">
-                @for (course of heroCourses(); track course.enrollment_id) {
-                  <article class="spotlight-card">
-                    <div class="spotlight-card__meta">
-                      <div class="spotlight-card__badge">{{ course.title.charAt(0) }}</div>
-                      <div>
-                        <strong>{{ course.title }}</strong>
-                        <p>{{ course.short_description || course.slug }}</p>
-                      </div>
-                    </div>
-                    <div class="spotlight-card__progress">
-                      <div class="spotlight-card__bar">
-                        <span [style.width.%]="progressSummary()?.average_progress_percentage ?? 0"></span>
-                      </div>
-                      <span>{{ progressValue() }}</span>
-                    </div>
-                    <a mat-flat-button color="primary" [routerLink]="['/app/student/learning', course.course_id]">
-                      Continue learning
-                    </a>
-                  </article>
-                }
-              </div>
-            } @else if (searchActive()) {
-              <div class="hero-card__search-empty">
-                <span class="material-symbols-outlined">search_off</span>
-                <div>
-                  <strong>No dashboard matches found</strong>
-                  <p>Try a different keyword to surface enrolled courses and recent notifications.</p>
+          <div class="student-hero-card__chips">
+            <span>{{ stats()?.total_enrolled_courses ?? 0 }} courses</span>
+            <span>{{ stats()?.completed_lessons ?? 0 }} lessons completed</span>
+            <span>{{ progressValue() }} average progress</span>
+          </div>
+
+          <div class="student-hero-card__highlights">
+            @for (item of heroHighlights(); track item.title) {
+              <article class="student-hero-card__highlight">
+                <span class="student-hero-card__highlight-icon material-symbols-outlined" [class]="item.tone">
+                  {{ item.icon }}
+                </span>
+                <div class="student-hero-card__highlight-body">
+                  <p>{{ item.title }}</p>
+                  <strong>{{ item.value }}</strong>
+                  <span>{{ item.copy }}</span>
                 </div>
-              </div>
+              </article>
             }
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </mat-card-content>
+      </mat-card>
 
         <mat-card class="surface-card dashboard-kpi-card">
           <mat-card-content>
             <div class="dashboard-kpi-card__ring">
               <app-dashboard-chart
                 type="doughnut"
-                [height]="200"
+                [height]="170"
                 [data]="distributionChartData()"
                 [options]="doughnutChartOptions()">
               </app-dashboard-chart>
@@ -110,16 +100,32 @@ import { materialImports } from '@app/shared/material/material-imports';
         </div>
       }
 
-      <div class="dashboard-metrics">
-        @for (card of metricCards(); track card.label) {
-          <mat-card class="stat-card stat-card--metric">
+      <div class="overview-grid overview-grid--summary">
+        @for (group of overviewSummaryGroups(); track group.title) {
+          <mat-card class="surface-card overview-summary-card">
             <mat-card-content>
-              <div class="metric-card__top">
-                <span class="metric-card__icon material-symbols-outlined">{{ card.icon }}</span>
-                <p class="metric-card__label">{{ card.label }}</p>
+              <div class="overview-card__header">
+                <div>
+                  <p class="overview-card__eyebrow">{{ group.title }}</p>
+                  <h2>{{ group.subtitle }}</h2>
+                </div>
+                <span class="overview-summary-card__badge">{{ group.badge }}</span>
               </div>
-              <strong class="metric-card__value">{{ card.value }}</strong>
-              <span class="metric-card__hint">{{ card.hint }}</span>
+
+              <div class="overview-summary-card__list">
+                @for (item of group.items; track item.label) {
+                  <article class="overview-summary-card__item">
+                    <span class="overview-summary-card__icon material-symbols-outlined" [class]="item.tone">
+                      {{ item.icon }}
+                    </span>
+                    <div>
+                      <strong>{{ item.label }}</strong>
+                      <p>{{ item.detail }}</p>
+                    </div>
+                    <span class="overview-summary-card__value">{{ item.value }}</span>
+                  </article>
+                }
+              </div>
             </mat-card-content>
           </mat-card>
         }
@@ -128,7 +134,7 @@ import { materialImports } from '@app/shared/material/material-imports';
       <div class="dashboard-split">
         <mat-card class="surface-card">
           <mat-card-header>
-            <mat-card-title>Continue Learning</mat-card-title>
+            <mat-card-title>Upcoming classes</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             @if (!loading() && displayedCourses().length) {
@@ -143,7 +149,7 @@ import { materialImports } from '@app/shared/material/material-imports';
                       </div>
                     </div>
                     <div class="course-grid__foot">
-                      <span>{{ progressValue() }} active progress</span>
+                      <span>{{ courseProgressPercentage(course.course_id) | number: '1.0-0' }}% progress</span>
                       <a mat-button [routerLink]="['/app/student/learning', course.course_id]">Open</a>
                     </div>
                   </article>
@@ -164,7 +170,7 @@ import { materialImports } from '@app/shared/material/material-imports';
 
         <mat-card class="surface-card">
           <mat-card-header>
-            <mat-card-title>Weekly Progress Chart</mat-card-title>
+            <mat-card-title>Weekly progress</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             <app-dashboard-chart
@@ -180,32 +186,44 @@ import { materialImports } from '@app/shared/material/material-imports';
       <div class="dashboard-split">
         <mat-card class="surface-card">
           <mat-card-header>
-            <mat-card-title>Recommended For You</mat-card-title>
+            <mat-card-title>Learning streak</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            @if (!loading() && recommendedCourses().length) {
-              <div class="recommend-grid">
-                @for (course of recommendedCourses(); track course.enrollment_id) {
-                  <article class="recommend-grid__card">
-                    <span class="recommend-grid__tag">{{ progressValue() }} match</span>
-                    <strong>{{ course.title }}</strong>
-                    <p>{{ course.short_description || 'Continue this course to maintain your learning streak.' }}</p>
-                  </article>
-                }
+            @if (!loading()) {
+              <div class="streak-card">
+                <div class="streak-card__lead">
+                  <strong>{{ learningStreakDays() }} days without a break</strong>
+                  <span>The record is based on your completed lesson activity.</span>
+                </div>
+
+                <div class="streak-card__week" aria-label="Learning streak by day of week">
+                  @for (day of streakTimeline(); track day.label) {
+                    <div class="streak-card__day" [class.streak-card__day--active]="day.active">
+                      <span class="streak-card__day-icon material-symbols-outlined">local_fire_department</span>
+                      <span>{{ day.label }}</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="streak-card__footer">
+                  <div class="streak-card__footer-item">
+                    <span class="material-symbols-outlined">fiber_manual_record</span>
+                    <span>{{ stats()?.completed_courses ?? 0 }} courses covered</span>
+                  </div>
+
+                  <div class="streak-card__footer-item">
+                    <span class="material-symbols-outlined">fiber_manual_record</span>
+                    <span>{{ assignmentRecords().length }} assignments completed</span>
+                  </div>
+                </div>
               </div>
-            } @else if (!loading()) {
-              <app-empty-state
-                [icon]="searchActive() ? 'search_off' : 'recommend'"
-                [title]="searchActive() ? 'No matching recommendations' : 'Recommendations will appear here'"
-                [description]="searchActive() ? 'Try another keyword to uncover related courses.' : 'As you enroll and progress through courses, tailored suggestions will show up in this area.'">
-              </app-empty-state>
             }
           </mat-card-content>
         </mat-card>
 
         <mat-card class="surface-card">
           <mat-card-header>
-            <mat-card-title>Achievements & Notifications</mat-card-title>
+            <mat-card-title>Latest assignment & notifications</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             <div class="achievement-list">
@@ -254,6 +272,737 @@ import { materialImports } from '@app/shared/material/material-imports';
     </section>
   `,
   styles: [`
+    .dashboard-page {
+      display: grid;
+      gap: 1rem;
+      font-family: 'IBM Plex Sans', sans-serif;
+      color: var(--text-primary);
+    }
+
+    .dashboard-page :where(h1, h2, h3, h4, h5, h6, p, span, strong, a, button, label, input, textarea, small, mat-card-title, mat-card-subtitle) {
+      font-family: inherit;
+    }
+
+    .dashboard-page .material-symbols-outlined,
+    .dashboard-page .mat-icon {
+      font-family: 'Material Symbols Outlined' !important;
+    }
+
+    .overview-top-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.32fr) minmax(320px, 0.88fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .overview-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .overview-grid--summary {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .student-hero-card,
+    .dashboard-kpi-card,
+    .stat-card,
+    .surface-card {
+      position: relative;
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(251, 253, 255, 0.99));
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.045);
+      overflow: hidden;
+    }
+
+    .student-hero-card mat-card-content {
+      display: grid;
+      gap: 0.7rem;
+      padding: 1.25rem 1.25rem 1.2rem;
+    }
+
+    .student-hero-card__eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      margin: 0;
+      padding: 0.33rem 0.72rem;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.65rem;
+      font-weight: 700;
+    }
+
+    .student-hero-card h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 1.9vw, 1.9rem);
+      letter-spacing: -0.04em;
+      line-height: 1.08;
+    }
+
+    .student-hero-card__description {
+      max-width: 42rem;
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .student-hero-card__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .student-hero-card__chips span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.1rem;
+      padding: 0 0.9rem;
+      border-radius: 999px;
+      background: #f7fbff;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      color: #42526b;
+      font-size: 0.7rem;
+      font-weight: 700;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+    }
+
+    .student-hero-card__highlights {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.15rem;
+    }
+
+    .student-hero-card__highlight {
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr);
+      gap: 0.7rem;
+      align-items: center;
+      min-height: 88px;
+      padding: 0.78rem 0.85rem;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.13);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.035);
+    }
+
+    .student-hero-card__highlight-icon {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: #eef4ff;
+      color: var(--primary);
+      font-size: 1rem;
+    }
+
+    .student-hero-card__highlight-icon.tone-teal { background: rgba(24, 196, 184, 0.12); color: #0f9f95; }
+    .student-hero-card__highlight-icon.tone-blue { background: rgba(78, 108, 240, 0.12); color: #3557df; }
+    .student-hero-card__highlight-icon.tone-pink { background: rgba(244, 114, 182, 0.14); color: #db2777; }
+    .student-hero-card__highlight-icon.tone-orange { background: rgba(251, 146, 60, 0.14); color: #ea580c; }
+
+    .student-hero-card__highlight-body {
+      min-width: 0;
+    }
+
+    .student-hero-card__highlight-body p {
+      margin: 0;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+      font-size: 0.58rem;
+      font-weight: 800;
+    }
+
+    .student-hero-card__highlight-body strong {
+      display: block;
+      margin-top: 0.24rem;
+      font-size: 0.84rem;
+      line-height: 1.22;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+    }
+
+    .student-hero-card__highlight-body span {
+      display: block;
+      margin-top: 0.22rem;
+      color: var(--muted);
+      font-size: 0.66rem;
+      line-height: 1.35;
+    }
+
+    .overview-top-row .dashboard-kpi-card {
+      min-height: 100%;
+    }
+
+    .overview-top-row .dashboard-kpi-card__ring {
+      min-height: 168px;
+    }
+
+    .overview-top-row .dashboard-kpi-card__list {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .overview-top-row .dashboard-kpi-card__item strong {
+      display: block;
+      font-size: 0.88rem;
+      line-height: 1.3;
+    }
+
+    .overview-top-row .dashboard-kpi-card__item span {
+      color: var(--muted);
+      font-size: 0.72rem;
+      line-height: 1.45;
+    }
+
+    .overview-card__eyebrow {
+      margin: 0;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 0.58rem;
+      font-weight: 800;
+    }
+
+    .overview-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin-bottom: 0.95rem;
+    }
+
+    .overview-card__header h2 {
+      margin: 0.3rem 0 0;
+      font-size: 0.88rem;
+      line-height: 1.28;
+      letter-spacing: -0.028em;
+    }
+
+    .dashboard-page mat-card-title,
+    .dashboard-page .mat-mdc-card-title {
+      font-size: 0.92rem;
+      line-height: 1.25;
+      letter-spacing: -0.018em;
+    }
+
+    .overview-performance-card__badge,
+    .overview-summary-card__badge,
+    .overview-card-header__badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2rem;
+      padding: 0 0.75rem;
+      border-radius: 999px;
+      background: #edf4ff;
+      color: var(--primary);
+      font-size: 0.66rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      white-space: nowrap;
+    }
+
+    .overview-performance-card__chart {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 225px;
+      margin-top: 0.5rem;
+    }
+
+    .overview-performance-card__center {
+      position: absolute;
+      display: grid;
+      gap: 0.15rem;
+      place-items: center;
+      text-align: center;
+    }
+
+    .overview-performance-card__center strong {
+      font-size: 1.8rem;
+      line-height: 1;
+      letter-spacing: -0.05em;
+    }
+
+    .overview-performance-card__center span {
+      color: var(--muted);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+    }
+
+    .overview-performance-card__stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin-top: 0.75rem;
+    }
+
+    .overview-performance-card__stats div {
+      display: grid;
+      gap: 0.22rem;
+      padding: 0.75rem 0.85rem;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      background: #fff;
+    }
+
+    .overview-performance-card__stats strong {
+      font-size: 0.92rem;
+      line-height: 1.2;
+    }
+
+    .overview-performance-card__stats span {
+      color: var(--muted);
+      font-size: 0.68rem;
+      line-height: 1.35;
+    }
+
+    .overview-summary-card__list {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .overview-summary-card__item {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.7rem 0.75rem;
+      border-radius: 18px;
+      background: #fdfefe;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .overview-summary-card__icon {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: #eef4ff;
+      color: var(--primary);
+      font-size: 1rem;
+    }
+
+    .overview-summary-card__icon.tone-teal { background: rgba(24, 196, 184, 0.12); color: #0f9f95; }
+    .overview-summary-card__icon.tone-blue { background: rgba(78, 108, 240, 0.12); color: #3557df; }
+    .overview-summary-card__icon.tone-pink { background: rgba(244, 114, 182, 0.14); color: #db2777; }
+    .overview-summary-card__icon.tone-orange { background: rgba(251, 146, 60, 0.14); color: #ea580c; }
+
+    .overview-summary-card__item strong {
+      display: block;
+      font-size: 0.84rem;
+      line-height: 1.25;
+    }
+
+    .overview-summary-card__item p {
+      margin: 0.22rem 0 0;
+      color: var(--muted);
+      font-size: 0.7rem;
+      line-height: 1.35;
+    }
+
+    .overview-summary-card__value {
+      color: var(--primary-strong);
+      font-size: 0.92rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .streak-card {
+      display: grid;
+      gap: 0.95rem;
+      padding: 0.15rem 0 0.05rem;
+    }
+
+    .streak-card__lead {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .streak-card__lead strong {
+      font-size: 1.04rem;
+      line-height: 1.2;
+      letter-spacing: -0.035em;
+      color: var(--text-primary);
+    }
+
+    .streak-card__lead span {
+      color: var(--muted);
+      font-size: 0.72rem;
+      line-height: 1.45;
+    }
+
+    .streak-card__week {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 0.4rem;
+    }
+
+    .streak-card__day {
+      display: grid;
+      justify-items: center;
+      gap: 0.35rem;
+      padding: 0.55rem 0.15rem 0.35rem;
+      border-radius: 14px;
+      border: 1px solid rgba(203, 213, 225, 0.12);
+      background: linear-gradient(180deg, #f8fafc 0%, #f4f7fb 100%);
+      color: #94a3b8;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1;
+    }
+
+    .streak-card__day-icon {
+      font-size: 1.15rem;
+      line-height: 1;
+      color: #cbd5e1;
+    }
+
+    .streak-card__day--active {
+      border-color: rgba(251, 146, 60, 0.24);
+      background: linear-gradient(180deg, rgba(255, 247, 237, 0.98), rgba(255, 252, 247, 0.98));
+      color: #b45309;
+      box-shadow: 0 10px 18px rgba(251, 146, 60, 0.09);
+    }
+
+    .streak-card__day--active .streak-card__day-icon {
+      color: #f97316;
+    }
+
+    .streak-card__footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem 1.1rem;
+      align-items: center;
+    }
+
+    .streak-card__footer-item {
+      display: inline-flex;
+      gap: 0.45rem;
+      align-items: center;
+      color: var(--text-primary);
+      font-size: 0.72rem;
+      line-height: 1.3;
+    }
+
+    .streak-card__footer-item .material-symbols-outlined {
+      color: #64748b;
+      font-size: 0.68rem;
+      line-height: 1;
+    }
+
+    .streak-card__footer-item span {
+      color: var(--muted);
+    }
+
+    .overview-main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.8fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .overview-side-stack {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .overview-side-card,
+    .overview-upcoming-card,
+    .course-table-card {
+      min-height: 100%;
+    }
+
+    .overview-card-header {
+      padding: 1.15rem 1.15rem 0;
+    }
+
+    .overview-card-subtitle {
+      margin: 0.28rem 0 0;
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1.45;
+    }
+
+    .overview-card-header__badge {
+      align-self: flex-start;
+    }
+
+    .upcoming-list {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .upcoming-list__item {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) auto;
+      gap: 0.85rem;
+      align-items: center;
+      padding: 0.85rem;
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: 20px;
+      background: #fff;
+    }
+
+    .upcoming-list__badge,
+    .course-table__thumb {
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: #4e6cf0;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .upcoming-list__title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .upcoming-list__title-row strong,
+    .course-table__course strong {
+      font-size: 0.92rem;
+      line-height: 1.25;
+    }
+
+    .upcoming-list__title-row p,
+    .course-table__course p {
+      margin: 0.18rem 0 0;
+      color: var(--muted);
+      font-size: 0.72rem;
+      line-height: 1.45;
+    }
+
+    .overview-pill,
+    .course-table__status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0 0.7rem;
+      border-radius: 999px;
+      background: #edf4ff;
+      color: var(--primary);
+      font-size: 0.64rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      white-space: nowrap;
+    }
+
+    .upcoming-list__bar,
+    .course-table__bar {
+      height: 7px;
+      border-radius: 999px;
+      background: #e5eefb;
+      overflow: hidden;
+    }
+
+    .upcoming-list__bar span,
+    .course-table__bar span {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: #18c4b8;
+    }
+
+    .upcoming-list__body {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .sidebar-stat {
+      display: grid;
+      gap: 0.15rem;
+      padding: 0.85rem 0.95rem;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(78, 108, 240, 0.06), rgba(255, 255, 255, 0.96));
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .sidebar-stat strong {
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .sidebar-stat span {
+      color: var(--muted);
+      font-size: 0.72rem;
+      line-height: 1.35;
+    }
+
+    .sidebar-mini-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin-top: 0.8rem;
+    }
+
+    .sidebar-mini-list div {
+      display: grid;
+      gap: 0.16rem;
+      padding: 0.72rem 0.8rem;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      background: #fff;
+    }
+
+    .sidebar-mini-list strong {
+      font-size: 0.9rem;
+    }
+
+    .sidebar-mini-list span {
+      color: var(--muted);
+      font-size: 0.66rem;
+      line-height: 1.3;
+    }
+
+    .assignment-card,
+    .sidebar-notifications__item {
+      display: grid;
+      gap: 0.25rem;
+      padding: 0.82rem 0.9rem;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      background: #fff;
+    }
+
+    .assignment-card strong,
+    .sidebar-notifications__item strong {
+      font-size: 0.88rem;
+      line-height: 1.25;
+    }
+
+    .assignment-card p,
+    .sidebar-notifications__item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.72rem;
+      line-height: 1.4;
+    }
+
+    .assignment-card__meta {
+      display: grid;
+      gap: 0.18rem;
+      margin-top: 0.35rem;
+    }
+
+    .assignment-card__meta span {
+      color: var(--muted);
+      font-size: 0.68rem;
+      line-height: 1.35;
+    }
+
+    .sidebar-notifications {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .sidebar-notifications__item {
+      grid-template-columns: 36px minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .sidebar-notifications__icon {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: #eef4ff;
+      color: var(--primary);
+    }
+
+    .course-table-card .mat-mdc-card-content {
+      padding-top: 0.25rem;
+    }
+
+    .course-table {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .course-table__row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(180px, 1fr) minmax(120px, auto) auto;
+      gap: 0.85rem;
+      align-items: center;
+      padding: 0.82rem 0.9rem;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      background: #fff;
+    }
+
+    .course-table__course {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr);
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    .course-table__progress {
+      display: grid;
+      gap: 0.3rem;
+    }
+
+    .course-table__progress strong {
+      font-size: 0.84rem;
+      text-align: right;
+    }
+
+    .course-table__meta {
+      display: grid;
+      gap: 0.2rem;
+      justify-items: start;
+    }
+
+    .course-table__meta p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.68rem;
+      line-height: 1.35;
+    }
+
+    .overview-grid--loading {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .overview-skeleton {
+      min-height: 260px;
+      border-radius: 28px;
+      background: linear-gradient(90deg, rgba(226, 232, 240, 0.58), rgba(241, 245, 249, 0.88), rgba(226, 232, 240, 0.58));
+      background-size: 200% 100%;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
     .dashboard-hero--student {
       align-items: stretch;
     }
@@ -402,12 +1151,12 @@ import { materialImports } from '@app/shared/material/material-imports';
       position: relative;
       display: grid;
       place-items: center;
-      min-height: 190px;
+      min-height: 168px;
     }
 
     .dashboard-kpi-card__ring-value {
       position: absolute;
-      font-size: 1.65rem;
+      font-size: 1.45rem;
       font-weight: 800;
       letter-spacing: -0.05em;
     }
@@ -528,6 +1277,26 @@ import { materialImports } from '@app/shared/material/material-imports';
     }
 
     @media (max-width: 900px) {
+      .overview-top-row {
+        grid-template-columns: 1fr;
+      }
+
+      .student-hero-card__highlight {
+        grid-template-columns: 38px minmax(0, 1fr);
+      }
+
+      .student-hero-card__highlights {
+        grid-template-columns: 1fr;
+      }
+
+      .overview-grid--summary {
+        grid-template-columns: 1fr;
+      }
+
+      .overview-grid--loading {
+        grid-template-columns: 1fr;
+      }
+
       .spotlight-grid {
         grid-template-columns: 1fr;
       }
@@ -539,6 +1308,7 @@ export class StudentDashboardComponent {
   private readonly studentPortalService = inject(StudentPortalService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly sessionService = inject(SessionService);
   private readonly workspaceSearch = inject(WorkspaceSearchService);
 
   readonly loading = signal(true);
@@ -547,8 +1317,12 @@ export class StudentDashboardComponent {
   readonly enrolledCourses = signal<EnrolledCourseItem[]>([]);
   readonly notifications = signal<NotificationItem[]>([]);
   readonly assignmentRecords = signal<StudentAssignmentRecord[]>([]);
+  readonly courseProgressById = signal<Record<string, CourseProgress>>({});
   readonly errorMessage = signal<string | null>(null);
-  readonly firstName = signal('Learner');
+  readonly displayName = computed(() => {
+    const user = this.sessionService.user();
+    return user ? `${user.first_name} ${user.last_name}`.trim() : 'Learner';
+  });
   readonly progressValue = computed(() => `${this.progressSummary()?.average_progress_percentage.toFixed(1) ?? '0.0'}%`);
   readonly searchQuery = computed(() => this.workspaceSearch.query().trim());
   readonly normalizedSearchQuery = computed(() => this.searchQuery().toLowerCase());
@@ -592,6 +1366,109 @@ export class StudentDashboardComponent {
   readonly latestGradedAssignment = computed(
     () => this.assignmentRecords().find((item) => item.status === 'graded' || item.score !== null && item.score !== undefined) ?? null
   );
+  readonly heroHighlights = computed(() => {
+    const stats = this.stats();
+    const progress = this.progressSummary();
+    if (!stats || !progress) {
+      return [];
+    }
+
+    const firstCourse = this.enrolledCourses()[0] ?? null;
+    const firstCourseProgress = firstCourse ? this.courseProgressPercentage(firstCourse.course_id) : 0;
+    const notificationCount = this.filteredNotifications().length;
+
+    return [
+      {
+        title: 'Current focus',
+        value: firstCourse?.title ?? 'Browse your next course',
+        copy: firstCourse
+          ? `${firstCourseProgress.toFixed(0)}% complete · Resume your next lesson.`
+          : 'Open the course catalog to start your next path.',
+        icon: firstCourse ? 'play_circle' : 'search',
+        tone: 'tone-blue'
+      },
+      {
+        title: 'Learning streak',
+        value: `${this.learningStreakDays()} days`,
+        copy: 'A steady rhythm keeps momentum moving.',
+        icon: 'local_fire_department',
+        tone: 'tone-orange'
+      },
+      {
+        title: 'Live activity',
+        value: `${notificationCount} alerts`,
+        copy: `${stats.completed_courses} completed courses · ${stats.in_progress_courses} active tracks.`,
+        icon: 'notifications',
+        tone: 'tone-pink'
+      }
+    ];
+  });
+  readonly overviewSummaryGroups = computed(() => {
+    const stats = this.stats();
+    const progress = this.progressSummary();
+    if (!stats || !progress) {
+      return [];
+    }
+
+    return [
+      {
+        title: 'Learning Snapshot',
+        subtitle: 'Your course load and learning pace at a glance.',
+        badge: `${stats.total_enrolled_courses} total`,
+        items: [
+          {
+            icon: 'menu_book',
+            label: 'Courses enrolled',
+            detail: `${stats.in_progress_courses} in progress`,
+            value: String(stats.total_enrolled_courses),
+            tone: 'tone-teal'
+          },
+          {
+            icon: 'workspace_premium',
+            label: 'Courses completed',
+            detail: 'Completed courses move you closer to certificates.',
+            value: String(stats.completed_courses),
+            tone: 'tone-blue'
+          },
+          {
+            icon: 'schedule',
+            label: 'Hours learned',
+            detail: 'Based on recent completed lesson volume.',
+            value: `${Math.max(stats.completed_lessons * 2.5, 2.5).toFixed(1)}h`,
+            tone: 'tone-pink'
+          }
+        ]
+      },
+      {
+        title: 'Activity Snapshot',
+        subtitle: 'Recent course, assignment, and alert activity.',
+        badge: `${this.displayedNotifications().length} alerts`,
+        items: [
+          {
+            icon: 'notifications',
+            label: 'Notifications',
+            detail: 'Course and platform announcements awaiting review.',
+            value: String(this.displayedNotifications().length),
+            tone: 'tone-blue'
+          },
+          {
+            icon: 'task_alt',
+            label: 'Graded assignments',
+            detail: 'Recently scored work from your active courses.',
+            value: String(this.assignmentRecords().filter((item) => item.status === 'graded' || item.score !== null && item.score !== undefined).length),
+            tone: 'tone-teal'
+          },
+          {
+            icon: 'timeline',
+            label: 'Average progress',
+            detail: 'Blended completion across your active courses.',
+            value: `${progress.average_progress_percentage.toFixed(0)}%`,
+            tone: 'tone-orange'
+          }
+        ]
+      }
+    ];
+  });
   readonly progressChartData = signal<ChartConfiguration<'bar' | 'line'>['data']>({
     labels: [],
     datasets: []
@@ -652,6 +1529,53 @@ export class StudentDashboardComponent {
     ];
   });
 
+  courseProgress(courseId: string): CourseProgress | null {
+    return this.courseProgressById()[courseId] ?? null;
+  }
+
+  courseProgressPercentage(courseId: string): number {
+    return this.courseProgress(courseId)?.progress_percentage ?? this.progressSummary()?.average_progress_percentage ?? 0;
+  }
+
+  learningStreakDays(): number {
+    return Math.max(this.stats()?.completed_lessons ?? 0, 0);
+  }
+
+  streakTimeline(): Array<{ label: string; active: boolean }> {
+    const labels = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+    const activeDays = Math.min(this.learningStreakDays(), labels.length);
+    return labels.map((label, index) => ({
+      label,
+      active: index < activeDays
+    }));
+  }
+
+  private loadCourseProgress(courses: EnrolledCourseItem[]): void {
+    if (!courses.length) {
+      this.courseProgressById.set({});
+      return;
+    }
+
+    forkJoin(
+      courses.map((course) =>
+        this.studentPortalService.getCourseProgress(course.course_id).pipe(
+          catchError(() => of(null))
+        )
+      )
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((progressItems) => {
+        const nextMap: Record<string, CourseProgress> = {};
+        progressItems.forEach((progress, index) => {
+          const courseId = courses[index]?.course_id;
+          if (courseId && progress) {
+            nextMap[courseId] = progress;
+          }
+        });
+        this.courseProgressById.set(nextMap);
+      });
+  }
+
   constructor() {
     forkJoin({
       stats: this.studentPortalService.getDashboardStats(),
@@ -672,6 +1596,7 @@ export class StudentDashboardComponent {
           this.enrolledCourses.set(enrolledCourses.items);
           this.notifications.set(notifications.items);
           this.assignmentRecords.set(assignmentRecords.items);
+          this.loadCourseProgress(enrolledCourses.items);
           this.progressChartData.set({
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
             datasets: [
@@ -722,3 +1647,4 @@ export class StudentDashboardComponent {
       });
   }
 }
+

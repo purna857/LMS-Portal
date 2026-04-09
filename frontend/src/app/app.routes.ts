@@ -217,7 +217,7 @@ export const appRoutes: Routes = [
         path: 'student/progress',
         canActivate: [roleGuard],
         data: { roles: ['student'] },
-        loadComponent: () => import('@app/features/student/pages/my-learning/my-learning.component').then((m) => m.MyLearningComponent)
+        loadComponent: () => import('@app/features/student/pages/progress/progress.component').then((m) => m.ProgressComponent)
       },
       {
         path: 'student/notifications',

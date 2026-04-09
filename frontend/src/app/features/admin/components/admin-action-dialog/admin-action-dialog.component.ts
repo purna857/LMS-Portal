@@ -28,7 +28,7 @@ export interface AdminActionDialogResult {
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
 
-    <mat-dialog-content class="dialog-content">
+    <mat-dialog-content class="dialog-shell">
       <p>{{ data.message }}</p>
 
       @if (data.noteLabel) {
@@ -60,10 +60,13 @@ export interface AdminActionDialogResult {
     </mat-dialog-actions>
   `,
   styles: [`
-    .dialog-content {
+    .dialog-shell {
       display: grid;
       gap: 1rem;
-      min-width: min(92vw, 420px);
+      width: min(92vw, 420px);
+      max-width: 420px;
+      padding: 0.35rem 1.25rem 0.5rem;
+      overflow: hidden;
     }
 
     p {

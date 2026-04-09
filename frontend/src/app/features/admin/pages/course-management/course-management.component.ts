@@ -218,7 +218,10 @@ export class CourseManagementComponent {
               mode: 'edit',
               course: detail,
               categories
-            }
+            },
+            width: 'min(94vw, 760px)',
+            maxWidth: 'min(94vw, 760px)',
+            panelClass: ['lms-dialog-panel', 'lms-course-editor-dialog']
           });
 
           dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {
@@ -252,7 +255,12 @@ export class CourseManagementComponent {
         message: `${publish ? 'Publish' : 'Move back to draft'} "${course.title}"?`,
         confirmLabel: publish ? 'Publish' : 'Unpublish',
         confirmColor: publish ? 'primary' : 'warn'
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: '420px',
+      maxWidth: '92vw',
+      maxHeight: '80vh',
+      autoFocus: false
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
@@ -283,7 +291,12 @@ export class CourseManagementComponent {
         message: `Delete "${course.title}" from the platform catalog? This action cannot be undone.`,
         confirmLabel: 'Delete Course',
         confirmColor: 'warn'
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: '420px',
+      maxWidth: '92vw',
+      maxHeight: '80vh',
+      autoFocus: false
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {

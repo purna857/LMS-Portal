@@ -20,7 +20,7 @@ export interface QuizQuestionDialogData {
   template: `
     <h2 mat-dialog-title>{{ data.mode === 'create' ? 'Add Question' : 'Edit Question' }}</h2>
 
-    <mat-dialog-content>
+    <mat-dialog-content class="dialog-shell">
       <form [formGroup]="form" class="dialog-grid">
         <mat-form-field appearance="outline" class="dialog-grid__full">
           <mat-label>Question</mat-label>
@@ -80,7 +80,8 @@ export interface QuizQuestionDialogData {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
-      min-width: min(94vw, 820px);
+      width: min(94vw, 820px);
+      max-width: 820px;
       padding-top: 0.5rem;
     }
 
@@ -110,6 +111,10 @@ export interface QuizQuestionDialogData {
       grid-template-columns: minmax(0, 1fr) auto auto;
       gap: 0.75rem;
       align-items: center;
+    }
+
+    .dialog-shell {
+      overflow: hidden;
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush

@@ -1,0 +1,222 @@
+<section class="page-section progress-dashboard-page">
+  <header class="progress-banner surface-card">
+    <div class="progress-banner__copy">
+      <p class="progress-banner__eyebrow">Student</p>
+      <h1>Progress</h1>
+      <p>
+        Live charts from your enrolled courses. Track completion, course momentum, and lesson balance in one dashboard.
+      </p>
+    </div>
+
+    <div class="progress-banner__stats">
+      <span>{{ totalCourses() }} courses</span>
+      <span>{{ completedCourses() }} completed</span>
+      <span>{{ inProgressCourses() }} in progress</span>
+      <span>{{ averageProgress() }}% average</span>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <div class="progress-grid progress-grid--skeleton">
+      @for (card of [1, 2, 3, 4, 5]; track card) {
+        <mat-card class="surface-card progress-card skeleton skeleton--card"></mat-card>
+      }
+    </div>
+  } @else if (courseItems().length) {
+    <div class="progress-summary-grid">
+      @for (card of summaryCards(); track card.label) {
+        <mat-card class="surface-card summary-card">
+          <mat-card-content>
+            <span class="summary-card__icon material-symbols-outlined">{{ card.icon }}</span>
+            <p class="summary-card__label">{{ card.label }}</p>
+            <strong class="summary-card__value">{{ card.value }}</strong>
+            <span class="summary-card__hint">{{ card.hint }}</span>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+
+    <div class="progress-grid">
+      <mat-card class="surface-card progress-card progress-card--wide">
+        <mat-card-content>
+          <div class="progress-card__head">
+            <div>
+              <p class="progress-card__eyebrow">Learning Activity</p>
+              <h2>Course momentum at a glance</h2>
+              <p class="progress-card__subtext">
+                The bars reflect lessons completed, while the line traces percentage completion across your strongest courses.
+              </p>
+            </div>
+            <span class="progress-card__badge">Live charts</span>
+          </div>
+
+          <div class="progress-card__chart">
+            <app-dashboard-chart
+              type="bar"
+              [height]="280"
+              [data]="activityChartData()"
+              [options]="comboChartOptions()">
+            </app-dashboard-chart>
+          </div>
+
+          <div class="progress-metrics">
+            <div class="progress-metrics__item">
+              <div>
+                <strong>{{ averageProgress() }}%</strong>
+                <span>average progress</span>
+              </div>
+              <div>
+                <strong>{{ completedLessons() }}</strong>
+                <span>lessons completed</span>
+              </div>
+            </div>
+            <div class="progress-metrics__item">
+              <div>
+                <strong>{{ remainingLessons() }}</strong>
+                <span>lessons remaining</span>
+              </div>
+              <div>
+                <strong>{{ topCourses().length }}</strong>
+                <span>courses charted</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="surface-card progress-card progress-card--narrow">
+        <mat-card-content>
+          <div class="progress-card__head">
+            <div>
+              <p class="progress-card__eyebrow">Completion Snapshot</p>
+              <h2>Course status mix</h2>
+            </div>
+            <span class="progress-card__badge">Live charts</span>
+          </div>
+
+          <div class="progress-card__doughnut">
+            <app-dashboard-chart
+              type="doughnut"
+              [height]="220"
+              [data]="snapshotChartData()"
+              [options]="doughnutChartOptions()">
+            </app-dashboard-chart>
+            <div class="progress-card__center">
+              <strong>{{ averageProgress() }}%</strong>
+              <span>average progress</span>
+            </div>
+          </div>
+
+          <div class="progress-legend">
+            @for (item of snapshotLegend(); track item.label) {
+              <div class="progress-legend__item">
+                <div class="progress-legend__label">
+                  <span class="progress-legend__swatch" [style.background]="item.color"></span>
+                  <strong>{{ item.label }}</strong>
+                </div>
+                <div class="progress-legend__value">
+                  <strong>{{ item.value }}</strong>
+                  <span>{{ item.hint }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="surface-card progress-card progress-card--half">
+        <mat-card-content>
+          <div class="progress-card__head">
+            <div>
+              <p class="progress-card__eyebrow">Progress by Course</p>
+              <h2>Live completion bars</h2>
+              <p class="progress-card__subtext">
+                Progress is ordered from strongest to smallest completion so you can spot momentum quickly.
+              </p>
+            </div>
+            <span class="progress-card__badge">Top {{ topCourses().length }}</span>
+          </div>
+
+          <div class="progress-card__chart">
+            <app-dashboard-chart
+              type="bar"
+              [height]="260"
+              [data]="courseProgressChartData()"
+              [options]="horizontalBarChartOptions()">
+            </app-dashboard-chart>
+          </div>
+
+          <div class="progress-course-list">
+            @for (item of topCourses(); track item.course.course_id) {
+              <div class="progress-course-list__item">
+                <div>
+                  <strong>{{ item.course.title }}</strong>
+                  <span>{{ item.progress?.completed_lessons ?? 0 }}/{{ item.progress?.total_lessons ?? 0 }} lessons complete</span>
+                </div>
+                <strong>{{ item.progress?.progress_percentage ?? 0 }}%</strong>
+                <div class="progress-course-list__bar">
+                  <span [style.width.%]="item.progress?.progress_percentage ?? 0"></span>
+                </div>
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="surface-card progress-card progress-card--half">
+        <mat-card-content>
+          <div class="progress-card__head">
+            <div>
+              <p class="progress-card__eyebrow">Momentum Trend</p>
+              <h2>Running average across enrolled courses</h2>
+              <p class="progress-card__subtext">
+                The line shows how your average completion changes as courses are ordered by current progress.
+              </p>
+            </div>
+            <span class="progress-card__badge">Live charts</span>
+          </div>
+
+          <div class="progress-card__chart">
+            <app-dashboard-chart
+              type="line"
+              [height]="260"
+              [data]="trendChartData()"
+              [options]="lineChartOptions()">
+            </app-dashboard-chart>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="surface-card progress-card progress-card--wide">
+        <mat-card-content>
+          <div class="progress-card__head">
+            <div>
+              <p class="progress-card__eyebrow">Lesson Balance</p>
+              <h2>Completed vs remaining lessons</h2>
+              <p class="progress-card__subtext">
+                A stacked view of your live lesson coverage by course gives you a quick sense of what still needs attention.
+              </p>
+            </div>
+            <span class="progress-card__badge">Live charts</span>
+          </div>
+
+          <div class="progress-card__chart">
+            <app-dashboard-chart
+              type="bar"
+              [height]="260"
+              [data]="lessonBalanceChartData()"
+              [options]="stackedBarChartOptions()">
+            </app-dashboard-chart>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  } @else {
+    <app-empty-state
+      icon="timeline"
+      title="No progress data yet"
+      description="Enroll in a course to start seeing live progress charts here.">
+    </app-empty-state>
+  }
+</section>

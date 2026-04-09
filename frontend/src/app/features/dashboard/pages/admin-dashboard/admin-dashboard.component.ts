@@ -58,7 +58,7 @@ import { materialImports } from '@app/shared/material/material-imports';
             <div class="dashboard-kpi-card__ring">
               <app-dashboard-chart
                 type="doughnut"
-                [height]="200"
+                [height]="170"
                 [data]="distributionChartData()"
                 [options]="doughnutChartOptions()">
               </app-dashboard-chart>
@@ -101,7 +101,7 @@ import { materialImports } from '@app/shared/material/material-imports';
           <mat-card-content>
             <app-dashboard-chart
               type="bar"
-              [height]="320"
+              [height]="310"
               [data]="overviewChartData()"
               [options]="barChartOptions()">
             </app-dashboard-chart>
@@ -223,6 +223,32 @@ import { materialImports } from '@app/shared/material/material-imports';
     </section>
   `,
   styles: [`
+    .dashboard-page {
+      font-family: 'IBM Plex Sans', sans-serif;
+      color: var(--text-primary);
+    }
+
+    .dashboard-page :where(h1, h2, h3, h4, h5, h6, p, span, strong, a, button, label, input, textarea, small, mat-card-title, mat-card-subtitle) {
+      font-family: inherit;
+    }
+
+    .dashboard-page .material-symbols-outlined,
+    .dashboard-page .mat-icon {
+      font-family: 'Material Symbols Outlined' !important;
+    }
+
+    .hero-card,
+    .dashboard-kpi-card,
+    .stat-card,
+    .surface-card {
+      position: relative;
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(251, 253, 255, 0.99));
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.045);
+      overflow: hidden;
+    }
+
     .hero-card__eyebrow {
       display: inline-flex;
       width: fit-content;
@@ -233,15 +259,21 @@ import { materialImports } from '@app/shared/material/material-imports';
       color: var(--primary);
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      font-size: 0.66rem;
+      font-size: 0.65rem;
       font-weight: 700;
+    }
+
+    .hero-card mat-card-content {
+      display: grid;
+      gap: 0.7rem;
+      padding: 1.25rem 1.25rem 1.2rem;
     }
 
     .hero-card h1 {
       margin: 0;
-      font-size: clamp(1.55rem, 2.2vw, 2.2rem);
+      font-size: clamp(1.35rem, 1.9vw, 1.9rem);
       letter-spacing: -0.04em;
-      line-height: 1.06;
+      line-height: 1.08;
     }
 
     .hero-card__description,
@@ -250,14 +282,22 @@ import { materialImports } from '@app/shared/material/material-imports';
     .hero-insights__item p {
       margin: 0.65rem 0 0;
       color: var(--muted);
-      font-size: 0.84rem;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .dashboard-kpi-card__label {
+      display: block;
+      margin-top: 0.5rem;
+      color: var(--muted);
+      font-size: 0.72rem;
       line-height: 1.45;
     }
 
     .hero-insights {
       display: grid;
       gap: 0.85rem;
-      margin-top: 1.25rem;
+      margin-top: 1.15rem;
     }
 
     .hero-insights__item {
@@ -265,6 +305,13 @@ import { materialImports } from '@app/shared/material/material-imports';
       grid-template-columns: 14px 1fr;
       gap: 0.75rem;
       align-items: start;
+    }
+
+    .hero-insights__item strong {
+      display: block;
+      font-size: 0.84rem;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
     }
 
     .hero-insights__dot {
@@ -293,12 +340,12 @@ import { materialImports } from '@app/shared/material/material-imports';
       position: relative;
       display: grid;
       place-items: center;
-      min-height: 190px;
+      min-height: 225px;
     }
 
     .dashboard-kpi-card__ring-value {
       position: absolute;
-      font-size: 1.7rem;
+      font-size: 1.8rem;
       font-weight: 800;
       letter-spacing: -0.05em;
     }
@@ -317,7 +364,7 @@ import { materialImports } from '@app/shared/material/material-imports';
       border-radius: 12px;
       background: #eef4ff;
       color: var(--primary);
-      font-size: 1.05rem;
+      font-size: 1rem;
     }
 
     .metric-card__label,
@@ -330,23 +377,24 @@ import { materialImports } from '@app/shared/material/material-imports';
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      font-size: 0.6rem;
+      font-size: 0.58rem;
       font-weight: 700;
     }
 
     .metric-card__value {
       display: block;
       margin-top: 0.9rem;
-      font-size: clamp(1.3rem, 1.5vw, 1.7rem);
+      font-size: 0.92rem;
+      font-weight: 800;
       letter-spacing: -0.03em;
-      line-height: 1.05;
+      line-height: 1.2;
     }
 
     .metric-card__hint {
       margin-top: 0.45rem;
       color: var(--muted);
       line-height: 1.35;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
     }
 
     .dashboard-split--wide {
@@ -372,6 +420,13 @@ import { materialImports } from '@app/shared/material/material-imports';
       border-bottom: 1px solid var(--border);
     }
 
+    .stack-list__item strong {
+      display: block;
+      font-size: 0.84rem;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+    }
+
     .stack-list__item:last-child {
       border-bottom: 0;
       padding-bottom: 0;
@@ -389,7 +444,7 @@ import { materialImports } from '@app/shared/material/material-imports';
       border-radius: 999px;
       background: #f3f7ff;
       color: var(--primary);
-      font-size: 0.68rem;
+      font-size: 0.64rem;
       font-weight: 700;
       text-transform: capitalize;
     }
@@ -403,7 +458,14 @@ import { materialImports } from '@app/shared/material/material-imports';
     .activity-list__item p {
       margin: 0.2rem 0 0;
       color: var(--muted);
-      font-size: 0.82rem;
+      font-size: 0.76rem;
+    }
+
+    .activity-list__item strong {
+      display: block;
+      font-size: 0.84rem;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
     }
 
     .activity-list__meta {
@@ -420,6 +482,13 @@ import { materialImports } from '@app/shared/material/material-imports';
       .action-grid {
         grid-template-columns: 1fr;
       }
+    }
+
+    .dashboard-page mat-card-title,
+    .dashboard-page .mat-mdc-card-title {
+      font-size: 0.92rem;
+      line-height: 1.25;
+      letter-spacing: -0.018em;
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush

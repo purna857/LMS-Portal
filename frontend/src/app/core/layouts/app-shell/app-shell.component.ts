@@ -292,6 +292,7 @@ export class AppShellComponent {
     const user = this.sessionService.user();
     return user ? `${user.first_name} ${user.last_name}` : 'Guest';
   });
+  readonly avatarUrl = computed(() => this.sessionService.user()?.avatar_url?.trim() ?? '');
   readonly initials = computed(() => {
     const user = this.sessionService.user();
     if (!user) {

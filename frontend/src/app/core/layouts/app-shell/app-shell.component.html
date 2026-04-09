@@ -125,7 +125,11 @@
         [matMenuTriggerFor]="profileMenu"
         class="shell-toolbar__profile"
         (menuOpened)="syncProfileMenuWidth(profileButton, profileTrigger)">
-        <span class="shell-toolbar__avatar">{{ initials() }}</span>
+        @if (avatarUrl()) {
+          <img class="shell-toolbar__avatar shell-toolbar__avatar--image" [src]="avatarUrl()" [alt]="displayName()" />
+        } @else {
+          <span class="shell-toolbar__avatar">{{ initials() }}</span>
+        }
         <span class="shell-toolbar__identity">
           <strong>{{ displayName() }}</strong>
           <small>{{ roleLabel() | titlecase }}</small>

@@ -190,7 +190,12 @@ export class InstructorApprovalsComponent {
         confirmColor: mode === 'approve' ? 'primary' : 'warn',
         noteLabel: 'Review Notes',
         notePlaceholder: 'Add optional review notes for your decision'
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: '420px',
+      maxWidth: '92vw',
+      maxHeight: '80vh',
+      autoFocus: false
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {

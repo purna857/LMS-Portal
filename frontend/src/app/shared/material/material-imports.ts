@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -21,6 +22,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatNativeDateModule } from '@angular/material/core';
 
 
 export const materialImports = [
@@ -30,6 +32,7 @@ export const materialImports = [
   MatCardModule,
   MatCheckboxModule,
   MatChipsModule,
+  MatDatepickerModule,
   MatDialogModule,
   MatDividerModule,
   MatExpansionModule,
@@ -42,6 +45,7 @@ export const materialImports = [
   MatProgressSpinnerModule,
   MatSelectModule,
   MatSnackBarModule,
+  MatNativeDateModule,
   MatSidenavModule,
   MatTableModule,
   MatTabsModule,

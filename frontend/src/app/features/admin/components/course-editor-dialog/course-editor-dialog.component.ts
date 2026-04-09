@@ -21,7 +21,7 @@ export interface CourseEditorDialogData {
   template: `
     <h2 mat-dialog-title>{{ data.mode === 'create' ? 'Create Course' : 'Edit Course' }}</h2>
 
-    <mat-dialog-content class="dialog-grid">
+    <mat-dialog-content class="dialog-shell">
       <form [formGroup]="form" class="dialog-grid">
         <mat-form-field appearance="outline" class="dialog-grid__full">
           <mat-label>Title</mat-label>
@@ -104,7 +104,13 @@ export interface CourseEditorDialogData {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
-      min-width: min(94vw, 760px);
+      width: min(94vw, 760px);
+      max-width: 760px;
+      padding-top: 0.5rem;
+    }
+
+    .dialog-shell {
+      overflow: hidden;
     }
 
     .dialog-grid__full {
@@ -114,6 +120,8 @@ export interface CourseEditorDialogData {
     @media (max-width: 760px) {
       .dialog-grid {
         grid-template-columns: 1fr;
+        width: 100%;
+        max-width: 100%;
       }
     }
   `],

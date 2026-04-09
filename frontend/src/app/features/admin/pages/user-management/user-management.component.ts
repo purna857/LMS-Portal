@@ -220,7 +220,12 @@ export class UserManagementComponent {
         message: `${block ? 'Suspend' : 'Restore'} access for ${user.first_name} ${user.last_name}?`,
         confirmLabel: block ? 'Suspend User' : 'Restore User',
         confirmColor: block ? 'warn' : 'primary'
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: '420px',
+      maxWidth: '92vw',
+      maxHeight: '80vh',
+      autoFocus: false
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {

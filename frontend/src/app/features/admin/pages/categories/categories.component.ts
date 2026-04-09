@@ -144,7 +144,11 @@ export class CategoriesComponent {
         mode: category ? 'edit' : 'create',
         category,
         categories: this.categories()
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: 'min(94vw, 640px)',
+      maxWidth: 'min(94vw, 640px)',
+      autoFocus: false
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {
@@ -175,7 +179,12 @@ export class CategoriesComponent {
         message: `Delete "${category.name}" from the catalog structure?`,
         confirmLabel: 'Delete Category',
         confirmColor: 'warn'
-      }
+      },
+      panelClass: ['lms-dialog-panel'],
+      width: '420px',
+      maxWidth: '92vw',
+      maxHeight: '80vh',
+      autoFocus: false
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
