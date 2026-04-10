@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import type {
@@ -12,10 +13,12 @@ import type {
   StudentCourseProgress,
   StudentEnrollment
 } from '@app/features/instructor/models/instructor.models';
+import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { InstructorPortalService } from '@app/features/instructor/services/instructor-portal.service';
 import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '@app/shared/components/page-header/page-header.component';
 import { materialImports } from '@app/shared/material/material-imports';
+import { chipToneForUserStatus } from '@app/shared/utils/chip-tone';
 
 
 @Component({
@@ -26,7 +29,7 @@ import { materialImports } from '@app/shared/material/material-imports';
     <section class="page-section">
       <app-page-header
         eyebrow="Instructor"
-        title="Students & Enrollments"
+        title="Learner Roster"
         description="Track roster health, enrollment distribution, and learning progress across your courses.">
       </app-page-header>
 
@@ -54,21 +57,33 @@ import { materialImports } from '@app/shared/material/material-imports';
       }
 
       <div class="page-grid">
-        <mat-card class="stat-card">
-          <strong>Total Enrollments</strong>
-          <p>{{ stats()?.total_enrollments ?? 0 }}</p>
+        <mat-card class="stat-card stat-card--metric">
+          <mat-card-content>
+            <p class="metric-card__label">Total Enrollments</p>
+            <strong class="metric-card__value">{{ stats()?.total_enrollments ?? 0 }}</strong>
+            <span class="metric-card__hint">Learners currently attached to the selected course</span>
+          </mat-card-content>
         </mat-card>
-        <mat-card class="stat-card">
-          <strong>Active</strong>
-          <p>{{ stats()?.active_enrollments ?? 0 }}</p>
+        <mat-card class="stat-card stat-card--metric">
+          <mat-card-content>
+            <p class="metric-card__label">Active</p>
+            <strong class="metric-card__value">{{ stats()?.active_enrollments ?? 0 }}</strong>
+            <span class="metric-card__hint">Students actively progressing through the course</span>
+          </mat-card-content>
         </mat-card>
-        <mat-card class="stat-card">
-          <strong>Completed</strong>
-          <p>{{ stats()?.completed_enrollments ?? 0 }}</p>
+        <mat-card class="stat-card stat-card--metric">
+          <mat-card-content>
+            <p class="metric-card__label">Completed</p>
+            <strong class="metric-card__value">{{ stats()?.completed_enrollments ?? 0 }}</strong>
+            <span class="metric-card__hint">Learners who have reached the completion milestone</span>
+          </mat-card-content>
         </mat-card>
-        <mat-card class="stat-card">
-          <strong>Dropped / Suspended</strong>
-          <p>{{ (stats()?.dropped_enrollments ?? 0) + (stats()?.suspended_enrollments ?? 0) }}</p>
+        <mat-card class="stat-card stat-card--metric">
+          <mat-card-content>
+            <p class="metric-card__label">Dropped / Suspended</p>
+            <strong class="metric-card__value">{{ (stats()?.dropped_enrollments ?? 0) + (stats()?.suspended_enrollments ?? 0) }}</strong>
+            <span class="metric-card__hint">Enrolment records no longer in an active state</span>
+          </mat-card-content>
         </mat-card>
       </div>
 
@@ -78,9 +93,9 @@ import { materialImports } from '@app/shared/material/material-imports';
             <mat-card-title>Roster</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            @if (students().length) {
+            @if (filteredStudents().length) {
               <div class="table-wrap">
-                <table mat-table [dataSource]="students()" class="data-table">
+                <table mat-table [dataSource]="filteredStudents()" class="data-table">
                   <ng-container matColumnDef="student">
                     <th mat-header-cell *matHeaderCellDef>Student</th>
                     <td mat-cell *matCellDef="let student">
@@ -95,7 +110,7 @@ import { materialImports } from '@app/shared/material/material-imports';
                     <th mat-header-cell *matHeaderCellDef>Status</th>
                     <td mat-cell *matCellDef="let student">
                       <mat-chip-set>
-                        <mat-chip>{{ student.status }}</mat-chip>
+                        <mat-chip [attr.data-tone]="chipToneForUserStatus(student.status)">{{ student.status }}</mat-chip>
                       </mat-chip-set>
                     </td>
                   </ng-container>
@@ -111,6 +126,12 @@ import { materialImports } from '@app/shared/material/material-imports';
                   <tr mat-row *matRowDef="let row; columns: studentColumns"></tr>
                 </table>
               </div>
+            } @else if (students().length) {
+              <app-empty-state
+                icon="search_off"
+                [title]="workspaceSearch.normalizedQuery() ? 'No matching students' : 'No enrollments found'"
+                [description]="workspaceSearch.normalizedQuery() ? 'Try a different name, email, status, or progress keyword.' : 'Enrollments for the selected course will appear here.'">
+              </app-empty-state>
             } @else {
               <app-empty-state
                 icon="group"
@@ -126,9 +147,9 @@ import { materialImports } from '@app/shared/material/material-imports';
             <mat-card-title>Progress Snapshot</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            @if (progress().length) {
+            @if (filteredProgress().length) {
               <div class="stack-list">
-                @for (item of progress(); track item.enrollment_id) {
+                @for (item of filteredProgress(); track item.enrollment_id) {
                   <div class="stack-list__item">
                     <div>
                       <strong>{{ item.student_name }}</strong>
@@ -141,6 +162,12 @@ import { materialImports } from '@app/shared/material/material-imports';
                   </div>
                 }
               </div>
+            } @else if (progress().length) {
+              <app-empty-state
+                icon="search_off"
+                [title]="workspaceSearch.normalizedQuery() ? 'No matching progress entries' : 'No progress yet'"
+                [description]="workspaceSearch.normalizedQuery() ? 'Try a different student name or progress keyword.' : 'Student progress will appear here once lessons are completed.'">
+              </app-empty-state>
             } @else {
               <app-empty-state
                 icon="timeline"
@@ -162,26 +189,24 @@ import { materialImports } from '@app/shared/material/material-imports';
 
     .stack-list {
       display: grid;
-      gap: 0.85rem;
+      gap: 0.9rem;
     }
 
     .stack-list__item {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 1rem;
       align-items: start;
-      padding-bottom: 0.85rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .stack-list__item:last-child {
-      border-bottom: 0;
-      padding-bottom: 0;
+      padding: 1rem 1.05rem;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(248, 251, 255, 0.92), #ffffff 72%);
     }
 
     .stack-list__item p {
       margin: 0.35rem 0 0;
       color: var(--muted);
+      line-height: 1.5;
     }
 
     .progress-box {
@@ -193,6 +218,16 @@ import { materialImports } from '@app/shared/material/material-imports';
     .progress-box strong {
       color: var(--text);
       font-size: 1.2rem;
+    }
+
+    @media (max-width: 720px) {
+      .stack-list__item {
+        grid-template-columns: 1fr;
+      }
+
+      .stack-list__item > :last-child {
+        justify-self: start;
+      }
     }
 
     @media (max-width: 1100px) {
@@ -208,6 +243,8 @@ export class StudentsComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  readonly workspaceSearch = inject(WorkspaceSearchService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly courses = signal<CourseListItem[]>([]);
   readonly students = signal<StudentEnrollment[]>([]);
@@ -215,6 +252,40 @@ export class StudentsComponent {
   readonly stats = signal<EnrollmentStats | null>(null);
   readonly loading = signal(false);
   readonly studentColumns = ['student', 'status', 'dates'];
+  readonly chipToneForUserStatus = chipToneForUserStatus;
+  readonly filteredStudents = computed(() => {
+    const query = this.workspaceSearch.normalizedQuery();
+    if (!query) {
+      return this.students();
+    }
+
+    return this.students().filter((student) =>
+      this.workspaceSearch.matches(
+        student.student_name,
+        student.student_email,
+        student.status,
+        student.enrolled_at,
+        student.started_at,
+        student.completed_at
+      )
+    );
+  });
+  readonly filteredProgress = computed(() => {
+    const query = this.workspaceSearch.normalizedQuery();
+    if (!query) {
+      return this.progress();
+    }
+
+    return this.progress().filter((item) =>
+      this.workspaceSearch.matches(
+        item.student_name,
+        item.student_email,
+        item.progress_status,
+        `${item.completed_lessons}/${item.total_lessons}`,
+        `${item.progress_percentage}%`
+      )
+    );
+  });
   readonly courseForm = this.formBuilder.group({
     course_id: ['']
   });
@@ -236,8 +307,9 @@ export class StudentsComponent {
       .subscribe({
         next: (response) => {
           this.courses.set(response.items);
-          const first = response.items[0]?.id ?? '';
-          this.courseForm.patchValue({ course_id: first });
+          const preferredCourseId = this.route.snapshot.queryParamMap.get('courseId') ?? '';
+          const selectedCourseId = response.items.find((course) => course.id === preferredCourseId)?.id ?? response.items[0]?.id ?? '';
+          this.courseForm.patchValue({ course_id: selectedCourseId });
         },
         error: (error: HttpErrorResponse) => {
           this.snackBar.open(error.error?.detail ?? 'Unable to load instructor courses.', 'Dismiss', { duration: 4500 });

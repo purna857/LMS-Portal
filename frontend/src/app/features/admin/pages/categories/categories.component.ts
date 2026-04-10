@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -10,7 +10,9 @@ import type { CourseCategory } from '@app/features/admin/models/admin.models';
 import { AdminPortalService } from '@app/features/admin/services/admin-portal.service';
 import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '@app/shared/components/page-header/page-header.component';
+import { portalDialogConfig } from '@app/shared/dialogs/portal-dialog-helpers';
 import { materialImports } from '@app/shared/material/material-imports';
+import { chipToneForCategoryStatus } from '@app/shared/utils/chip-tone';
 
 
 @Component({
@@ -21,9 +23,24 @@ import { materialImports } from '@app/shared/material/material-imports';
     <section class="page-section">
       <app-page-header
         eyebrow="Admin"
-        title="Course Categories"
+        title="Catalog Taxonomy"
         description="Shape the catalog taxonomy used across course discovery, management, and reporting.">
       </app-page-header>
+
+      <div class="page-grid">
+        @for (card of summaryCards(); track card.label) {
+          <mat-card class="stat-card stat-card--metric">
+            <mat-card-content>
+              <div class="metric-card__top">
+                <span class="metric-card__icon material-symbols-outlined">{{ card.icon }}</span>
+                <p class="metric-card__label">{{ card.label }}</p>
+              </div>
+              <strong class="metric-card__value">{{ card.value }}</strong>
+              <span class="metric-card__hint">{{ card.hint }}</span>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
 
       <mat-card class="surface-card">
         <mat-card-actions align="end">
@@ -56,7 +73,7 @@ import { materialImports } from '@app/shared/material/material-imports';
                   <th mat-header-cell *matHeaderCellDef>Status</th>
                   <td mat-cell *matCellDef="let category">
                     <mat-chip-set>
-                      <mat-chip [highlighted]="category.status === 'active'">{{ category.status }}</mat-chip>
+                      <mat-chip [attr.data-tone]="chipToneForCategoryStatus(category.status)">{{ category.status }}</mat-chip>
                     </mat-chip-set>
                   </td>
                 </ng-container>
@@ -96,6 +113,7 @@ import { materialImports } from '@app/shared/material/material-imports';
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
+      align-items: center;
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -109,6 +127,37 @@ export class CategoriesComponent {
   readonly loading = signal(false);
   readonly categories = signal<CourseCategory[]>([]);
   readonly displayedColumns = ['name', 'parent', 'status', 'sort', 'actions'];
+  readonly summaryCards = computed(() => {
+    const categories = this.categories();
+    return [
+      {
+        label: 'Categories',
+        value: String(categories.length),
+        hint: 'Total catalog categories loaded',
+        icon: 'category'
+      },
+      {
+        label: 'Active',
+        value: String(categories.filter((category) => category.status === 'active').length),
+        hint: 'Categories available for use',
+        icon: 'check_circle'
+      },
+      {
+        label: 'Inactive',
+        value: String(categories.filter((category) => category.status === 'inactive').length),
+        hint: 'Hidden or paused taxonomy entries',
+        icon: 'pause_circle'
+      },
+      {
+        label: 'Top-level',
+        value: String(categories.filter((category) => !category.parent_id).length),
+        hint: 'Root categories in the hierarchy',
+        icon: 'account_tree'
+      }
+    ];
+  });
+
+  readonly chipToneForCategoryStatus = chipToneForCategoryStatus;
 
   constructor() {
     this.loadCategories();
@@ -145,10 +194,7 @@ export class CategoriesComponent {
         category,
         categories: this.categories()
       },
-      panelClass: ['lms-dialog-panel'],
-      width: 'min(94vw, 640px)',
-      maxWidth: 'min(94vw, 640px)',
-      autoFocus: false
+      ...portalDialogConfig('md')
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {
@@ -180,11 +226,7 @@ export class CategoriesComponent {
         confirmLabel: 'Delete Category',
         confirmColor: 'warn'
       },
-      panelClass: ['lms-dialog-panel'],
-      width: '420px',
-      maxWidth: '92vw',
-      maxHeight: '80vh',
-      autoFocus: false
+      ...portalDialogConfig('sm')
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {

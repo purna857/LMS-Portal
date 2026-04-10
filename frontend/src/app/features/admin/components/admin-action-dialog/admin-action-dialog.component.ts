@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
+import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -24,57 +25,57 @@ export interface AdminActionDialogResult {
 @Component({
   selector: 'app-admin-action-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, ...materialImports],
+  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
   template: `
-    <h2 mat-dialog-title>{{ data.title }}</h2>
+    <app-portal-dialog-shell
+      size="sm"
+      [variant]="data.confirmColor === 'warn' ? 'destructive' : 'confirm'"
+      [eyebrow]="data.confirmColor === 'warn' ? 'Destructive action' : 'Action confirmation'"
+      [title]="data.title"
+      [description]="data.message"
+      [closeLabel]="'Close confirmation dialog'"
+      (closeRequested)="dialogRef.close()">
+      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="admin-action-form" (ngSubmit)="confirm()">
+        <div class="dialog-copy">
+          <p>{{ data.message }}</p>
+        </div>
 
-    <mat-dialog-content class="dialog-shell">
-      <p>{{ data.message }}</p>
+        @if (data.noteLabel) {
+          <section class="dialog-section">
+            <div class="dialog-section__title">
+              <strong>{{ data.noteLabel }}</strong>
+              <p>{{ data.noteRequired ? 'Add a short note before confirming this action.' : 'Optional note for the record.' }}</p>
+            </div>
 
-      @if (data.noteLabel) {
-        <mat-form-field appearance="outline">
-          <mat-label>{{ data.noteLabel }}</mat-label>
-          <textarea
-            matInput
-            rows="5"
-            [placeholder]="data.notePlaceholder ?? ''"
-            [formControl]="form.controls.note">
-          </textarea>
-          @if (form.controls.note.invalid && form.controls.note.touched) {
-            <mat-error>Review notes are required for this action.</mat-error>
-          }
-        </mat-form-field>
-      }
-    </mat-dialog-content>
+            <mat-form-field appearance="outline" class="dialog-grid__full">
+              <mat-label>{{ data.noteLabel }}</mat-label>
+              <textarea
+                matInput
+                rows="5"
+                [placeholder]="data.notePlaceholder ?? ''"
+                [formControl]="form.controls.note">
+              </textarea>
+              @if (form.controls.note.invalid && form.controls.note.touched) {
+                <mat-error>Review notes are required for this action.</mat-error>
+              }
+            </mat-form-field>
+          </section>
+        }
+      </form>
 
-    <mat-dialog-actions align="end">
-      <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
-      <button
-        mat-flat-button
-        type="button"
-        [color]="data.confirmColor ?? 'primary'"
-        [disabled]="form.invalid"
-        (click)="confirm()">
-        {{ data.confirmLabel }}
-      </button>
-    </mat-dialog-actions>
+      <div dialogFooter class="dialog-footer-actions">
+        <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
+        <button
+          mat-flat-button
+          type="submit"
+          [color]="data.confirmColor ?? 'primary'"
+          [disabled]="form.invalid"
+          form="admin-action-form">
+          {{ data.confirmLabel }}
+        </button>
+      </div>
+    </app-portal-dialog-shell>
   `,
-  styles: [`
-    .dialog-shell {
-      display: grid;
-      gap: 1rem;
-      width: min(92vw, 420px);
-      max-width: 420px;
-      padding: 0.35rem 1.25rem 0.5rem;
-      overflow: hidden;
-    }
-
-    p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-  `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminActionDialogComponent {

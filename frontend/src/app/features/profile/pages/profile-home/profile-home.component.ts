@@ -213,7 +213,7 @@ type ProfileFact = {
         </mat-card-header>
 
         <mat-card-content>
-          <form [formGroup]="passwordForm" class="toolbar-grid">
+          <form [formGroup]="passwordForm" class="toolbar-grid toolbar-grid--security">
             <mat-form-field appearance="outline">
               <mat-label>Current Password</mat-label>
               <input matInput type="password" formControlName="current_password" />
@@ -224,7 +224,7 @@ type ProfileFact = {
               <input matInput type="password" formControlName="new_password" />
             </mat-form-field>
 
-            <div class="toolbar-grid__actions">
+            <div class="toolbar-grid__actions toolbar-grid__actions--security">
               <button mat-flat-button color="primary" type="button" (click)="changePassword()">Update Password</button>
             </div>
           </form>
@@ -264,7 +264,7 @@ type ProfileFact = {
     .profile-summary-card mat-card-content,
     .profile-form-card mat-card-content,
     .profile-security-card mat-card-content {
-      padding: 1.15rem 1.2rem 1rem;
+      padding: 1.35rem 1.4rem 1.1rem;
     }
 
     .profile-summary {
@@ -275,18 +275,18 @@ type ProfileFact = {
     .profile-summary__hero {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
-      gap: 1rem;
+      gap: 1.1rem;
       align-items: start;
-      padding-bottom: 0.95rem;
+      padding-bottom: 1rem;
       border-bottom: 1px solid rgba(148, 163, 184, 0.1);
     }
 
     .profile-avatar {
       display: grid;
       place-items: center;
-      width: 96px;
-      height: 96px;
-      border-radius: 30px;
+      width: 104px;
+      height: 104px;
+      border-radius: 32px;
       background:
         radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 28%),
         linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(20, 184, 166, 0.12));
@@ -305,14 +305,14 @@ type ProfileFact = {
     }
 
     .profile-avatar span {
-      font-size: 1.95rem;
+      font-size: 2.15rem;
       font-weight: 800;
       letter-spacing: -0.05em;
     }
 
     .profile-summary__copy {
       display: grid;
-      gap: 0.28rem;
+      gap: 0.35rem;
       align-content: start;
       max-width: 40rem;
     }
@@ -323,13 +323,13 @@ type ProfileFact = {
       color: var(--primary);
       text-transform: uppercase;
       letter-spacing: 0.14em;
-      font-size: 0.62rem;
+      font-size: 0.76rem;
       font-weight: 800;
     }
 
     .profile-summary__copy h2 {
       margin: 0;
-      font-size: clamp(1.2rem, 1.7vw, 1.58rem);
+      font-size: clamp(1.48rem, 2vw, 1.95rem);
       line-height: 1.02;
       letter-spacing: -0.05em;
       color: var(--primary-strong);
@@ -338,7 +338,7 @@ type ProfileFact = {
     .profile-summary__headline {
       margin: 0;
       color: var(--primary-strong);
-      font-size: 0.74rem;
+      font-size: 0.9rem;
       font-weight: 600;
       line-height: 1.5;
     }
@@ -346,15 +346,28 @@ type ProfileFact = {
     .profile-summary__email {
       margin: 0;
       color: var(--muted);
-      font-size: 0.74rem;
+      font-size: 0.88rem;
       line-height: 1.5;
     }
 
     .profile-chip-row {
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-top: 0.15rem;
+      flex-wrap: nowrap;
+      gap: 0.5rem;
+      margin-top: 0.2rem;
+      align-items: center;
+      width: fit-content;
+      max-width: 100%;
+      overflow: visible;
+    }
+
+    :host ::ng-deep .profile-chip-row.mat-mdc-chip-set {
+      display: grid !important;
+      grid-auto-flow: column;
+      grid-auto-columns: max-content;
+      justify-content: start;
+      width: fit-content;
+      max-width: 100%;
     }
 
     .profile-chip {
@@ -367,7 +380,9 @@ type ProfileFact = {
       --mdc-chip-outline-width: 0;
       --mdc-chip-outline-color: transparent;
       --mdc-chip-container-height: 28px;
-      padding-inline: 0.1rem;
+      padding-inline: 0.05rem;
+      white-space: nowrap;
+      flex: 0 0 auto;
     }
 
     .profile-chip--role {
@@ -388,15 +403,16 @@ type ProfileFact = {
     .profile-chip-row .profile-chip .mdc-evolution-chip__text-label,
     .profile-chip-row .profile-chip .mat-mdc-chip-action-label {
       color: inherit !important;
-      font-size: 0.64rem;
+      font-size: 0.78rem;
       font-weight: 700;
       letter-spacing: 0.02em;
+      white-space: nowrap;
     }
 
     .profile-summary__actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.45rem;
+      gap: 0.55rem;
       align-items: center;
       margin-top: 0.2rem;
     }
@@ -408,11 +424,11 @@ type ProfileFact = {
     .profile-summary__upload,
     .profile-summary__remove {
       min-width: 0;
-      height: 1.98rem;
-      padding: 0 0.85rem;
+      height: 2.2rem;
+      padding: 0 0.95rem;
       border-radius: 999px !important;
       font-family: 'IBM Plex Sans', sans-serif !important;
-      font-size: 0.72rem;
+      font-size: 0.84rem;
       font-weight: 700;
     }
 
@@ -424,7 +440,7 @@ type ProfileFact = {
 
     .profile-summary__upload .material-symbols-outlined {
       margin-right: 0.35rem;
-      font-size: 0.92rem;
+      font-size: 1rem;
       line-height: 1;
     }
 
@@ -435,52 +451,45 @@ type ProfileFact = {
     .profile-summary__hint {
       margin: 0;
       color: var(--muted);
-      font-size: 0.64rem;
+      font-size: 0.84rem;
       line-height: 1.45;
     }
 
     .profile-facts {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.58rem;
+      gap: 0.7rem;
     }
 
     .profile-fact {
       display: grid;
-      gap: 0.16rem;
-      padding: 0.78rem 0.86rem;
+      gap: 0.22rem;
+      padding: 0.92rem 1rem;
       border-radius: 18px;
       border: 1px solid rgba(148, 163, 184, 0.1);
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(250, 252, 255, 0.98));
       box-shadow: 0 7px 16px rgba(15, 23, 42, 0.028);
-      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-    }
-
-    .profile-fact:hover {
-      transform: translateY(-1px);
-      border-color: rgba(37, 99, 235, 0.15);
-      box-shadow: 0 16px 34px rgba(15, 23, 42, 0.055);
     }
 
     .profile-fact__label {
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.14em;
-      font-size: 0.54rem;
+      font-size: 0.72rem;
       font-weight: 800;
     }
 
     .profile-fact strong {
       color: var(--primary-strong);
-      font-size: 0.8rem;
-      line-height: 1.3;
+      font-size: 1rem;
+      line-height: 1.28;
       overflow-wrap: anywhere;
     }
 
     .profile-fact p {
       margin: 0;
       color: var(--muted);
-      font-size: 0.66rem;
+      font-size: 0.8rem;
       line-height: 1.45;
       overflow-wrap: anywhere;
     }
@@ -498,7 +507,7 @@ type ProfileFact = {
     .profile-security-card__subtitle {
       margin: 0.35rem 0 0;
       color: var(--muted);
-      font-size: 0.72rem;
+      font-size: 0.92rem;
       line-height: 1.45;
     }
 
@@ -512,7 +521,7 @@ type ProfileFact = {
       background: #edf4ff;
       color: var(--primary);
       font-weight: 800;
-      font-size: 0.58rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.14em;
       white-space: nowrap;
@@ -520,16 +529,16 @@ type ProfileFact = {
 
     .profile-form {
       display: grid;
-      gap: 0.9rem;
+      gap: 1rem;
     }
 
     .profile-form__section {
       display: grid;
-      gap: 0.56rem;
+      gap: 0.7rem;
     }
 
     .profile-form__section .mat-mdc-form-field {
-      font-size: 0.76rem;
+      font-size: 0.92rem;
     }
 
     .profile-form__section .mat-mdc-text-field-wrapper {
@@ -537,13 +546,13 @@ type ProfileFact = {
     }
 
     .profile-form__section .mat-mdc-form-field .mat-mdc-floating-label {
-      font-size: 0.7rem;
+      font-size: 0.82rem;
     }
 
     .form-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
+      gap: 1.1rem;
     }
 
     .form-grid__full {
@@ -553,8 +562,13 @@ type ProfileFact = {
     .toolbar-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
-      gap: 1rem;
+      gap: 1.05rem;
       align-items: end;
+    }
+
+    .toolbar-grid--security {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+      align-items: center;
     }
 
     .toolbar-grid__actions {
@@ -562,19 +576,36 @@ type ProfileFact = {
       justify-content: flex-end;
     }
 
+    .toolbar-grid__actions--security {
+      align-self: center;
+    }
+
+    .toolbar-grid__actions--security button {
+      width: auto;
+      min-width: 10.5rem;
+      height: 2.8rem;
+      min-height: 2.8rem;
+      padding-inline: 1.15rem;
+    }
+
+    .toolbar-grid--security .mat-mdc-form-field {
+      width: 100%;
+      min-width: 0;
+    }
+
     .profile-form-card mat-card-actions,
     .profile-security-card mat-card-actions {
-      padding: 0 1.2rem 1.2rem;
+      padding: 0 1.4rem 1.35rem;
     }
 
     .profile-form-card button,
     .profile-security-card button {
       min-width: 0;
-      height: 2.15rem;
-      padding: 0 0.95rem;
+      height: 2.4rem;
+      padding: 0 1rem;
       border-radius: 999px !important;
       font-family: 'IBM Plex Sans', sans-serif !important;
-      font-size: 0.72rem;
+      font-size: 0.86rem;
       font-weight: 700;
     }
 
@@ -582,12 +613,7 @@ type ProfileFact = {
     .profile-security-card button[mat-flat-button] {
       color: #ffffff !important;
       background: var(--primary) !important;
-      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
-    }
-
-    .profile-form-card button[mat-flat-button]:hover,
-    .profile-security-card button[mat-flat-button]:hover {
-      background: #1d4ed8 !important;
+      box-shadow: 0 12px 24px rgba(37, 99, 235, 0.16);
     }
 
     @media (max-width: 1080px) {

@@ -192,15 +192,25 @@ import { materialImports } from '@app/shared/material/material-imports';
             @if (!loading()) {
               <div class="streak-card">
                 <div class="streak-card__lead">
-                  <strong>{{ learningStreakDays() }} days without a break</strong>
-                  <span>The record is based on your completed lesson activity.</span>
+                  <div class="streak-card__eyebrow">
+                    <span>Live streak</span>
+                    <span class="streak-card__live-badge">Updated today</span>
+                  </div>
+                  <strong>{{ learningStreakDays() }}-day streak</strong>
+                  <span>The record is based on your latest completed lesson activity.</span>
                 </div>
 
                 <div class="streak-card__week" aria-label="Learning streak by day of week">
                   @for (day of streakTimeline(); track day.label) {
-                    <div class="streak-card__day" [class.streak-card__day--active]="day.active">
+                    <div
+                      class="streak-card__day"
+                      [class.streak-card__day--active]="day.active"
+                      [class.streak-card__day--current]="day.current">
                       <span class="streak-card__day-icon material-symbols-outlined">local_fire_department</span>
-                      <span>{{ day.label }}</span>
+                      <span class="streak-card__day-label">{{ day.label }}</span>
+                      @if (day.current) {
+                        <span class="streak-card__day-tag">Today</span>
+                      }
                     </div>
                   }
                 </div>
@@ -622,25 +632,45 @@ import { materialImports } from '@app/shared/material/material-imports';
 
     .streak-card {
       display: grid;
-      gap: 0.95rem;
+      gap: 1rem;
       padding: 0.15rem 0 0.05rem;
     }
 
     .streak-card__lead {
       display: grid;
-      gap: 0.35rem;
+      gap: 0.4rem;
+    }
+
+    .streak-card__eyebrow {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      align-items: center;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.64rem;
+      font-weight: 800;
+      color: var(--muted);
+    }
+
+    .streak-card__live-badge {
+      padding: 0.28rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, 0.08);
+      color: #1d4ed8;
+      letter-spacing: 0.08em;
     }
 
     .streak-card__lead strong {
-      font-size: 1.04rem;
+      font-size: 1.08rem;
       line-height: 1.2;
-      letter-spacing: -0.035em;
+      letter-spacing: -0.04em;
       color: var(--text-primary);
     }
 
     .streak-card__lead span {
       color: var(--muted);
-      font-size: 0.72rem;
+      font-size: 0.78rem;
       line-height: 1.45;
     }
 
@@ -651,18 +681,25 @@ import { materialImports } from '@app/shared/material/material-imports';
     }
 
     .streak-card__day {
+      position: relative;
       display: grid;
       justify-items: center;
-      gap: 0.35rem;
-      padding: 0.55rem 0.15rem 0.35rem;
+      gap: 0.3rem;
+      padding: 0.65rem 0.2rem 0.45rem;
       border-radius: 14px;
-      border: 1px solid rgba(203, 213, 225, 0.12);
+      border: 1px solid rgba(203, 213, 225, 0.16);
       background: linear-gradient(180deg, #f8fafc 0%, #f4f7fb 100%);
       color: #94a3b8;
-      font-size: 0.58rem;
+      font-size: 0.62rem;
       font-weight: 700;
       letter-spacing: 0.02em;
       line-height: 1;
+      transition:
+        transform 160ms ease,
+        box-shadow 160ms ease,
+        border-color 160ms ease,
+        background 160ms ease,
+        color 160ms ease;
     }
 
     .streak-card__day-icon {
@@ -680,6 +717,36 @@ import { materialImports } from '@app/shared/material/material-imports';
 
     .streak-card__day--active .streak-card__day-icon {
       color: #f97316;
+    }
+
+    .streak-card__day--current {
+      border-color: rgba(37, 99, 235, 0.22);
+      background: linear-gradient(180deg, rgba(37, 99, 235, 0.08), rgba(248, 250, 252, 0.98));
+      box-shadow: 0 10px 18px rgba(37, 99, 235, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .streak-card__day--current .streak-card__day-icon {
+      color: #2563eb;
+      animation: streakPulse 1.8s ease-in-out infinite;
+    }
+
+    .streak-card__day-label {
+      font-size: 0.62rem;
+    }
+
+    .streak-card__day-tag {
+      position: absolute;
+      top: -0.45rem;
+      padding: 0.12rem 0.38rem;
+      border-radius: 999px;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 0.5rem;
+      line-height: 1;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.16);
     }
 
     .streak-card__footer {
@@ -706,6 +773,18 @@ import { materialImports } from '@app/shared/material/material-imports';
 
     .streak-card__footer-item span {
       color: var(--muted);
+    }
+
+    @keyframes streakPulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.08);
+        opacity: 0.88;
+      }
     }
 
     .overview-main-grid {
@@ -1541,13 +1620,21 @@ export class StudentDashboardComponent {
     return Math.max(this.stats()?.completed_lessons ?? 0, 0);
   }
 
-  streakTimeline(): Array<{ label: string; active: boolean }> {
-    const labels = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-    const activeDays = Math.min(this.learningStreakDays(), labels.length);
-    return labels.map((label, index) => ({
-      label,
-      active: index < activeDays
-    }));
+  streakTimeline(): Array<{ label: string; active: boolean; current: boolean }> {
+    const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+    const streakDays = Math.min(this.learningStreakDays(), labels.length);
+    const todayIndex = today.getDay();
+
+    return Array.from({ length: labels.length }, (_, offset) => {
+      const dayIndex = (todayIndex - (labels.length - 1 - offset) + labels.length) % labels.length;
+      const daysFromToday = labels.length - 1 - offset;
+      return {
+        label: labels[dayIndex],
+        active: daysFromToday < streakDays,
+        current: daysFromToday === 0
+      };
+    });
   }
 
   private loadCourseProgress(courses: EnrolledCourseItem[]): void {

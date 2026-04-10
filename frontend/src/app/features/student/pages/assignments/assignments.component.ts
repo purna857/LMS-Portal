@@ -56,7 +56,7 @@ import { materialImports } from '@app/shared/material/material-imports';
       @if (filteredAssignments().length) {
         <div class="assignment-grid">
           @for (assignment of filteredAssignments(); track assignment.id) {
-            <mat-card class="surface-card">
+            <mat-card class="surface-card" [class.assignment-card--submitted]="submissionMap()[assignment.id]">
               <mat-card-content>
                 <div class="assignment-head">
                   <div>
@@ -72,6 +72,14 @@ import { materialImports } from '@app/shared/material/material-imports';
                   <span>Due: {{ assignment.due_at ? (assignment.due_at | date:'medium') : 'No due date' }}</span>
                   @if (submissionMap()[assignment.id]; as submission) {
                     <span>Submitted: {{ submission.submitted_at | date:'mediumDate' }}</span>
+                    <span class="assignment-meta__summary">
+                      <strong>Submitted</strong>
+                      @if (submission.score !== null && submission.score !== undefined) {
+                        <span>{{ submission.score }}/{{ assignment.max_score }} pts</span>
+                      } @else {
+                        <span>Awaiting grading</span>
+                      }
+                    </span>
                   }
                 </div>
 
@@ -106,9 +114,16 @@ import { materialImports } from '@app/shared/material/material-imports';
               </mat-card-content>
               <mat-card-actions align="end">
                 @if (submissionMap()[assignment.id]) {
-                  <button mat-stroked-button type="button" disabled>
-                    {{ submissionMap()[assignment.id].status === 'graded' ? 'Reviewed' : 'Submitted' }}
-                  </button>
+                  <div class="assignment-card__submission-state">
+                    <span>Submitted</span>
+                    <strong>
+                      @if (submissionMap()[assignment.id].score !== null && submissionMap()[assignment.id].score !== undefined) {
+                        {{ submissionMap()[assignment.id].score }}/{{ assignment.max_score }} pts
+                      } @else {
+                        Awaiting grading
+                      }
+                    </strong>
+                  </div>
                 } @else {
                   <button mat-flat-button color="primary" type="button" (click)="submitAssignment(assignment)">Submit</button>
                 }
@@ -156,6 +171,19 @@ import { materialImports } from '@app/shared/material/material-imports';
       font-size: 0.92rem;
     }
 
+    .assignment-meta__summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .assignment-meta__summary strong {
+      color: var(--success);
+      font-weight: 700;
+    }
+
     .submission-panel {
       display: grid;
       gap: 0.85rem;
@@ -192,6 +220,29 @@ import { materialImports } from '@app/shared/material/material-imports';
     .feedback-panel p {
       margin: 0;
       line-height: 1.55;
+    }
+
+    .assignment-card--submitted {
+      border-color: rgba(34, 197, 94, 0.18);
+    }
+
+    .assignment-card__submission-state {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.65rem;
+      width: 100%;
+      padding: 0.15rem 0;
+      color: var(--success);
+      font-size: 0.94rem;
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .assignment-card__submission-state strong {
+      color: var(--text);
+      font-weight: 700;
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush

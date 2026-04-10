@@ -4,6 +4,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import type { QuizQuestion, QuizQuestionPayload } from '@app/features/instructor/models/instructor.models';
+import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -16,88 +17,86 @@ export interface QuizQuestionDialogData {
 @Component({
   selector: 'app-quiz-question-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, ...materialImports],
+  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
   template: `
-    <h2 mat-dialog-title>{{ data.mode === 'create' ? 'Add Question' : 'Edit Question' }}</h2>
+    <app-portal-dialog-shell
+      size="xl"
+      eyebrow="Question editor"
+      [title]="data.mode === 'create' ? 'Add Question' : 'Edit Question'"
+      [description]="data.mode === 'create'
+        ? 'Add a question, define the point value, and build answer options that are easy to review.'
+        : 'Refine the question text, scoring, and answer choices while preserving the quiz structure.'"
+      (closeRequested)="dialogRef.close()">
+      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="quiz-question-form" (ngSubmit)="submit()">
+          <section class="dialog-section">
+            <div class="dialog-section__title">
+              <strong>Question details</strong>
+              <p>Write the prompt, define points, and set the grading behavior.</p>
+            </div>
 
-    <mat-dialog-content class="dialog-shell">
-      <form [formGroup]="form" class="dialog-grid">
-        <mat-form-field appearance="outline" class="dialog-grid__full">
-          <mat-label>Question</mat-label>
-          <textarea matInput rows="4" formControlName="question_text"></textarea>
-        </mat-form-field>
+            <div class="dialog-grid">
+              <mat-form-field appearance="outline" class="dialog-grid__full">
+                <mat-label>Question</mat-label>
+                <textarea matInput rows="4" formControlName="question_text"></textarea>
+              </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Points</mat-label>
-          <input matInput type="number" formControlName="points" />
-        </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Points</mat-label>
+                <input matInput type="number" formControlName="points" />
+              </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Position</mat-label>
-          <input matInput type="number" formControlName="position" />
-        </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Position</mat-label>
+                <input matInput type="number" formControlName="position" />
+              </mat-form-field>
 
-        <mat-checkbox formControlName="allow_multiple_answers" class="dialog-grid__full">Allow multiple correct answers</mat-checkbox>
+              <mat-checkbox formControlName="allow_multiple_answers" class="dialog-grid__full">Allow multiple correct answers</mat-checkbox>
 
-        <mat-form-field appearance="outline" class="dialog-grid__full">
-          <mat-label>Explanation</mat-label>
-          <textarea matInput rows="3" formControlName="explanation"></textarea>
-        </mat-form-field>
+              <mat-form-field appearance="outline" class="dialog-grid__full">
+                <mat-label>Explanation</mat-label>
+                <textarea matInput rows="3" formControlName="explanation"></textarea>
+              </mat-form-field>
+            </div>
+          </section>
 
-        <div class="options-block dialog-grid__full">
-          <div class="options-block__header">
-            <strong>Answer Options</strong>
-            <button mat-stroked-button type="button" (click)="addOption()">Add Option</button>
-          </div>
-
-          <div formArrayName="options" class="options-list">
-            @for (option of options.controls; track $index) {
-              <div class="option-row" [formGroupName]="$index">
-                <mat-form-field appearance="outline">
-                  <mat-label>Option {{ $index + 1 }}</mat-label>
-                  <input matInput formControlName="option_text" />
-                </mat-form-field>
-                <mat-checkbox formControlName="is_correct">Correct</mat-checkbox>
-                <button mat-icon-button type="button" [disabled]="options.length <= 2" (click)="removeOption($index)">
-                  <span class="material-symbols-outlined">delete</span>
-                </button>
+          <section class="dialog-section dialog-grid__full">
+            <div class="options-toolbar">
+              <div class="dialog-section__title">
+                <strong>Answer Options</strong>
+                <p>Add at least two options and mark the correct answer(s).</p>
               </div>
-            }
-          </div>
-        </div>
+              <button mat-stroked-button type="button" (click)="addOption()">Add Option</button>
+            </div>
+            <div formArrayName="options" class="options-list">
+              @for (option of options.controls; track $index) {
+                <div class="option-row" [formGroupName]="$index">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Option {{ $index + 1 }}</mat-label>
+                    <input matInput formControlName="option_text" />
+                  </mat-form-field>
+                  <mat-checkbox formControlName="is_correct">Correct</mat-checkbox>
+                  <button mat-icon-button type="button" [disabled]="options.length <= 2" (click)="removeOption($index)">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              }
+            </div>
+          </section>
       </form>
-    </mat-dialog-content>
 
-    <mat-dialog-actions align="end">
-      <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
-      <button mat-flat-button color="primary" type="button" (click)="submit()">
-        {{ data.mode === 'create' ? 'Add Question' : 'Save Question' }}
-      </button>
-    </mat-dialog-actions>
+      <div dialogFooter class="dialog-footer-actions">
+        <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
+        <button mat-flat-button color="primary" type="submit" form="quiz-question-form">
+          {{ data.mode === 'create' ? 'Add Question' : 'Save Question' }}
+        </button>
+      </div>
+    </app-portal-dialog-shell>
   `,
   styles: [`
-    .dialog-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
-      width: min(94vw, 820px);
-      max-width: 820px;
-      padding-top: 0.5rem;
-    }
-
-    .dialog-grid__full {
-      grid-column: 1 / -1;
-    }
-
-    .options-block {
-      display: grid;
-      gap: 0.9rem;
-    }
-
-    .options-block__header {
+    .options-toolbar {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 1rem;
     }
 
@@ -110,11 +109,25 @@ export interface QuizQuestionDialogData {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto auto;
       gap: 0.75rem;
-      align-items: center;
+      align-items: start;
     }
 
-    .dialog-shell {
-      overflow: hidden;
+    .option-row .mat-mdc-form-field {
+      min-width: 0;
+    }
+
+    @media (max-width: 720px) {
+      .options-toolbar {
+        flex-direction: column;
+      }
+
+      .option-row {
+        grid-template-columns: 1fr;
+      }
+
+      .option-row > :last-child {
+        justify-self: start;
+      }
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush

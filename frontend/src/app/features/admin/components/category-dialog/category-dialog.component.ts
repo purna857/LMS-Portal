@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import type { CourseCategory, CourseCategoryPayload } from '@app/features/admin/models/admin.models';
+import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -16,83 +17,82 @@ export interface CategoryDialogData {
 @Component({
   selector: 'app-category-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, ...materialImports],
+  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
   template: `
-    <h2 mat-dialog-title>{{ data.mode === 'create' ? 'Create Category' : 'Edit Category' }}</h2>
+    <app-portal-dialog-shell
+      size="md"
+      eyebrow="Catalog structure"
+      [title]="data.mode === 'create' ? 'Create Category' : 'Edit Category'"
+      [description]="data.mode === 'create'
+        ? 'Add a category that helps learners and instructors navigate the catalog more easily.'
+        : 'Adjust the category naming, hierarchy, and ordering without breaking the structure.'"
+      (closeRequested)="dialogRef.close()">
+      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="category-form" (ngSubmit)="submit()">
+          <section class="dialog-section">
+            <div class="dialog-section__title">
+              <strong>Category details</strong>
+              <p>Capture the display name, slug, hierarchy, and ordering in one place.</p>
+            </div>
 
-    <mat-dialog-content class="dialog-shell">
-      <form [formGroup]="form" class="dialog-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Name</mat-label>
-          <input matInput formControlName="name" />
-        </mat-form-field>
+            <div class="dialog-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Name</mat-label>
+                <input matInput formControlName="name" />
+              </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Slug</mat-label>
-          <input matInput formControlName="slug" />
-        </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Slug</mat-label>
+                <input matInput formControlName="slug" />
+              </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Status</mat-label>
-          <mat-select formControlName="status">
-            <mat-option value="active">Active</mat-option>
-            <mat-option value="inactive">Inactive</mat-option>
-          </mat-select>
-        </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Status</mat-label>
+                <mat-select formControlName="status">
+                  <mat-option value="active">Active</mat-option>
+                  <mat-option value="inactive">Inactive</mat-option>
+                </mat-select>
+              </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Sort Order</mat-label>
-          <input matInput type="number" formControlName="sort_order" />
-        </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Sort Order</mat-label>
+                <input matInput type="number" formControlName="sort_order" />
+              </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Parent Category</mat-label>
-          <mat-select formControlName="parent_id">
-            <mat-option [value]="null">None</mat-option>
-            @for (category of availableParents; track category.id) {
-              <mat-option [value]="category.id">{{ category.name }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+              <mat-form-field appearance="outline" class="dialog-grid__full">
+                <mat-label>Parent Category</mat-label>
+                <mat-select formControlName="parent_id">
+                  <mat-option [value]="null">None</mat-option>
+                  @for (category of availableParents; track category.id) {
+                    <mat-option [value]="category.id">{{ category.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </section>
 
-        <mat-form-field appearance="outline" class="dialog-grid__full">
-          <mat-label>Description</mat-label>
-          <textarea matInput rows="4" formControlName="description"></textarea>
-        </mat-form-field>
+          <section class="dialog-section">
+            <div class="dialog-section__title">
+              <strong>Description</strong>
+              <p>Provide supporting copy that helps the catalog feel organized and descriptive.</p>
+            </div>
+
+            <div class="dialog-grid">
+              <mat-form-field appearance="outline" class="dialog-grid__full">
+                <mat-label>Description</mat-label>
+                <textarea matInput rows="4" formControlName="description"></textarea>
+              </mat-form-field>
+            </div>
+          </section>
       </form>
-    </mat-dialog-content>
 
-    <mat-dialog-actions align="end">
-      <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
-      <button mat-flat-button color="primary" type="button" (click)="submit()">
-        {{ data.mode === 'create' ? 'Create' : 'Save Changes' }}
-      </button>
-    </mat-dialog-actions>
+      <div dialogFooter class="dialog-footer-actions">
+        <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
+        <button mat-flat-button color="primary" type="submit" form="category-form">
+          {{ data.mode === 'create' ? 'Create' : 'Save Changes' }}
+        </button>
+      </div>
+    </app-portal-dialog-shell>
   `,
-  styles: [`
-    .dialog-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
-      width: min(94vw, 640px);
-      max-width: 640px;
-      padding-top: 0.5rem;
-    }
-
-    .dialog-grid__full {
-      grid-column: 1 / -1;
-    }
-
-    .dialog-shell {
-      overflow: hidden;
-    }
-
-    @media (max-width: 720px) {
-      .dialog-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CategoryDialogComponent {

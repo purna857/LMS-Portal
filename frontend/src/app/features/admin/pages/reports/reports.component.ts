@@ -7,19 +7,22 @@ import { catchError } from 'rxjs/operators';
 
 import type { AdminAssignmentTrackerItem, AdminDashboardStats } from '@app/features/admin/models/admin.models';
 import { AdminPortalService } from '@app/features/admin/services/admin-portal.service';
+import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
+import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '@app/shared/components/page-header/page-header.component';
 import { materialImports } from '@app/shared/material/material-imports';
+import { chipToneForSubmissionStatus } from '@app/shared/utils/chip-tone';
 
 
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [PageHeaderComponent, ...materialImports],
+  imports: [EmptyStateComponent, PageHeaderComponent, ...materialImports],
   template: `
     <section class="page-section">
       <app-page-header
         eyebrow="Admin"
-        title="Reports & Analytics"
+        title="Platform Reports"
         description="Track platform health, teaching capacity, assessment coverage, and operational throughput from one reporting view.">
       </app-page-header>
 
@@ -99,20 +102,20 @@ import { materialImports } from '@app/shared/material/material-imports';
           <mat-card-title>Assignment Tracking</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          @if (assignmentTracker().length) {
+          @if (filteredAssignmentTracker().length) {
             <div class="stack-list">
-              @for (item of assignmentTracker(); track item.submission_id) {
+              @for (item of filteredAssignmentTracker(); track item.submission_id) {
                 <div class="stack-list__item">
                   <div>
                     <strong>{{ item.assignment_title }}</strong>
                     <p>{{ item.course_title }} · {{ item.student_name }} · {{ item.student_email }}</p>
                     <mat-chip-set>
-                      <mat-chip>{{ item.status }}</mat-chip>
+                      <mat-chip [attr.data-tone]="chipToneForSubmissionStatus(item.status)">{{ item.status }}</mat-chip>
                       @if (item.score !== null && item.score !== undefined) {
-                        <mat-chip color="primary">{{ item.score }}/{{ item.max_score }} pts</mat-chip>
+                        <mat-chip data-tone="info">{{ item.score }}/{{ item.max_score }} pts</mat-chip>
                       }
                       @if (item.is_late) {
-                        <mat-chip color="warn">Late</mat-chip>
+                        <mat-chip data-tone="danger">Late</mat-chip>
                       }
                     </mat-chip-set>
                   </div>
@@ -125,8 +128,18 @@ import { materialImports } from '@app/shared/material/material-imports';
                 </div>
               }
             </div>
+          } @else if (assignmentTracker().length) {
+            <app-empty-state
+              icon="search_off"
+              [title]="workspaceSearch.normalizedQuery() ? 'No matching assignments' : 'Assignment activity will appear here'"
+              [description]="workspaceSearch.normalizedQuery() ? 'Try a different assignment title, course, student, or status.' : 'Assignment submissions will appear here once students start turning in work.'">
+            </app-empty-state>
           } @else {
-            <p class="visual-card__summary">Assignment submissions will appear here once students start turning in work.</p>
+            <app-empty-state
+              icon="assignment"
+              title="Assignment activity will appear here"
+              description="Assignment submissions will appear here once students start turning in work.">
+            </app-empty-state>
           }
         </mat-card-content>
       </mat-card>
@@ -214,23 +227,26 @@ import { materialImports } from '@app/shared/material/material-imports';
     }
 
     .stack-list__item {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 1rem;
       align-items: start;
-      padding: 1rem 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .stack-list__item:last-child {
-      border-bottom: 0;
-      padding-bottom: 0;
+      padding: 1rem 1.05rem;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(248, 251, 255, 0.92), #ffffff 72%);
     }
 
     .stack-list__item p {
       margin: 0.35rem 0 0.75rem;
       color: var(--muted);
       line-height: 1.5;
+    }
+
+    .stack-list__item .mat-mdc-chip-set {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
     }
 
     .tracker-meta {
@@ -246,6 +262,16 @@ import { materialImports } from '@app/shared/material/material-imports';
       font-weight: 600;
       text-decoration: none;
     }
+
+    @media (max-width: 720px) {
+      .stack-list__item {
+        grid-template-columns: 1fr;
+      }
+
+      .stack-list__item > :last-child {
+        justify-self: start;
+      }
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -253,10 +279,29 @@ export class ReportsComponent {
   private readonly adminPortalService = inject(AdminPortalService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  readonly workspaceSearch = inject(WorkspaceSearchService);
 
   readonly loading = signal(true);
   readonly stats = signal<AdminDashboardStats | null>(null);
   readonly assignmentTracker = signal<AdminAssignmentTrackerItem[]>([]);
+  readonly filteredAssignmentTracker = computed(() => {
+    const query = this.workspaceSearch.normalizedQuery();
+    if (!query) {
+      return this.assignmentTracker();
+    }
+
+    return this.assignmentTracker().filter((item) =>
+      this.workspaceSearch.matches(
+        item.assignment_title,
+        item.course_title,
+        item.student_name,
+        item.student_email,
+        item.status,
+        item.feedback,
+        item.submission_file_name
+      )
+    );
+  });
 
   readonly activeEnrollmentRate = computed(() => {
     const stats = this.stats();
@@ -295,6 +340,8 @@ export class ReportsComponent {
       { label: 'Published Courses', value: String(stats.published_courses), hint: `${stats.total_courses} courses exist in total` }
     ];
   });
+
+  readonly chipToneForSubmissionStatus = chipToneForSubmissionStatus;
 
   constructor() {
     forkJoin({

@@ -1,20 +1,24 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { AdminActionDialogComponent } from '@app/features/admin/components/admin-action-dialog/admin-action-dialog.component';
 import { AssignmentDialogComponent } from '@app/features/instructor/components/assignment-dialog/assignment-dialog.component';
 import { AssignmentReviewDialogComponent } from '@app/features/instructor/components/assignment-review-dialog/assignment-review-dialog.component';
 import type { Assignment, AssignmentSubmission, CourseListItem, CourseModule, Lesson } from '@app/features/instructor/models/instructor.models';
+import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { InstructorPortalService } from '@app/features/instructor/services/instructor-portal.service';
 import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '@app/shared/components/page-header/page-header.component';
+import { portalDialogConfig } from '@app/shared/dialogs/portal-dialog-helpers';
 import { materialImports } from '@app/shared/material/material-imports';
+import { chipToneForCourseStatus, chipToneForSubmissionStatus } from '@app/shared/utils/chip-tone';
 
 
 @Component({
@@ -25,9 +29,24 @@ import { materialImports } from '@app/shared/material/material-imports';
     <section class="page-section">
       <app-page-header
         eyebrow="Instructor"
-        title="Assignments"
+        title="Assignment Review"
         description="Create assessments, tune due dates, and review learner submissions with grading feedback.">
       </app-page-header>
+
+      <div class="page-grid">
+        @for (card of summaryCards(); track card.label) {
+          <mat-card class="stat-card stat-card--metric">
+            <mat-card-content>
+              <div class="metric-card__top">
+                <span class="metric-card__icon material-symbols-outlined">{{ card.icon }}</span>
+                <p class="metric-card__label">{{ card.label }}</p>
+              </div>
+              <strong class="metric-card__value">{{ card.value }}</strong>
+              <span class="metric-card__hint">{{ card.hint }}</span>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
 
       <mat-card class="surface-card">
         <mat-card-content>
@@ -56,9 +75,9 @@ import { materialImports } from '@app/shared/material/material-imports';
               <mat-progress-bar mode="indeterminate"></mat-progress-bar>
             }
 
-            @if (assignments().length) {
+            @if (filteredAssignments().length) {
               <div class="table-wrap">
-                <table mat-table [dataSource]="assignments()" class="data-table">
+                <table mat-table [dataSource]="filteredAssignments()" class="data-table">
                   <ng-container matColumnDef="title">
                     <th mat-header-cell *matHeaderCellDef>Assignment</th>
                     <td mat-cell *matCellDef="let assignment">
@@ -73,10 +92,10 @@ import { materialImports } from '@app/shared/material/material-imports';
                     <th mat-header-cell *matHeaderCellDef>Status</th>
                     <td mat-cell *matCellDef="let assignment">
                       <mat-chip-set>
-                        <mat-chip [highlighted]="assignment.status === 'published'">{{ assignment.status }}</mat-chip>
-                        <mat-chip>{{ assignment.max_score }} pts</mat-chip>
+                        <mat-chip [attr.data-tone]="chipToneForCourseStatus(assignment.status)">{{ assignment.status }}</mat-chip>
+                        <mat-chip data-tone="info">{{ assignment.max_score }} pts</mat-chip>
                         @if (submissionCountMap()[assignment.id]) {
-                          <mat-chip color="primary">
+                          <mat-chip data-tone="success">
                             {{ submissionCountMap()[assignment.id] }} submission{{ submissionCountMap()[assignment.id] === 1 ? '' : 's' }}
                           </mat-chip>
                         }
@@ -99,6 +118,12 @@ import { materialImports } from '@app/shared/material/material-imports';
                   <tr mat-row *matRowDef="let row; columns: assignmentColumns"></tr>
                 </table>
               </div>
+            } @else if (assignments().length) {
+              <app-empty-state
+                icon="search_off"
+                [title]="workspaceSearch.normalizedQuery() ? 'No matching assignments' : 'No assignments yet'"
+                [description]="workspaceSearch.normalizedQuery() ? 'Try a different assignment title, status, course, or score keyword.' : 'Create an assignment for the selected course to start collecting work.'">
+              </app-empty-state>
             } @else {
               <app-empty-state
                 icon="assignment"
@@ -118,9 +143,9 @@ import { materialImports } from '@app/shared/material/material-imports';
               <mat-progress-bar mode="indeterminate"></mat-progress-bar>
             }
 
-            @if (submissions().length) {
+            @if (filteredSubmissions().length) {
               <div class="stack-list">
-                @for (submission of submissions(); track submission.submission_id) {
+                @for (submission of filteredSubmissions(); track submission.submission_id) {
                   <div class="stack-list__item">
                     <div>
                       <strong>{{ submission.student_name }}</strong>
@@ -131,12 +156,12 @@ import { materialImports } from '@app/shared/material/material-imports';
                         </a>
                       }
                       <mat-chip-set>
-                        <mat-chip>{{ submission.status }}</mat-chip>
+                        <mat-chip [attr.data-tone]="chipToneForSubmissionStatus(submission.status)">{{ submission.status }}</mat-chip>
                         @if (submission.score !== null && submission.score !== undefined) {
-                          <mat-chip>{{ submission.score }} pts</mat-chip>
+                          <mat-chip data-tone="info">{{ submission.score }} pts</mat-chip>
                         }
                         @if (submission.is_late) {
-                          <mat-chip>Late</mat-chip>
+                          <mat-chip data-tone="danger">Late</mat-chip>
                         }
                       </mat-chip-set>
                     </div>
@@ -144,6 +169,12 @@ import { materialImports } from '@app/shared/material/material-imports';
                   </div>
                 }
               </div>
+            } @else if (submissions().length) {
+              <app-empty-state
+                icon="search_off"
+                [title]="workspaceSearch.normalizedQuery() ? 'No matching submissions' : 'No submissions to review'"
+                [description]="workspaceSearch.normalizedQuery() ? 'Try a different student name, email, status, or score keyword.' : 'Student submissions for the selected course will appear here automatically.'">
+              </app-empty-state>
             } @else {
               <app-empty-state
                 icon="grading"
@@ -163,35 +194,33 @@ import { materialImports } from '@app/shared/material/material-imports';
       gap: 1.25rem;
     }
 
-    .action-row,
-    .stack-list {
-      display: grid;
-      gap: 0.75rem;
-    }
-
     .action-row {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
+      align-items: center;
+    }
+
+    .stack-list {
+      display: grid;
+      gap: 0.9rem;
     }
 
     .stack-list__item {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 1rem;
       align-items: start;
-      padding-bottom: 0.85rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .stack-list__item:last-child {
-      border-bottom: 0;
-      padding-bottom: 0;
+      padding: 1rem 1.05rem;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(248, 251, 255, 0.92), #ffffff 72%);
     }
 
     .stack-list__item p {
       margin: 0.35rem 0 0.75rem;
       color: var(--muted);
+      line-height: 1.5;
     }
 
     .submission-asset {
@@ -204,6 +233,22 @@ import { materialImports } from '@app/shared/material/material-imports';
 
     .action-row button:first-child {
       font-weight: 700;
+    }
+
+    .stack-list__item .mat-mdc-chip-set {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    @media (max-width: 720px) {
+      .stack-list__item {
+        grid-template-columns: 1fr;
+      }
+
+      .stack-list__item > :last-child {
+        justify-self: start;
+      }
     }
 
     @media (max-width: 1100px) {
@@ -220,6 +265,8 @@ export class AssignmentsComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  readonly workspaceSearch = inject(WorkspaceSearchService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly courses = signal<CourseListItem[]>([]);
   readonly assignments = signal<Assignment[]>([]);
@@ -232,6 +279,77 @@ export class AssignmentsComponent {
   readonly selectedAssignment = signal<Assignment | null>(null);
   readonly selectedCourseId = signal<string | null>(null);
   readonly assignmentColumns = ['title', 'status', 'actions'];
+  readonly chipToneForCourseStatus = chipToneForCourseStatus;
+  readonly chipToneForSubmissionStatus = chipToneForSubmissionStatus;
+  readonly summaryCards = computed(() => {
+    const assignments = this.assignments();
+    const submissions = this.submissions();
+    const totalSubmissions = Object.values(this.submissionCountMap()).reduce((total, count) => total + count, 0);
+
+    return [
+      {
+        label: 'Assignments',
+        value: String(assignments.length),
+        hint: 'Assessment items in the selected course',
+        icon: 'assignment'
+      },
+      {
+        label: 'Published',
+        value: String(assignments.filter((assignment) => assignment.status === 'published').length),
+        hint: 'Assignments visible to learners',
+        icon: 'rocket_launch'
+      },
+      {
+        label: 'Submissions',
+        value: String(totalSubmissions),
+        hint: 'Total submissions collected across the course',
+        icon: 'upload_file'
+      },
+      {
+        label: 'In Review',
+        value: String(submissions.length),
+        hint: 'Selected assignment submissions ready for grading',
+        icon: 'grading'
+      }
+    ];
+  });
+  readonly filteredAssignments = computed(() => {
+    const query = this.workspaceSearch.normalizedQuery();
+    if (!query) {
+      return this.assignments();
+    }
+
+    return this.assignments().filter((assignment) =>
+      this.workspaceSearch.matches(
+        assignment.title,
+        assignment.description,
+        assignment.instructions,
+        assignment.status,
+        String(assignment.max_score),
+        assignment.due_at,
+        assignment.allow_late_submission ? 'allow late submission' : null
+      )
+    );
+  });
+  readonly filteredSubmissions = computed(() => {
+    const query = this.workspaceSearch.normalizedQuery();
+    if (!query) {
+      return this.submissions();
+    }
+
+    return this.submissions().filter((submission) =>
+      this.workspaceSearch.matches(
+        submission.student_name,
+        submission.student_email,
+        submission.status,
+        submission.submission_text,
+        submission.submission_link,
+        submission.feedback,
+        submission.submission_file_name,
+        submission.score !== null && submission.score !== undefined ? String(submission.score) : null
+      )
+    );
+  });
 
   readonly courseForm = this.formBuilder.group({
     course_id: ['']
@@ -258,8 +376,9 @@ export class AssignmentsComponent {
       .subscribe({
         next: (response) => {
           this.courses.set(response.items);
-          const first = response.items[0]?.id ?? '';
-          this.courseForm.patchValue({ course_id: first });
+          const preferredCourseId = this.route.snapshot.queryParamMap.get('courseId') ?? '';
+          const selectedCourseId = response.items.find((course) => course.id === preferredCourseId)?.id ?? response.items[0]?.id ?? '';
+          this.courseForm.patchValue({ course_id: selectedCourseId });
         },
         error: (error: HttpErrorResponse) => {
           this.snackBar.open(error.error?.detail ?? 'Unable to load instructor courses.', 'Dismiss', { duration: 4500 });
@@ -361,11 +480,7 @@ export class AssignmentsComponent {
         modules: this.modules(),
         lessons: this.lessons()
       },
-      panelClass: ['lms-dialog-panel', 'lms-assignment-dialog'],
-      width: '760px',
-      maxWidth: '94vw',
-      maxHeight: '88vh',
-      autoFocus: false
+      ...portalDialogConfig('xl')
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {
@@ -397,11 +512,7 @@ export class AssignmentsComponent {
         confirmLabel: 'Delete Assignment',
         confirmColor: 'warn'
       },
-      panelClass: ['lms-dialog-panel'],
-      width: '420px',
-      maxWidth: '92vw',
-      maxHeight: '80vh',
-      autoFocus: false
+      ...portalDialogConfig('sm')
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
@@ -449,11 +560,7 @@ export class AssignmentsComponent {
         submission,
         maxScore: this.selectedAssignment()?.max_score ?? 100
       },
-      panelClass: ['lms-dialog-panel', 'lms-assignment-dialog'],
-      width: '620px',
-      maxWidth: '92vw',
-      maxHeight: '88vh',
-      autoFocus: false
+      ...portalDialogConfig('lg')
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {

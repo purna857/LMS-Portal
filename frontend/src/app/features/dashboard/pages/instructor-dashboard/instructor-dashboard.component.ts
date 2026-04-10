@@ -26,10 +26,10 @@ import { materialImports } from '@app/shared/material/material-imports';
       <div class="dashboard-hero dashboard-hero--instructor">
         <mat-card class="surface-card hero-card">
           <mat-card-content>
-            <p class="hero-card__eyebrow">Instructor Hub</p>
-            <h1>Welcome back, Instructor!</h1>
+            <p class="hero-card__eyebrow">Teaching Workflow</p>
+            <h1>Your course studio is ready.</h1>
             <p class="hero-card__description">
-              Your students are making steady progress this week across courses, lessons, assignments, and quizzes.
+              Manage course drafts, curriculum structure, assessments, learner progress, and announcements from one teaching command center.
             </p>
 
             @if (featuredCourse(); as course) {
@@ -45,6 +45,15 @@ import { materialImports } from '@app/shared/material/material-imports';
                 </div>
               </div>
             }
+
+            <div class="hero-actions">
+              <a mat-stroked-button routerLink="/app/instructor/courses">Course Studio</a>
+              <a mat-stroked-button routerLink="/app/instructor/content">Curriculum Builder</a>
+              <a mat-stroked-button routerLink="/app/instructor/assignments">Assignments</a>
+              <a mat-stroked-button routerLink="/app/instructor/quizzes">Assessments</a>
+              <a mat-stroked-button routerLink="/app/instructor/analytics">Insights</a>
+              <a mat-stroked-button routerLink="/app/instructor/announcements">Broadcasts</a>
+            </div>
           </mat-card-content>
         </mat-card>
 
@@ -61,6 +70,27 @@ import { materialImports } from '@app/shared/material/material-imports';
               <div class="dashboard-kpi-card__ring-value">{{ averageProgressValue() }}</div>
             </div>
             <span class="dashboard-kpi-card__label">Average course completion across active learners</span>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="workflow-grid">
+        <mat-card class="surface-card workflow-card">
+          <mat-card-header>
+            <mat-card-title>Course Studio Path</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            @for (step of workflowSteps(); track step.title) {
+              <article class="workflow-step">
+                <span class="workflow-step__index">{{ step.step }}</span>
+                <span class="workflow-step__icon material-symbols-outlined">{{ step.icon }}</span>
+                <div class="workflow-step__copy">
+                  <p>{{ step.title }}</p>
+                  <strong>{{ step.description }}</strong>
+                </div>
+                <a mat-stroked-button [routerLink]="step.route" [queryParams]="step.queryParams">{{ step.cta }}</a>
+              </article>
+            }
           </mat-card-content>
         </mat-card>
       </div>
@@ -136,7 +166,7 @@ import { materialImports } from '@app/shared/material/material-imports';
       <div class="dashboard-split">
         <mat-card class="surface-card">
           <mat-card-header>
-            <mat-card-title>Teaching Checklist</mat-card-title>
+            <mat-card-title>Course Operations</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             <div class="insight-list">
@@ -158,7 +188,7 @@ import { materialImports } from '@app/shared/material/material-imports';
 
         <mat-card class="surface-card">
           <mat-card-header>
-            <mat-card-title>Recent Notifications</mat-card-title>
+            <mat-card-title>Broadcast Feed</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             @if (!loading() && notifications().length) {
@@ -305,6 +335,21 @@ import { materialImports } from '@app/shared/material/material-imports';
       font-size: 0.7rem;
     }
 
+    .hero-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-top: 0.15rem;
+    }
+
+    .hero-actions a {
+      width: 100%;
+      min-height: 2.8rem;
+      justify-content: center;
+      border-radius: 16px;
+      font-weight: 700;
+    }
+
     .dashboard-kpi-card__ring {
       position: relative;
       display: grid;
@@ -361,6 +406,76 @@ import { materialImports } from '@app/shared/material/material-imports';
       color: var(--muted);
       line-height: 1.35;
       font-size: 0.7rem;
+    }
+
+    .workflow-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .workflow-card mat-card-content {
+      display: grid;
+      gap: 0.8rem;
+      padding-top: 0.35rem;
+    }
+
+    .workflow-step {
+      display: grid;
+      grid-template-columns: 56px 42px minmax(0, 1fr) auto;
+      gap: 0.85rem;
+      align-items: center;
+      padding: 0.95rem 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(248, 251, 255, 0.95), #ffffff 74%);
+    }
+
+    .workflow-step__index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2rem;
+      padding: 0 0.7rem;
+      border-radius: 999px;
+      background: #0f172a;
+      color: #fff;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .workflow-step__icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: #eef4ff;
+      color: var(--primary);
+      font-size: 1.05rem;
+    }
+
+    .workflow-step__copy {
+      min-width: 0;
+    }
+
+    .workflow-step__copy p {
+      margin: 0;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.58rem;
+      font-weight: 800;
+    }
+
+    .workflow-step__copy strong {
+      display: block;
+      margin-top: 0.25rem;
+      font-size: 0.84rem;
+      line-height: 1.35;
+      letter-spacing: -0.03em;
     }
 
     .course-highlight-grid {
@@ -442,6 +557,31 @@ import { materialImports } from '@app/shared/material/material-imports';
       line-height: 1.25;
       letter-spacing: -0.018em;
     }
+
+    @media (max-width: 900px) {
+      .hero-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .workflow-step {
+        grid-template-columns: 56px 42px minmax(0, 1fr);
+      }
+
+      .workflow-step a {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .hero-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .workflow-step {
+        grid-template-columns: 1fr;
+      }
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -500,6 +640,60 @@ export class InstructorDashboardComponent {
       { label: 'Assessments Live', value: String(stats.total_assignments + stats.total_quizzes), hint: 'Assignments and quizzes combined', icon: 'quiz' },
       { label: 'Avg Completion', value: `${stats.average_student_progress_percentage.toFixed(0)}%`, hint: 'Average course completion', icon: 'trending_up' },
       { label: 'Teaching Load', value: String(stats.total_enrollments), hint: 'Active and completed learning seats', icon: 'insights' }
+    ];
+  });
+  readonly workflowSteps = computed(() => {
+    const course = this.featuredCourse();
+    const courseId = course?.id ?? '';
+    const courseQueryParams = courseId ? { courseId } : null;
+    return [
+      {
+        step: '01',
+        title: course ? `Continue "${course.title}"` : 'Create your first course',
+        description: course
+          ? 'Resume the draft or latest course and move it toward publish-ready quality.'
+          : 'Start a course draft and define the learning structure.',
+        route: '/app/instructor/courses',
+        cta: course ? 'course studio' : 'create course',
+        icon: 'library_books',
+        queryParams: null
+      },
+      {
+        step: '02',
+        title: 'Build curriculum',
+        description: 'Organize modules and lessons into a clear teaching sequence.',
+        route: '/app/instructor/content',
+        cta: 'curriculum',
+        icon: 'topic',
+        queryParams: courseQueryParams
+      },
+      {
+        step: '03',
+        title: 'Shape assessments',
+        description: 'Create quizzes and assignments to measure student understanding.',
+        route: '/app/instructor/quizzes',
+        cta: 'assessments',
+        icon: 'quiz',
+        queryParams: courseQueryParams
+      },
+      {
+        step: '04',
+        title: 'Review learners',
+        description: 'Monitor enrollments and progress across the roster.',
+        route: '/app/instructor/students',
+        cta: 'learners',
+        icon: 'group',
+        queryParams: courseQueryParams
+      },
+      {
+        step: '05',
+        title: 'Broadcast updates',
+        description: 'Publish announcements to keep enrolled learners informed.',
+        route: '/app/instructor/announcements',
+        cta: 'broadcasts',
+        icon: 'notifications_active',
+        queryParams: courseQueryParams
+      }
     ];
   });
 

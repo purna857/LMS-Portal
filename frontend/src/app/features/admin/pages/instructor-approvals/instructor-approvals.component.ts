@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -8,10 +8,13 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { AdminActionDialogComponent } from '@app/features/admin/components/admin-action-dialog/admin-action-dialog.component';
 import type { InstructorApprovalItem } from '@app/features/admin/models/admin.models';
+import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { AdminPortalService } from '@app/features/admin/services/admin-portal.service';
 import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '@app/shared/components/page-header/page-header.component';
+import { portalDialogConfig } from '@app/shared/dialogs/portal-dialog-helpers';
 import { materialImports } from '@app/shared/material/material-imports';
+import { chipToneForApprovalStatus, chipToneForUserStatus } from '@app/shared/utils/chip-tone';
 
 
 @Component({
@@ -22,9 +25,24 @@ import { materialImports } from '@app/shared/material/material-imports';
     <section class="page-section">
       <app-page-header
         eyebrow="Admin"
-        title="Instructor Approvals"
+        title="Instructor Reviews"
         description="Review teaching applications, verify expertise, and control who can publish learning content.">
       </app-page-header>
+
+      <div class="page-grid">
+        @for (card of summaryCards(); track card.label) {
+          <mat-card class="stat-card stat-card--metric">
+            <mat-card-content>
+              <div class="metric-card__top">
+                <span class="metric-card__icon material-symbols-outlined">{{ card.icon }}</span>
+                <p class="metric-card__label">{{ card.label }}</p>
+              </div>
+              <strong class="metric-card__value">{{ card.value }}</strong>
+              <span class="metric-card__hint">{{ card.hint }}</span>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
 
       <mat-card class="surface-card">
         <mat-card-content>
@@ -54,9 +72,9 @@ import { materialImports } from '@app/shared/material/material-imports';
             <mat-progress-bar mode="indeterminate"></mat-progress-bar>
           }
 
-          @if (approvals().length) {
+          @if (filteredApprovals().length) {
             <div class="table-wrap">
-              <table mat-table [dataSource]="approvals()" class="data-table">
+              <table mat-table [dataSource]="filteredApprovals()" class="data-table">
                 <ng-container matColumnDef="applicant">
                   <th mat-header-cell *matHeaderCellDef>Applicant</th>
                   <td mat-cell *matCellDef="let item">
@@ -81,8 +99,8 @@ import { materialImports } from '@app/shared/material/material-imports';
                   <th mat-header-cell *matHeaderCellDef>Status</th>
                   <td mat-cell *matCellDef="let item">
                     <mat-chip-set>
-                      <mat-chip>{{ item.approval_status }}</mat-chip>
-                      <mat-chip>{{ item.user_status }}</mat-chip>
+                      <mat-chip [attr.data-tone]="chipToneForApprovalStatus(item.approval_status)">{{ item.approval_status }}</mat-chip>
+                      <mat-chip [attr.data-tone]="chipToneForUserStatus(item.user_status)">{{ item.user_status }}</mat-chip>
                     </mat-chip-set>
                   </td>
                 </ng-container>
@@ -120,6 +138,12 @@ import { materialImports } from '@app/shared/material/material-imports';
                 <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
               </table>
             </div>
+          } @else if (approvals().length) {
+            <app-empty-state
+              icon="search_off"
+              [title]="workspaceSearch.normalizedQuery() ? 'No matching approvals' : 'No approval requests found'"
+              [description]="workspaceSearch.normalizedQuery() ? 'Try a different name, email, expertise, or status.' : 'Instructor applications that match this filter will appear here.'">
+            </app-empty-state>
           } @else {
             <app-empty-state
               icon="how_to_reg"
@@ -136,6 +160,7 @@ import { materialImports } from '@app/shared/material/material-imports';
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
+      align-items: center;
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -146,10 +171,62 @@ export class InstructorApprovalsComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  readonly workspaceSearch = inject(WorkspaceSearchService);
 
   readonly loading = signal(false);
   readonly approvals = signal<InstructorApprovalItem[]>([]);
   readonly displayedColumns = ['applicant', 'profile', 'status', 'submitted', 'actions'];
+  readonly filteredApprovals = computed(() => {
+    const query = this.workspaceSearch.normalizedQuery();
+    if (!query) {
+      return this.approvals();
+    }
+
+    return this.approvals().filter((item) =>
+      this.workspaceSearch.matches(
+        item.first_name,
+        item.last_name,
+        item.email,
+        item.headline,
+        item.expertise,
+        item.approval_status,
+        item.user_status,
+        item.review_notes
+      )
+    );
+  });
+  readonly summaryCards = computed(() => {
+    const approvals = this.approvals();
+    return [
+      {
+        label: 'Requests',
+        value: String(approvals.length),
+        hint: 'Instructor applications in the current filter',
+        icon: 'pending_actions'
+      },
+      {
+        label: 'Submitted',
+        value: String(approvals.filter((item) => item.approval_status === 'submitted').length),
+        hint: 'Fresh requests awaiting triage',
+        icon: 'inbox'
+      },
+      {
+        label: 'Under Review',
+        value: String(approvals.filter((item) => item.approval_status === 'under_review').length),
+        hint: 'Applications actively being evaluated',
+        icon: 'fact_check'
+      },
+      {
+        label: 'Approved',
+        value: String(approvals.filter((item) => item.approval_status === 'approved').length),
+        hint: 'Instructors cleared to publish content',
+        icon: 'verified'
+      }
+    ];
+  });
+
+  readonly chipToneForApprovalStatus = chipToneForApprovalStatus;
+  readonly chipToneForUserStatus = chipToneForUserStatus;
 
   readonly filterForm = this.formBuilder.group({
     status: ['submitted']
@@ -191,11 +268,7 @@ export class InstructorApprovalsComponent {
         noteLabel: 'Review Notes',
         notePlaceholder: 'Add optional review notes for your decision'
       },
-      panelClass: ['lms-dialog-panel'],
-      width: '420px',
-      maxWidth: '92vw',
-      maxHeight: '80vh',
-      autoFocus: false
+      ...portalDialogConfig('sm')
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {

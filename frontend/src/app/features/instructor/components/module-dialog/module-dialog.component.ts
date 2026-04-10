@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import type { CourseModule, CourseModulePayload } from '@app/features/instructor/models/instructor.models';
+import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -15,65 +16,70 @@ export interface ModuleDialogData {
 @Component({
   selector: 'app-module-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, ...materialImports],
+  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
   template: `
-    <h2 mat-dialog-title>{{ data.mode === 'create' ? 'Create Module' : 'Edit Module' }}</h2>
+    <app-portal-dialog-shell
+      size="md"
+      eyebrow="Module builder"
+      [title]="data.mode === 'create' ? 'Create Module' : 'Edit Module'"
+      [description]="data.mode === 'create'
+        ? 'Organize lessons into a focused module that gives learners a clear progression.'
+        : 'Refine the module title, order, visibility, and preview access in one place.'"
+      (closeRequested)="dialogRef.close()">
+      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="module-form" (ngSubmit)="submit()">
+          <section class="dialog-section">
+            <div class="dialog-section__title">
+              <strong>Module details</strong>
+              <p>Set the module title, order, and publication state.</p>
+            </div>
 
-    <mat-dialog-content class="dialog-shell">
-      <form [formGroup]="form" class="dialog-grid">
-        <mat-form-field appearance="outline" class="dialog-grid__full">
-          <mat-label>Title</mat-label>
-          <input matInput formControlName="title" />
-        </mat-form-field>
+            <div class="dialog-grid">
+              <mat-form-field appearance="outline" class="dialog-grid__full">
+                <mat-label>Title</mat-label>
+                <input matInput formControlName="title" />
+              </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Position</mat-label>
-          <input matInput type="number" formControlName="position" />
-        </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Position</mat-label>
+                <input matInput type="number" formControlName="position" />
+              </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Status</mat-label>
-          <mat-select formControlName="status">
-            <mat-option value="draft">Draft</mat-option>
-            <mat-option value="published">Published</mat-option>
-            <mat-option value="archived">Archived</mat-option>
-          </mat-select>
-        </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Status</mat-label>
+                <mat-select formControlName="status">
+                  <mat-option value="draft">Draft</mat-option>
+                  <mat-option value="published">Published</mat-option>
+                  <mat-option value="archived">Archived</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </section>
 
-        <mat-checkbox formControlName="is_preview" class="dialog-grid__full">Allow preview access</mat-checkbox>
+          <section class="dialog-section">
+            <div class="dialog-section__title">
+              <strong>Access & summary</strong>
+              <p>Control preview access and provide a concise summary for the module.</p>
+            </div>
 
-        <mat-form-field appearance="outline" class="dialog-grid__full">
-          <mat-label>Description</mat-label>
-          <textarea matInput rows="4" formControlName="description"></textarea>
-        </mat-form-field>
+            <div class="dialog-grid">
+              <mat-checkbox formControlName="is_preview" class="dialog-grid__full">Allow preview access</mat-checkbox>
+
+              <mat-form-field appearance="outline" class="dialog-grid__full">
+                <mat-label>Description</mat-label>
+                <textarea matInput rows="4" formControlName="description"></textarea>
+              </mat-form-field>
+            </div>
+          </section>
       </form>
-    </mat-dialog-content>
 
-    <mat-dialog-actions align="end">
-      <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
-      <button mat-flat-button color="primary" type="button" (click)="submit()">
-        {{ data.mode === 'create' ? 'Create Module' : 'Save Module' }}
-      </button>
-    </mat-dialog-actions>
+      <div dialogFooter class="dialog-footer-actions">
+        <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
+        <button mat-flat-button color="primary" type="submit" form="module-form">
+          {{ data.mode === 'create' ? 'Create Module' : 'Save Module' }}
+        </button>
+      </div>
+    </app-portal-dialog-shell>
   `,
-  styles: [`
-    .dialog-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
-      width: min(94vw, 620px);
-      max-width: 620px;
-      padding-top: 0.5rem;
-    }
-
-    .dialog-grid__full {
-      grid-column: 1 / -1;
-    }
-
-    .dialog-shell {
-      overflow: hidden;
-    }
-  `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ModuleDialogComponent {

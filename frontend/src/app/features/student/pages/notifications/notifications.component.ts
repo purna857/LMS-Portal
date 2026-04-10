@@ -18,6 +18,7 @@ import { materialImports } from '@app/shared/material/material-imports';
   template: `
     <section class="page-section">
       <app-page-header
+        class="notifications-page-header"
         eyebrow="Student"
         title="Notifications"
         description="Stay up to date with course announcements, grading updates, and platform alerts.">
@@ -54,28 +55,23 @@ import { materialImports } from '@app/shared/material/material-imports';
 
       @if (!loading() && filteredNotifications().length) {
         <mat-card class="surface-card notification-card">
-          <mat-card-header class="notification-card__header">
-            <div>
-              <mat-card-title>Inbox</mat-card-title>
+          <div class="notification-card__header">
+            <div class="notification-card__header-copy">
+              <h2>Inbox</h2>
               <p class="notification-card__subtitle">Newest updates from your courses and the platform.</p>
             </div>
             <span class="notification-card__badge">{{ filteredNotifications().length }} visible</span>
-          </mat-card-header>
+          </div>
           <mat-card-content>
             <div class="notification-list">
               @for (notification of filteredNotifications(); track notification.id) {
                 <article class="notification-item" [class.notification-item--read]="notification.is_read">
                   <div class="notification-item__icon">
-                    <mat-icon>{{ notification.is_read ? 'drafts' : 'notifications_active' }}</mat-icon>
+                    <span>{{ notificationAvatarLabel(notification) }}</span>
                   </div>
                   <div class="notification-item__copy">
                     <div class="notification-item__eyebrow">
                       <span>{{ formatNotificationType(notification.notification_type) }}</span>
-                      @if (!notification.is_read) {
-                        <strong>New</strong>
-                      } @else {
-                        <strong class="notification-item__eyebrow--muted">Read</strong>
-                      }
                     </div>
                     <strong>{{ notification.title }}</strong>
                     <p>{{ notification.body }}</p>
@@ -117,6 +113,30 @@ import { materialImports } from '@app/shared/material/material-imports';
       gap: 1.1rem;
     }
 
+    .notifications-page-header {
+      width: 100%;
+    }
+
+    .notifications-page-header :global(.page-header) {
+      justify-content: flex-start;
+      align-items: flex-start;
+      width: 100%;
+      padding-inline: 1.15rem;
+    }
+
+    .notifications-page-header :global(.page-header__copy) {
+      width: 100%;
+      max-width: none;
+    }
+
+    .notifications-page-header :global(.page-header h1) {
+      color: #14213d;
+    }
+
+    .notifications-page-header :global(.page-header__description) {
+      color: var(--muted);
+    }
+
     .notifications-summary {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -149,7 +169,7 @@ import { materialImports } from '@app/shared/material/material-imports';
     .notification-stat strong {
       font-size: clamp(1.3rem, 1.8vw, 1.8rem);
       line-height: 1;
-      color: var(--primary-strong);
+      color: #14213d;
       letter-spacing: -0.04em;
     }
 
@@ -162,10 +182,10 @@ import { materialImports } from '@app/shared/material/material-imports';
 
     .notification-card {
       border: 1px solid rgba(37, 99, 235, 0.1);
-      border-radius: 28px;
-      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+      border-radius: 32px;
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
       overflow: hidden;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.98));
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
     }
 
     .notification-card__header {
@@ -173,13 +193,28 @@ import { materialImports } from '@app/shared/material/material-imports';
       justify-content: space-between;
       align-items: flex-start;
       gap: 1rem;
-      padding: 1.05rem 1.15rem 0;
+      padding: 1.15rem 1.25rem 0.65rem;
+    }
+
+    .notification-card__header-copy {
+      display: grid;
+      gap: 0.2rem;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .notification-card__header h2 {
+      margin: 0;
+      color: var(--primary);
+      font-size: 1.15rem;
+      font-weight: 800;
+      line-height: 1.15;
     }
 
     .notification-card__subtitle {
       margin: 0.35rem 0 0;
       color: var(--muted);
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       line-height: 1.45;
     }
 
@@ -187,16 +222,19 @@ import { materialImports } from '@app/shared/material/material-imports';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0.45rem 0.78rem;
+      padding: 0.5rem 0.8rem;
       border-radius: 999px;
       background: #edf4ff;
+      border: 1px solid rgba(37, 99, 235, 0.14);
       white-space: nowrap;
+      align-self: flex-start;
+      margin-top: 0.1rem;
     }
 
     .notification-list {
       display: grid;
       gap: 0.9rem;
-      padding-top: 0.9rem;
+      padding: 1rem 1.25rem 1.2rem;
     }
 
     .notification-item {
@@ -205,17 +243,16 @@ import { materialImports } from '@app/shared/material/material-imports';
       align-items: start;
       gap: 1rem;
       padding: 1rem 1.05rem;
-      border-radius: 22px;
+      border-radius: 24px;
       border: 1px solid rgba(37, 99, 235, 0.1);
       background: #ffffff;
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.03);
-      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
     }
 
-    .notification-item:hover {
-      transform: translateY(-1px);
-      border-color: rgba(37, 99, 235, 0.2);
-      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06);
+    .notification-item--unread {
+      border-color: rgba(37, 99, 235, 0.18);
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      box-shadow: inset 3px 0 0 rgba(37, 99, 235, 0.9);
     }
 
     .notification-item--read {
@@ -228,16 +265,20 @@ import { materialImports } from '@app/shared/material/material-imports';
       width: 3rem;
       height: 3rem;
       border-radius: 18px;
-      background: #edf4ff;
-      color: var(--primary);
+      background: #eef4ff;
+      color: var(--primary-strong);
       flex-shrink: 0;
     }
 
-    .notification-item__icon mat-icon {
-      width: 22px;
-      height: 22px;
-      font-size: 22px;
-      line-height: 22px;
+    .notification-item--unread .notification-item__icon {
+      background: #dbeafe;
+    }
+
+    .notification-item__icon span {
+      font-size: 0.98rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
 
     .notification-item__copy {
@@ -256,18 +297,10 @@ import { materialImports } from '@app/shared/material/material-imports';
       font-size: 0.74rem;
     }
 
-    .notification-item__eyebrow strong {
-      color: var(--primary-strong);
-    }
-
-    .notification-item__eyebrow--muted {
-      color: var(--muted) !important;
-    }
-
     .notification-item__copy strong {
       font-size: 1rem;
-      line-height: 1.4;
-      color: var(--primary-strong);
+      line-height: 1.35;
+      color: #172033;
     }
 
     .notification-item__copy p,
@@ -276,6 +309,13 @@ import { materialImports } from '@app/shared/material/material-imports';
       color: var(--muted);
       line-height: 1.55;
       font-size: 0.9rem;
+    }
+
+    .notification-item__copy p {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
     }
 
     .notification-item__meta {
@@ -305,19 +345,18 @@ import { materialImports } from '@app/shared/material/material-imports';
       box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
     }
 
-    .notification-action-button:hover {
-      background: #1d4ed8 !important;
-    }
-
     .notification-read-chip {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 6rem;
-      padding: 0.62rem 0.95rem;
+      min-width: 5.75rem;
+      height: 2.75rem;
+      padding: 0 1rem;
       border-radius: 999px;
-      background: #edf4ff;
-      color: var(--primary);
+      background: #eef4ff;
+      color: var(--primary-strong);
+      border: 1px solid rgba(37, 99, 235, 0.12);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.04);
       font-weight: 700;
       font-size: 0.88rem;
     }
@@ -427,5 +466,21 @@ export class StudentNotificationsComponent {
       .replace(/_/g, ' ')
       .toLowerCase()
       .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  }
+
+  notificationAvatarLabel(notification: NotificationItem): string {
+    const source = (notification.notification_type?.trim() || notification.title?.trim() || 'Notification')
+      .replace(/[_-]+/g, ' ');
+    const words = source.split(/\s+/).filter(Boolean);
+    if (!words.length) {
+      return 'N';
+    }
+
+    const initials = words
+      .slice(0, 2)
+      .map((word) => word.charAt(0))
+      .join('');
+
+    return initials.toUpperCase();
   }
 }

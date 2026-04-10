@@ -1,17 +1,19 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { MatButton } from '@angular/material/button';
 
+import { NotificationApiService } from '@app/core/api/services/notification-api.service';
 import type { NavItem } from '@app/core/models/navigation.model';
 import { AuthService } from '@app/core/services/auth.service';
 import { SessionService } from '@app/core/services/session.service';
 import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { AppLogoComponent } from '@app/shared/components/app-logo/app-logo.component';
 import { materialImports } from '@app/shared/material/material-imports';
+import type { NotificationItem } from '@app/features/admin/models/admin.models';
 
 
 const NAV_ITEMS: NavItem[] = [
@@ -24,135 +26,135 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['admin', 'instructor', 'student']
   },
   {
-    section: 'Admin',
-    label: 'Overview',
-    caption: 'Platform dashboard and executive summary',
+    section: 'Platform Control',
+    label: 'Control Center',
+    caption: 'Platform command center and health overview',
     icon: 'space_dashboard',
     route: '/app/dashboard/admin',
     roles: ['admin']
   },
   {
-    section: 'Admin',
-    label: 'Reports',
-    caption: 'Platform metrics and executive reporting',
-    icon: 'monitoring',
-    route: '/app/admin/analytics',
-    roles: ['admin']
-  },
-  {
-    section: 'Admin',
-    label: 'Courses',
-    caption: 'Catalog publishing and course oversight',
-    icon: 'library_books',
-    route: '/app/admin/courses',
-    roles: ['admin']
-  },
-  {
-    section: 'Admin',
-    label: 'Users',
-    caption: 'Users, roles, and account control',
-    icon: 'groups',
-    route: '/app/admin/users',
-    roles: ['admin']
-  },
-  {
-    section: 'Admin',
-    label: 'Approvals',
-    caption: 'Instructor approval workflow',
+    section: 'Platform Control',
+    label: 'Instructor Reviews',
+    caption: 'Approve or reject teaching applications',
     icon: 'verified_user',
     route: '/app/admin/approvals',
     roles: ['admin']
   },
   {
-    section: 'Admin',
-    label: 'Categories',
-    caption: 'Catalog organization',
+    section: 'Platform Control',
+    label: 'Catalog',
+    caption: 'Course publishing, metadata, and governance',
+    icon: 'library_books',
+    route: '/app/admin/courses',
+    roles: ['admin']
+  },
+  {
+    section: 'Platform Control',
+    label: 'Users',
+    caption: 'Accounts, access, and role control',
+    icon: 'groups',
+    route: '/app/admin/users',
+    roles: ['admin']
+  },
+  {
+    section: 'Platform Control',
+    label: 'Taxonomy',
+    caption: 'Catalog structure and grouping',
     icon: 'category',
     route: '/app/admin/categories',
     roles: ['admin']
   },
   {
-    section: 'Admin',
-    label: 'Announcements',
+    section: 'Platform Control',
+    label: 'Broadcasts',
     caption: 'Platform-wide communication',
     icon: 'campaign',
     route: '/app/admin/announcements',
     roles: ['admin']
   },
   {
-    section: 'Instructor',
-    label: 'Overview',
-    caption: 'Teaching dashboard',
+    section: 'Platform Control',
+    label: 'Reports',
+    caption: 'Executive analytics and platform health',
+    icon: 'monitoring',
+    route: '/app/admin/analytics',
+    roles: ['admin']
+  },
+  {
+    section: 'Teaching Workflow',
+    label: 'Teaching Center',
+    caption: 'Course command center and portfolio summary',
     icon: 'school',
     route: '/app/dashboard/instructor',
     roles: ['instructor']
   },
   {
-    section: 'Instructor',
-    label: 'My Courses',
-    caption: 'Author and manage courses',
+    section: 'Teaching Workflow',
+    label: 'Course Studio',
+    caption: 'Create, edit, publish, and maintain courses',
     icon: 'library_books',
     route: '/app/instructor/courses',
     roles: ['instructor']
   },
   {
-    section: 'Instructor',
-    label: 'Content',
-    caption: 'Modules and lessons management',
+    section: 'Teaching Workflow',
+    label: 'Curriculum Builder',
+    caption: 'Modules, lessons, and sequencing',
     icon: 'topic',
     route: '/app/instructor/content',
     roles: ['instructor']
   },
   {
-    section: 'Instructor',
-    label: 'Students',
-    caption: 'Enrollment and progress',
-    icon: 'group',
-    route: '/app/instructor/students',
-    roles: ['instructor']
-  },
-  {
-    section: 'Instructor',
-    label: 'Assignments',
-    caption: 'Review and grading workspace',
-    icon: 'assignment',
-    route: '/app/instructor/assignments',
-    roles: ['instructor']
-  },
-  {
-    section: 'Instructor',
-    label: 'Quizzes',
-    caption: 'Assessments and question sets',
+    section: 'Teaching Workflow',
+    label: 'Assessments',
+    caption: 'Quiz authoring and question sets',
     icon: 'quiz',
     route: '/app/instructor/quizzes',
     roles: ['instructor']
   },
   {
-    section: 'Instructor',
-    label: 'Analytics',
-    caption: 'Teaching performance and course insights',
+    section: 'Teaching Workflow',
+    label: 'Assignments',
+    caption: 'Submission review and grading',
+    icon: 'assignment',
+    route: '/app/instructor/assignments',
+    roles: ['instructor']
+  },
+  {
+    section: 'Teaching Workflow',
+    label: 'Learners',
+    caption: 'Enrollment and progress tracking',
+    icon: 'group',
+    route: '/app/instructor/students',
+    roles: ['instructor']
+  },
+  {
+    section: 'Teaching Workflow',
+    label: 'Insights',
+    caption: 'Teaching performance and course analytics',
     icon: 'insights',
     route: '/app/instructor/analytics',
     roles: ['instructor']
   },
   {
-    section: 'Instructor',
-    label: 'Announcements',
-    caption: 'Course communication',
+    section: 'Teaching Workflow',
+    label: 'Broadcasts',
+    caption: 'Course communication and learner updates',
     icon: 'notifications_active',
     route: '/app/instructor/announcements',
     roles: ['instructor']
   },
   {
-    section: 'Student',
-    label: 'Overview',
-    caption: 'Learning dashboard',
+    section: 'Learning Path',
+    label: 'Learning Center',
+    caption: 'Learning dashboard and progress summary',
     icon: 'menu_book',
     route: '/app/dashboard/student',
     roles: ['student']
   },
   {
-    section: 'Student',
+    section: 'Learning Path',
     label: 'My Learning',
     caption: 'Continue enrolled courses',
     icon: 'cast_for_education',
@@ -160,15 +162,15 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Student',
-    label: 'Browse Courses',
+    section: 'Learning Path',
+    label: 'Browse Catalog',
     caption: 'Discover new courses to enroll in',
     icon: 'travel_explore',
     route: '/app/student/browse',
     roles: ['student']
   },
   {
-    section: 'Student',
+    section: 'Learning Path',
     label: 'Assignments',
     caption: 'Due work and submissions',
     icon: 'task',
@@ -176,7 +178,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Student',
+    section: 'Learning Path',
     label: 'Quizzes',
     caption: 'Attempts and results',
     icon: 'fact_check',
@@ -184,7 +186,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Student',
+    section: 'Learning Path',
     label: 'Results',
     caption: 'Review quiz outcomes and attempt history',
     icon: 'assessment',
@@ -192,7 +194,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Student',
+    section: 'Learning Path',
     label: 'Progress',
     caption: 'Completion and momentum',
     icon: 'timeline',
@@ -200,7 +202,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Student',
+    section: 'Learning Path',
     label: 'Notifications',
     caption: 'Course and platform updates',
     icon: 'notifications',
@@ -208,7 +210,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Student',
+    section: 'Learning Path',
     label: 'Certificates',
     caption: 'View earned certificates when available',
     icon: 'workspace_premium',
@@ -244,6 +246,8 @@ const NAV_ITEMS: NavItem[] = [
 export class AppShellComponent {
   private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly notificationApi = inject(NotificationApiService);
   private readonly router = inject(Router);
   readonly workspaceSearch = inject(WorkspaceSearchService);
 
@@ -264,13 +268,13 @@ export class AppShellComponent {
     { initialValue: this.router.url }
   );
 
-  readonly navigationSections = computed(() => {
+  readonly accessibleNavigationItems = computed(() => {
     const userRoles = this.sessionService.user()?.roles ?? [];
-    const visibleItems = NAV_ITEMS.filter(
-      (item) =>
-        item.route !== '/app/dashboard/hub' &&
-        item.roles.some((role) => userRoles.includes(role))
-    );
+
+    return NAV_ITEMS.filter((item) => item.roles.some((role) => userRoles.includes(role)));
+  });
+  readonly navigationSections = computed(() => {
+    const visibleItems = this.accessibleNavigationItems().filter((item) => item.route !== '/app/dashboard/hub');
     const sectionMap = new Map<string, NavItem[]>();
 
     for (const item of visibleItems) {
@@ -285,6 +289,28 @@ export class AppShellComponent {
         items
       }))
       .filter((section) => section.items.length > 0);
+  });
+  readonly searchSections = computed(() => {
+    const query = this.workspaceSearch.normalizedQuery();
+    if (!query) {
+      return [];
+    }
+
+    const visibleItems = this.accessibleNavigationItems().filter((item) =>
+      `${item.section} ${item.label} ${item.caption} ${item.route}`.toLowerCase().includes(query)
+    );
+    const sectionMap = new Map<string, NavItem[]>();
+
+    for (const item of visibleItems) {
+      const items = sectionMap.get(item.section) ?? [];
+      items.push(item);
+      sectionMap.set(item.section, items);
+    }
+
+    return Array.from(sectionMap.entries()).map(([section, items]) => ({
+      section,
+      items
+    }));
   });
   readonly compactBrand = computed(() => this.desktop() && this.sidebarCollapsed());
 
@@ -327,17 +353,25 @@ export class AppShellComponent {
     }
     return 'Access the LMS portal workspace';
   });
-  readonly notificationCount = computed(() => 0);
-  readonly notificationItems = computed(() => [
-    'Notification summaries are available inside the role-specific workspace pages.'
-  ]);
+  readonly notifications = signal<NotificationItem[]>([]);
+  readonly notificationCount = computed(() => this.notifications().filter((notification) => !notification.is_read).length);
+  readonly notificationCenterRoute = computed(() => {
+    const role = this.roleLabel();
+    if (role === 'admin') {
+      return '/app/admin/announcements';
+    }
+    if (role === 'instructor') {
+      return '/app/instructor/announcements';
+    }
+    return '/app/student/notifications';
+  });
   readonly activeNav = computed(() => {
     const rawUrl = this.currentUrl();
     const url = rawUrl.startsWith('/app/student/learning')
       ? '/app/student/courses'
       : rawUrl;
     const userRoles = this.sessionService.user()?.roles ?? [];
-    const visibleItems = NAV_ITEMS
+    const visibleItems = this.accessibleNavigationItems()
       .filter((item) => item.roles.some((role) => userRoles.includes(role)))
       .sort((left, right) => right.route.length - left.route.length);
 
@@ -348,26 +382,49 @@ export class AppShellComponent {
   readonly pageDescription = computed(
     () => this.activeNav()?.caption ?? 'Manage your LMS workspace from a unified portal shell.'
   );
-  readonly toolbarSearchVisible = computed(() => {
-    const role = this.roleLabel();
-    const url = this.currentUrl();
-    return role === 'student' && (url.startsWith('/app/student') || url.startsWith('/app/dashboard/student'));
-  });
+  readonly toolbarSearchVisible = computed(() => true);
   readonly toolbarSearchPlaceholder = computed(() => {
-    const activeLabel = this.activeNav()?.label ?? 'workspace';
-    return `Search ${activeLabel.toLowerCase()}`;
+    const role = this.roleLabel();
+    if (role === 'admin') {
+      return 'Search users, courses, approvals, reports';
+    }
+    if (role === 'instructor') {
+      return 'Search courses, modules, lessons, quizzes';
+    }
+    if (role === 'student') {
+      return 'Search courses, lessons, progress, notifications';
+    }
+    return 'Search workspace';
   });
 
   constructor() {
     effect(() => {
       this.currentUrl();
       this.mobileNavOpen.set(false);
-      this.workspaceSearch.clear();
       queueMicrotask(() => {
         this.mainScroller()?.nativeElement.scrollTo({ top: 0, left: 0, behavior: 'auto' });
         this.navScroller()?.nativeElement.scrollTo({ top: 0, left: 0, behavior: 'auto' });
       });
     });
+
+    this.loadNotifications();
+  }
+
+  loadNotifications(): void {
+    this.notificationApi
+      .listMyNotifications()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ items }) => {
+          const sortedItems = [...items].sort(
+            (left, right) => right.created_at.localeCompare(left.created_at)
+          );
+          this.notifications.set(sortedItems);
+        },
+        error: () => {
+          this.notifications.set([]);
+        }
+      });
   }
 
   syncProfileMenuWidth(button: MatButton, trigger: { updatePosition(): void }): void {
@@ -394,9 +451,11 @@ export class AppShellComponent {
   logout(): void {
     this.authService.logout().subscribe({
       next: () => {
+        this.workspaceSearch.clear();
         void this.router.navigate(['/auth/login']);
       },
       error: () => {
+        this.workspaceSearch.clear();
         this.sessionService.clearSession();
         void this.router.navigate(['/auth/login']);
       }

@@ -27,8 +27,8 @@ import { materialImports } from '@app/shared/material/material-imports';
       <div class="dashboard-hero dashboard-hero--admin">
         <mat-card class="surface-card hero-card">
           <mat-card-content>
-            <p class="hero-card__eyebrow">Admin Control</p>
-            <h1>Platform dashboard for growth, approvals, and course health.</h1>
+            <p class="hero-card__eyebrow">Platform Control</p>
+            <h1>Your admin control room is ready.</h1>
             <p class="hero-card__description">
               Review users, instructor approvals, enrollments, course publishing, and platform activity from one command center.
             </p>
@@ -48,6 +48,13 @@ import { materialImports } from '@app/shared/material/material-imports';
                   <p>Published inventory currently visible to learners.</p>
                 </div>
               </div>
+              <div class="hero-insights__item">
+                <span class="hero-insights__dot hero-insights__dot--teal"></span>
+                <div>
+                  <strong>{{ (stats()?.total_students ?? 0) + (stats()?.total_instructors ?? 0) }} active users</strong>
+                  <p>Students and instructors currently active on the platform.</p>
+                </div>
+              </div>
             </div>
           </mat-card-content>
         </mat-card>
@@ -65,6 +72,27 @@ import { materialImports } from '@app/shared/material/material-imports';
               <div class="dashboard-kpi-card__ring-value">{{ activeSeatValue() }}</div>
             </div>
             <span class="dashboard-kpi-card__label">Active and completed learning seats across the platform</span>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="workflow-grid">
+        <mat-card class="surface-card workflow-card">
+          <mat-card-header>
+            <mat-card-title>Platform Control Path</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            @for (step of workflowSteps(); track step.title) {
+              <article class="workflow-step">
+                <span class="workflow-step__index">{{ step.step }}</span>
+                <span class="workflow-step__icon material-symbols-outlined">{{ step.icon }}</span>
+                <div class="workflow-step__copy">
+                  <p>{{ step.title }}</p>
+                  <strong>{{ step.description }}</strong>
+                </div>
+                <a mat-stroked-button [routerLink]="step.route">{{ step.cta }}</a>
+              </article>
+            }
           </mat-card-content>
         </mat-card>
       </div>
@@ -114,7 +142,7 @@ import { materialImports } from '@app/shared/material/material-imports';
         <div class="side-stack">
           <mat-card class="surface-card">
             <mat-card-header>
-              <mat-card-title>Course Watchlist</mat-card-title>
+              <mat-card-title>Catalog Watchlist</mat-card-title>
             </mat-card-header>
             <mat-card-content>
               @if (!loading() && recentCourses().length) {
@@ -144,14 +172,14 @@ import { materialImports } from '@app/shared/material/material-imports';
 
           <mat-card class="surface-card">
             <mat-card-header>
-              <mat-card-title>Quick Actions</mat-card-title>
+              <mat-card-title>Control Shortcuts</mat-card-title>
             </mat-card-header>
             <mat-card-content>
               <div class="action-grid">
-                <a mat-flat-button color="primary" routerLink="/app/admin/courses">Manage Courses</a>
-                <a mat-flat-button color="primary" routerLink="/app/admin/users">Manage Users</a>
-                <a mat-flat-button color="primary" routerLink="/app/admin/approvals">Review Approvals</a>
-                <a mat-flat-button color="primary" routerLink="/app/admin/analytics">Open Reports</a>
+                <a mat-flat-button color="primary" routerLink="/app/admin/courses">Catalog Control</a>
+                <a mat-flat-button color="primary" routerLink="/app/admin/users">User Governance</a>
+                <a mat-flat-button color="primary" routerLink="/app/admin/approvals">Instructor Reviews</a>
+                <a mat-flat-button color="primary" routerLink="/app/admin/analytics">Platform Reports</a>
               </div>
             </mat-card-content>
           </mat-card>
@@ -161,7 +189,7 @@ import { materialImports } from '@app/shared/material/material-imports';
       <div class="dashboard-split">
         <mat-card class="surface-card">
           <mat-card-header>
-            <mat-card-title>Recent Activity</mat-card-title>
+            <mat-card-title>User Activity</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             @if (!loading() && recentUsers().length) {
@@ -193,7 +221,7 @@ import { materialImports } from '@app/shared/material/material-imports';
 
         <mat-card class="surface-card">
           <mat-card-header>
-            <mat-card-title>Pending Instructor Reviews</mat-card-title>
+            <mat-card-title>Approval Queue</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             @if (!loading() && pendingApprovals().length) {
@@ -296,6 +324,7 @@ import { materialImports } from '@app/shared/material/material-imports';
 
     .hero-insights {
       display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 0.85rem;
       margin-top: 1.15rem;
     }
@@ -397,6 +426,76 @@ import { materialImports } from '@app/shared/material/material-imports';
       font-size: 0.7rem;
     }
 
+    .workflow-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .workflow-card mat-card-content {
+      display: grid;
+      gap: 0.8rem;
+      padding-top: 0.35rem;
+    }
+
+    .workflow-step {
+      display: grid;
+      grid-template-columns: 56px 42px minmax(0, 1fr) auto;
+      gap: 0.85rem;
+      align-items: center;
+      padding: 0.95rem 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(248, 251, 255, 0.95), #ffffff 74%);
+    }
+
+    .workflow-step__index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2rem;
+      padding: 0 0.7rem;
+      border-radius: 999px;
+      background: #0f172a;
+      color: #fff;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .workflow-step__icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: #eef4ff;
+      color: var(--primary);
+      font-size: 1.05rem;
+    }
+
+    .workflow-step__copy {
+      min-width: 0;
+    }
+
+    .workflow-step__copy p {
+      margin: 0;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.58rem;
+      font-weight: 800;
+    }
+
+    .workflow-step__copy strong {
+      display: block;
+      margin-top: 0.25rem;
+      font-size: 0.84rem;
+      line-height: 1.35;
+      letter-spacing: -0.03em;
+    }
+
     .dashboard-split--wide {
       grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
     }
@@ -476,10 +575,27 @@ import { materialImports } from '@app/shared/material/material-imports';
       .dashboard-split--wide {
         grid-template-columns: 1fr;
       }
+
+      .hero-insights {
+        grid-template-columns: 1fr;
+      }
+
+      .workflow-step {
+        grid-template-columns: 56px 42px minmax(0, 1fr);
+      }
+
+      .workflow-step a {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
     }
 
     @media (max-width: 720px) {
       .action-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .workflow-step {
         grid-template-columns: 1fr;
       }
     }
@@ -504,6 +620,63 @@ export class AdminDashboardComponent {
   readonly pendingApprovals = signal<InstructorApprovalItem[]>([]);
   readonly recentCourses = signal<CourseListItem[]>([]);
   readonly activeSeatValue = signal('0');
+  readonly workflowSteps = computed(() => {
+    const pendingApprovals = this.stats()?.pending_approvals ?? 0;
+    return [
+      {
+        step: '01',
+        title: pendingApprovals
+          ? `${pendingApprovals} instructor request${pendingApprovals === 1 ? '' : 's'} waiting`
+          : 'Review instructor approvals',
+        description: pendingApprovals
+          ? 'Clear the approval queue so new instructors can publish content.'
+          : 'Check the approval queue for incoming teaching applications.',
+        route: '/app/admin/approvals',
+        cta: 'approval queue',
+        icon: 'verified_user'
+      },
+      {
+        step: '02',
+        title: 'Catalog control',
+        description: 'Adjust course metadata, publishing state, and catalog visibility.',
+        route: '/app/admin/courses',
+        cta: 'catalog',
+        icon: 'library_books'
+      },
+      {
+        step: '03',
+        title: 'User governance',
+        description: 'Manage learner and instructor accounts, status, and access.',
+        route: '/app/admin/users',
+        cta: 'users',
+        icon: 'groups'
+      },
+      {
+        step: '04',
+        title: 'Catalog taxonomy',
+        description: 'Keep categories and organization tidy for the LMS catalog.',
+        route: '/app/admin/categories',
+        cta: 'taxonomy',
+        icon: 'category'
+      },
+      {
+        step: '05',
+        title: 'Platform reports',
+        description: 'Inspect platform health, enrollment, and assessment coverage.',
+        route: '/app/admin/analytics',
+        cta: 'reports',
+        icon: 'monitoring'
+      },
+      {
+        step: '06',
+        title: 'Platform broadcasts',
+        description: 'Send announcements and operational updates across the LMS.',
+        route: '/app/admin/announcements',
+        cta: 'broadcasts',
+        icon: 'campaign'
+      }
+    ];
+  });
   readonly statCards = computed(() => {
     const stats = this.stats();
     if (!stats) {

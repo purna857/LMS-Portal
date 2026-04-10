@@ -381,12 +381,6 @@ interface ResultListItem extends QuizAttemptHistoryItem {
       border: 1px solid rgba(148, 163, 184, 0.14);
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 255, 0.98));
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-    }
-    .answer-list__item:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
-      border-color: rgba(37, 99, 235, 0.18);
     }
     .answer-list__item:last-child {
       padding-bottom: 1rem;

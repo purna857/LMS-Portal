@@ -152,7 +152,7 @@ export class ProgressComponent {
           type: 'bar',
           label: 'Lessons completed',
           data: items.map((item) => item.progress?.completed_lessons ?? 0),
-          backgroundColor: '#4e6cf0',
+          backgroundColor: '#3b82f6',
           borderRadius: 14,
           maxBarThickness: 28
         },
@@ -160,13 +160,13 @@ export class ProgressComponent {
           type: 'line',
           label: 'Progress %',
           data: items.map((item) => item.progress?.progress_percentage ?? 0),
-          borderColor: '#18c4b8',
-          backgroundColor: 'rgba(24, 196, 184, 0.12)',
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.12)',
           fill: true,
           tension: 0.42,
           pointRadius: 4,
           pointHoverRadius: 6,
-          pointBackgroundColor: '#18c4b8',
+          pointBackgroundColor: '#2563eb',
           pointBorderColor: '#ffffff',
           pointBorderWidth: 2
         }
@@ -175,14 +175,14 @@ export class ProgressComponent {
   });
   readonly snapshotChartData = computed<ChartConfiguration<'doughnut'>['data']>(() => ({
     labels: ['Completed', 'In progress', 'Not started'],
-    datasets: [
-      {
-        data: [this.completedCourses(), this.inProgressCourses(), this.notStartedCourses()],
-        backgroundColor: ['#16a34a', '#4e6cf0', '#dbeafe'],
-        borderWidth: 0
-      }
-    ]
-  }));
+      datasets: [
+        {
+          data: [this.completedCourses(), this.inProgressCourses(), this.notStartedCourses()],
+          backgroundColor: ['#1d4ed8', '#3b82f6', '#bfdbfe'],
+          borderWidth: 0
+        }
+      ]
+    }));
   readonly courseProgressChartData = computed<ChartConfiguration<'bar'>['data']>(() => {
     const items = this.topCourses();
 
@@ -192,7 +192,7 @@ export class ProgressComponent {
         {
           label: 'Completion %',
           data: items.map((item) => item.progress?.progress_percentage ?? 0),
-          backgroundColor: '#4e6cf0',
+          backgroundColor: '#3b82f6',
           borderRadius: 12,
           maxBarThickness: 22
         }
@@ -209,7 +209,7 @@ export class ProgressComponent {
           type: 'bar',
           label: 'Completed lessons',
           data: items.map((item) => item.progress?.completed_lessons ?? 0),
-          backgroundColor: '#f472b6',
+          backgroundColor: '#2563eb',
           borderRadius: 12,
           maxBarThickness: 28,
           stack: 'lesson-balance'
@@ -220,7 +220,7 @@ export class ProgressComponent {
           data: items.map((item) =>
             Math.max((item.progress?.total_lessons ?? 0) - (item.progress?.completed_lessons ?? 0), 0)
           ),
-          backgroundColor: '#dbeafe',
+          backgroundColor: '#bfdbfe',
           borderRadius: 12,
           maxBarThickness: 28,
           stack: 'lesson-balance'
@@ -241,13 +241,13 @@ export class ProgressComponent {
             runningTotal += item.progress?.progress_percentage ?? 0;
             return Number((runningTotal / (index + 1)).toFixed(1));
           }),
-          borderColor: '#14b8a6',
-          backgroundColor: 'rgba(20, 184, 166, 0.12)',
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.12)',
           fill: true,
           tension: 0.42,
           pointRadius: 4,
           pointHoverRadius: 6,
-          pointBackgroundColor: '#14b8a6',
+          pointBackgroundColor: '#2563eb',
           pointBorderColor: '#ffffff',
           pointBorderWidth: 2
         }

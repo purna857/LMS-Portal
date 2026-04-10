@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -24,7 +25,20 @@ interface LearningLibraryItem {
   totalDurationMinutes: number;
   currentModuleTitle: string | null;
   currentLessonTitle: string | null;
+  videoEmbedUrl: SafeResourceUrl | null;
+  videoEmbedLabel: string | null;
 }
+
+const COURSE_VIDEO_PREVIEWS: Record<string, { url: string; label: string }> = {
+  'python-fastapi-bootcamp': {
+    url: 'https://www.youtube.com/embed/0sOvCWFmrtA?rel=0&modestbranding=1&playsinline=1',
+    label: 'FastAPI course preview'
+  },
+  'data-sql-foundations': {
+    url: 'https://www.youtube.com/embed/HXV3zeQKqGY?rel=0&modestbranding=1&playsinline=1',
+    label: 'SQL course preview'
+  }
+};
 
 @Component({
   selector: 'app-my-learning',
@@ -80,19 +94,32 @@ interface LearningLibraryItem {
             <article class="course-card surface-card">
               <div class="course-card__media">
                 <div class="course-card__thumbnail">
-                  @if (item.course.thumbnail_url) {
+                  @if (item.videoEmbedUrl) {
+                    <iframe
+                      class="course-card__video"
+                      [src]="item.videoEmbedUrl"
+                      [title]="item.videoEmbedLabel || item.course.title"
+                      loading="lazy"
+                      referrerpolicy="strict-origin-when-cross-origin"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowfullscreen>
+                    </iframe>
+                    <div class="course-card__video-pill">
+                      <span class="material-symbols-outlined">smart_display</span>
+                      <span>{{ item.videoEmbedLabel || 'YouTube preview' }}</span>
+                    </div>
+                  } @else if (item.course.thumbnail_url) {
                     <img [src]="item.course.thumbnail_url" [alt]="item.course.title" />
                   } @else {
                     <div class="course-card__fallback">{{ item.course.title.charAt(0) }}</div>
                   }
 
-                  @if (item.videoLessonCount > 0) {
-                    <button type="button" class="play-button" aria-label="Continue learning">
-                      <span class="material-symbols-outlined">play_arrow</span>
-                    </button>
-                  }
-
-                  <button type="button" class="more-button" aria-label="Course actions">
+                  <button
+                    type="button"
+                    class="more-button"
+                    aria-label="Course actions"
+                    [matMenuTriggerFor]="courseActionsMenu"
+                    (click)="setActiveCourseMenuItem(item)">
                     <span class="material-symbols-outlined">more_vert</span>
                   </button>
                 </div>
@@ -136,6 +163,17 @@ interface LearningLibraryItem {
           description="Try another filter or search term to find a course in your learning library.">
         </app-empty-state>
       }
+
+      <mat-menu #courseActionsMenu="matMenu" class="course-actions-menu">
+        <button mat-menu-item type="button" [disabled]="!activeCourseMenuItem()" (click)="openCourseLearning(activeCourseMenuItem())">
+          <span class="material-symbols-outlined">play_arrow</span>
+          <span>{{ learningActionLabel(activeCourseMenuItem()) }}</span>
+        </button>
+        <button mat-menu-item type="button" [disabled]="!activeCourseMenuItem()" (click)="openCourseDetails(activeCourseMenuItem())">
+          <span class="material-symbols-outlined">open_in_new</span>
+          <span>View course details</span>
+        </button>
+      </mat-menu>
     </section>
   `,
   styles: [`
@@ -209,16 +247,12 @@ interface LearningLibraryItem {
       font-size: 0.86rem;
       font-weight: 700;
       cursor: pointer;
-      transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     }
 
-    .filter-pill:hover,
     .filter-pill--active {
       border-color: #bfd4ff;
       background: linear-gradient(135deg, #edf4ff 0%, #f9fbff 100%);
       color: #1d4ed8;
-      box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12);
-      transform: translateY(-1px);
     }
 
       .library-toolbar__actions {
@@ -255,24 +289,58 @@ interface LearningLibraryItem {
       border-radius: 28px;
       padding: 0.9rem;
       box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
-      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-    }
-
-    .course-card:hover {
-      transform: translateY(-4px);
-      border-color: #bfd4ff;
-      box-shadow: 0 26px 56px rgba(37, 99, 235, 0.16);
     }
 
     .course-card__thumbnail {
       position: relative;
       aspect-ratio: 16 / 9;
-      border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 22px;
       background:
         linear-gradient(145deg, rgba(9, 18, 38, 0.96) 0%, rgba(15, 29, 58, 0.96) 100%);
       overflow: hidden;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .course-card__video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border: 0;
+      background: #0b1220;
+    }
+
+    .course-card__video-pill {
+      position: absolute;
+      top: 0.75rem;
+      left: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      max-width: calc(100% - 5.5rem);
+      padding: 0.5rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(37, 99, 235, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+      color: #172033;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
+      z-index: 2;
+    }
+
+    .course-card__video-pill .material-symbols-outlined {
+      display: grid;
+      place-items: center;
+      width: 1.2rem;
+      height: 1.2rem;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: #2563eb;
+      font-size: 0.92rem;
+      line-height: 1;
     }
 
     .course-card__thumbnail img {
@@ -297,41 +365,26 @@ interface LearningLibraryItem {
       letter-spacing: -0.04em;
     }
 
-    .play-button,
     .more-button {
       position: absolute;
       display: grid;
       place-items: center;
       border: 0;
       cursor: pointer;
-    }
-
-    .play-button {
-      inset: 50% auto auto 50%;
-      transform: translate(-50%, -50%);
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.95);
-      color: #172033;
-      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.28);
-      backdrop-filter: blur(12px);
-    }
-
-    .play-button .material-symbols-outlined {
-      font-size: 2.35rem;
-      margin-left: 0.15rem;
+      z-index: 2;
+      pointer-events: auto;
     }
 
     .more-button {
       top: 0.7rem;
       right: 0.7rem;
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.98);
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.86);
+      background: rgba(255, 255, 255, 0.99);
       color: #172033;
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+      box-shadow: 0 14px 26px rgba(15, 23, 42, 0.14);
     }
 
     .course-card__body {
@@ -432,6 +485,58 @@ interface LearningLibraryItem {
       box-shadow: 0 14px 26px rgba(29, 99, 232, 0.24);
     }
 
+    :host ::ng-deep .course-actions-menu .mat-mdc-menu-content {
+      padding: 0.5rem;
+    }
+
+    :host ::ng-deep .mat-mdc-menu-panel.course-actions-menu {
+      min-width: 278px;
+      border: 1px solid #dce6f4;
+      border-radius: 24px !important;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      box-shadow: 0 22px 42px rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+    }
+
+    :host ::ng-deep .course-actions-menu .mat-mdc-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      min-height: 50px;
+      margin: 0.25rem 0;
+      padding: 0 0.95rem;
+      border: 1px solid #e7eef9;
+      border-radius: 16px;
+      background: #ffffff;
+      color: #172033;
+      font-size: 0.94rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    :host ::ng-deep .course-actions-menu .mat-mdc-menu-item .material-symbols-outlined {
+      width: 1.55rem;
+      height: 1.55rem;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: #eef4ff;
+      font-size: 1.02rem;
+      color: #2563eb;
+    }
+
+    :host ::ng-deep .course-actions-menu .mat-mdc-menu-item .mdc-list-item__primary-text {
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    :host ::ng-deep .course-actions-menu .mat-mdc-menu-item:hover,
+    :host ::ng-deep .course-actions-menu .mat-mdc-menu-item:focus-visible {
+      background: #f6f9ff;
+      border-color: #d6e3fb;
+    }
+
     @media (max-width: 1320px) {
       .course-grid {
         grid-template-columns: repeat(auto-fill, minmax(260px, 320px));
@@ -479,7 +584,9 @@ export class MyLearningComponent {
   private readonly studentPortalService = inject(StudentPortalService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly router = inject(Router);
   private readonly workspaceSearch = inject(WorkspaceSearchService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   readonly loading = signal(true);
   readonly enrolledCourses = signal<EnrolledCourseItem[]>([]);
@@ -488,6 +595,7 @@ export class MyLearningComponent {
   readonly lessonMap = signal<Record<string, Lesson[]>>({});
   readonly activeFilter = signal<LearningFilter>('all');
   readonly sortMode = signal<LearningSort>('recent');
+  readonly activeCourseMenuItem = signal<LearningLibraryItem | null>(null);
 
   readonly tabs: Array<{ label: string; value: LearningFilter }> = [
     { label: 'All courses', value: 'all' },
@@ -505,6 +613,7 @@ export class MyLearningComponent {
         lessons.find((lesson) => lesson.lesson_type === 'video')?.title ??
         lessons[0]?.title ??
         null;
+      const videoPreview = COURSE_VIDEO_PREVIEWS[course.slug] ?? null;
 
       return {
         course,
@@ -514,7 +623,9 @@ export class MyLearningComponent {
         videoLessonCount: lessons.filter((lesson) => lesson.lesson_type === 'video').length,
         totalDurationMinutes: lessons.reduce((total, lesson) => total + (lesson.duration_minutes ?? 0), 0),
         currentModuleTitle,
-        currentLessonTitle
+        currentLessonTitle,
+        videoEmbedUrl: videoPreview ? this.sanitizer.bypassSecurityTrustResourceUrl(videoPreview.url) : null,
+        videoEmbedLabel: videoPreview?.label ?? null
       };
     })
   );
@@ -553,6 +664,30 @@ export class MyLearningComponent {
 
   constructor() {
     this.loadLearning();
+  }
+
+  setActiveCourseMenuItem(item: LearningLibraryItem): void {
+    this.activeCourseMenuItem.set(item);
+  }
+
+  learningActionLabel(item: LearningLibraryItem | null): string {
+    return (item?.progress?.progress_percentage ?? 0) > 0 ? 'Continue learning' : 'Start learning';
+  }
+
+  openCourseLearning(item: LearningLibraryItem | null): void {
+    if (!item) {
+      return;
+    }
+
+    void this.router.navigate(['/app/student/learning', item.course.course_id]);
+  }
+
+  openCourseDetails(item: LearningLibraryItem | null): void {
+    if (!item) {
+      return;
+    }
+
+    void this.router.navigate(['/app/student/browse', item.course.course_id]);
   }
 
   loadLearning(): void {

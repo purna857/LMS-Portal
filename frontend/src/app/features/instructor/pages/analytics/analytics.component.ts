@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import type { CourseListItem, EnrollmentStats, InstructorDashboardStats } from '@app/features/instructor/models/instructor.models';
@@ -19,7 +20,7 @@ import { materialImports } from '@app/shared/material/material-imports';
     <section class="page-section">
       <app-page-header
         eyebrow="Instructor"
-        title="Teaching Analytics"
+        title="Teaching Insights"
         description="Understand course performance, student load, enrollment health, and assessment coverage across your teaching portfolio.">
       </app-page-header>
 
@@ -158,6 +159,7 @@ export class AnalyticsComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
 
   readonly loading = signal(true);
   readonly dashboardStats = signal<InstructorDashboardStats | null>(null);
@@ -199,10 +201,11 @@ export class AnalyticsComponent {
         next: ({ stats, courses }) => {
           this.dashboardStats.set(stats);
           this.courses.set(courses.items);
-          const first = courses.items[0]?.id ?? '';
-          this.courseForm.patchValue({ course_id: first });
+          const preferredCourseId = this.route.snapshot.queryParamMap.get('courseId') ?? '';
+          const selectedCourseId = courses.items.find((course) => course.id === preferredCourseId)?.id ?? courses.items[0]?.id ?? '';
+          this.courseForm.patchValue({ course_id: selectedCourseId });
           this.loading.set(false);
-          if (first) {
+          if (selectedCourseId) {
             this.loadCourseStats();
           }
         },

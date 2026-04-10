@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import type { Lesson, LessonPayload } from '@app/features/instructor/models/instructor.models';
+import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -15,95 +16,100 @@ export interface LessonDialogData {
 @Component({
   selector: 'app-lesson-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, ...materialImports],
+  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
   template: `
-    <h2 mat-dialog-title>{{ data.mode === 'create' ? 'Create Lesson' : 'Edit Lesson' }}</h2>
+    <app-portal-dialog-shell
+      size="lg"
+      eyebrow="Lesson builder"
+      [title]="data.mode === 'create' ? 'Create Lesson' : 'Edit Lesson'"
+      [description]="data.mode === 'create'
+        ? 'Create a lesson with the right media type, ordering, and learner access level.'
+        : 'Update the lesson details, content, and publishing state without leaving the modal.'"
+      (closeRequested)="dialogRef.close()">
+      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="lesson-form" (ngSubmit)="submit()">
+          <section class="dialog-section">
+            <div class="dialog-section__title">
+              <strong>Lesson details</strong>
+              <p>Set the lesson title, type, position, and publication state.</p>
+            </div>
 
-    <mat-dialog-content class="dialog-shell">
-      <form [formGroup]="form" class="dialog-grid">
-        <mat-form-field appearance="outline" class="dialog-grid__full">
-          <mat-label>Title</mat-label>
-          <input matInput formControlName="title" />
-        </mat-form-field>
+            <div class="dialog-grid">
+              <mat-form-field appearance="outline" class="dialog-grid__full">
+                <mat-label>Title</mat-label>
+                <input matInput formControlName="title" />
+              </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Lesson Type</mat-label>
-          <mat-select formControlName="lesson_type">
-            <mat-option value="video">Video</mat-option>
-            <mat-option value="text">Text</mat-option>
-            <mat-option value="resource_link">Resource Link</mat-option>
-          </mat-select>
-        </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Lesson Type</mat-label>
+                <mat-select formControlName="lesson_type">
+                  <mat-option value="video">Video</mat-option>
+                  <mat-option value="text">Text</mat-option>
+                  <mat-option value="resource_link">Resource Link</mat-option>
+                </mat-select>
+              </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Status</mat-label>
-          <mat-select formControlName="status">
-            <mat-option value="draft">Draft</mat-option>
-            <mat-option value="published">Published</mat-option>
-            <mat-option value="archived">Archived</mat-option>
-          </mat-select>
-        </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Status</mat-label>
+                <mat-select formControlName="status">
+                  <mat-option value="draft">Draft</mat-option>
+                  <mat-option value="published">Published</mat-option>
+                  <mat-option value="archived">Archived</mat-option>
+                </mat-select>
+              </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Position</mat-label>
-          <input matInput type="number" formControlName="position" />
-        </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Position</mat-label>
+                <input matInput type="number" formControlName="position" />
+              </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Duration (Minutes)</mat-label>
-          <input matInput type="number" formControlName="duration_minutes" />
-        </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Duration (Minutes)</mat-label>
+                <input matInput type="number" formControlName="duration_minutes" />
+              </mat-form-field>
+            </div>
+          </section>
 
-        <mat-checkbox formControlName="is_preview" class="dialog-grid__full">Allow preview access</mat-checkbox>
+          <section class="dialog-section">
+            <div class="dialog-section__title">
+              <strong>Content & access</strong>
+              <p>Control preview access and provide the lesson content that matches the selected type.</p>
+            </div>
 
-        @if (showContent()) {
-          <mat-form-field appearance="outline" class="dialog-grid__full">
-            <mat-label>Content</mat-label>
-            <textarea matInput rows="5" formControlName="content"></textarea>
-          </mat-form-field>
-        }
+            <div class="dialog-grid">
+              <mat-checkbox formControlName="is_preview" class="dialog-grid__full">Allow preview access</mat-checkbox>
 
-        @if (showVideo()) {
-          <mat-form-field appearance="outline" class="dialog-grid__full">
-            <mat-label>Video URL</mat-label>
-            <input matInput formControlName="video_url" />
-          </mat-form-field>
-        }
+              @if (showContent()) {
+                <mat-form-field appearance="outline" class="dialog-grid__full">
+                  <mat-label>Content</mat-label>
+                  <textarea matInput rows="5" formControlName="content"></textarea>
+                </mat-form-field>
+              }
 
-        @if (showResource()) {
-          <mat-form-field appearance="outline" class="dialog-grid__full">
-            <mat-label>Resource URL</mat-label>
-            <input matInput formControlName="resource_url" />
-          </mat-form-field>
-        }
+              @if (showVideo()) {
+                <mat-form-field appearance="outline" class="dialog-grid__full">
+                  <mat-label>Video URL</mat-label>
+                  <input matInput formControlName="video_url" />
+                </mat-form-field>
+              }
+
+              @if (showResource()) {
+                <mat-form-field appearance="outline" class="dialog-grid__full">
+                  <mat-label>Resource URL</mat-label>
+                  <input matInput formControlName="resource_url" />
+                </mat-form-field>
+              }
+            </div>
+          </section>
       </form>
-    </mat-dialog-content>
 
-    <mat-dialog-actions align="end">
-      <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
-      <button mat-flat-button color="primary" type="button" (click)="submit()">
-        {{ data.mode === 'create' ? 'Create Lesson' : 'Save Lesson' }}
-      </button>
-    </mat-dialog-actions>
+      <div dialogFooter class="dialog-footer-actions">
+        <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
+        <button mat-flat-button color="primary" type="submit" form="lesson-form">
+          {{ data.mode === 'create' ? 'Create Lesson' : 'Save Lesson' }}
+        </button>
+      </div>
+    </app-portal-dialog-shell>
   `,
-  styles: [`
-    .dialog-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem;
-      width: min(94vw, 720px);
-      max-width: 720px;
-      padding-top: 0.5rem;
-    }
-
-    .dialog-grid__full {
-      grid-column: 1 / -1;
-    }
-
-    .dialog-shell {
-      overflow: hidden;
-    }
-  `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LessonDialogComponent {

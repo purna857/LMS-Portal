@@ -86,6 +86,12 @@ import { materialImports } from '@app/shared/material/material-imports';
     :host {
       display: block;
       font-family: 'IBM Plex Sans', sans-serif !important;
+      --certificate-accent: #365fd8;
+      --certificate-accent-strong: #2448b8;
+      --certificate-accent-rgb: 54, 95, 216;
+      --certificate-surface: #ffffff;
+      --certificate-surface-soft: #f8fbff;
+      --certificate-border: rgba(148, 163, 184, 0.18);
     }
 
     .page-section {
@@ -94,24 +100,24 @@ import { materialImports } from '@app/shared/material/material-imports';
     }
 
     .certificate-card {
-      border: 1px solid rgba(37, 99, 235, 0.1);
+      border: 1px solid var(--certificate-border);
       border-radius: 28px;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 252, 255, 0.98));
-      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 251, 255, 0.99));
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.05);
       overflow: hidden;
     }
 
     .certificate-card mat-card-content {
       display: grid;
-      gap: 1.1rem;
-      padding: 1.25rem 1.25rem 0.9rem;
+      gap: 1.15rem;
+      padding: 1.35rem 1.35rem 1rem;
     }
 
     .certificate-hero {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
       gap: 1rem 1.15rem;
-      align-items: start;
+      align-items: center;
     }
 
     .certificate-hero__icon {
@@ -120,52 +126,56 @@ import { materialImports } from '@app/shared/material/material-imports';
       width: 92px;
       height: 92px;
       border-radius: 28px;
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(20, 184, 166, 0.12));
-      color: var(--primary-strong);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+      background:
+        radial-gradient(circle at 30% 25%, rgba(var(--certificate-accent-rgb), 0.08), transparent 48%),
+        linear-gradient(135deg, rgba(var(--certificate-accent-rgb), 0.09), rgba(148, 163, 184, 0.08));
+      color: var(--certificate-accent-strong);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.8),
+        0 14px 28px rgba(15, 23, 42, 0.04);
     }
 
     .certificate-hero__icon .material-symbols-outlined {
-      font-size: 2.6rem;
-      width: 2.6rem;
-      height: 2.6rem;
+      font-size: 2.45rem;
+      width: 2.45rem;
+      height: 2.45rem;
     }
 
     .certificate-hero__copy {
       display: grid;
-      gap: 0.65rem;
+      gap: 0.6rem;
       align-content: start;
     }
 
     .certificate-hero__eyebrow,
     .certificate-panel__eyebrow {
       margin: 0;
-      color: var(--primary);
+      color: var(--certificate-accent);
       text-transform: uppercase;
-      letter-spacing: 0.14em;
-      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      font-size: 0.68rem;
       font-weight: 800;
     }
 
     .certificate-hero__copy h2 {
       margin: 0;
-      font-size: clamp(1.75rem, 2.3vw, 2.5rem);
+      font-size: clamp(1.55rem, 2vw, 2.15rem);
       line-height: 1.05;
       letter-spacing: -0.05em;
-      color: var(--primary-strong);
+      color: #18233b;
     }
 
     .certificate-hero__copy p {
       margin: 0;
       color: var(--muted);
       line-height: 1.6;
-      max-width: 64ch;
+      max-width: 58ch;
     }
 
     .certificate-hero__pills {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.55rem;
+      gap: 0.5rem;
       margin-top: 0.1rem;
     }
 
@@ -174,8 +184,10 @@ import { materialImports } from '@app/shared/material/material-imports';
       align-items: center;
       padding: 0.5rem 0.75rem;
       border-radius: 999px;
-      background: #edf4ff;
-      color: var(--primary-strong);
+      background: rgba(var(--certificate-accent-rgb), 0.08);
+      color: var(--certificate-accent-strong);
+      border: 1px solid rgba(var(--certificate-accent-rgb), 0.1);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
       font-weight: 700;
       font-size: 0.8rem;
     }
@@ -183,25 +195,28 @@ import { materialImports } from '@app/shared/material/material-imports';
     .certificate-grid {
       display: grid;
       grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.9fr);
-      gap: 1rem;
+      gap: 1.05rem;
     }
 
     .certificate-panel {
       display: grid;
       gap: 0.9rem;
       padding: 1rem 1.05rem;
-      border: 1px solid rgba(37, 99, 235, 0.1);
+      border: 1px solid var(--certificate-border);
       border-radius: 24px;
-      background: rgba(255, 255, 255, 0.95);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.98));
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.03);
     }
 
     .certificate-panel--accent {
-      background: linear-gradient(180deg, rgba(237, 244, 255, 0.8), rgba(255, 255, 255, 0.95));
+      background:
+        linear-gradient(180deg, rgba(var(--certificate-accent-rgb), 0.04), rgba(255, 255, 255, 0.98)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.98));
     }
 
     .certificate-panel h3 {
       margin: 0;
-      color: var(--primary-strong);
+      color: #18233b;
       font-size: 1.05rem;
       line-height: 1.35;
       letter-spacing: -0.03em;
@@ -219,11 +234,11 @@ import { materialImports } from '@app/shared/material/material-imports';
       display: grid;
       gap: 0.25rem;
       padding-left: 0.9rem;
-      border-left: 2px solid rgba(37, 99, 235, 0.16);
+      border-left: 2px solid rgba(var(--certificate-accent-rgb), 0.14);
     }
 
     .certificate-steps strong {
-      color: var(--primary-strong);
+      color: #20304f;
       font-size: 0.95rem;
       line-height: 1.35;
     }
@@ -237,10 +252,10 @@ import { materialImports } from '@app/shared/material/material-imports';
     }
 
     .certificate-panel__metric {
-      font-size: clamp(2.6rem, 4vw, 3.2rem);
+      font-size: clamp(2.45rem, 3.8vw, 3rem);
       line-height: 1;
       letter-spacing: -0.06em;
-      color: var(--primary-strong);
+      color: var(--certificate-accent-strong);
     }
 
     .certificate-panel__metric-copy {
@@ -267,7 +282,7 @@ import { materialImports } from '@app/shared/material/material-imports';
     }
 
     .certificate-readiness__row strong {
-      color: var(--primary-strong);
+      color: var(--certificate-accent-strong);
       font-size: 0.86rem;
       white-space: nowrap;
     }
@@ -292,16 +307,12 @@ import { materialImports } from '@app/shared/material/material-imports';
 
     .certificate-action--primary {
       color: #ffffff !important;
-      background: var(--primary) !important;
-      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
-    }
-
-    .certificate-action--primary:hover {
-      background: #1d4ed8 !important;
+      background: linear-gradient(180deg, var(--certificate-accent), var(--certificate-accent-strong)) !important;
+      box-shadow: 0 12px 24px rgba(var(--certificate-accent-rgb), 0.16);
     }
 
     .certificate-action:not(.certificate-action--primary) {
-      color: var(--primary) !important;
+      color: var(--certificate-accent) !important;
     }
 
     @media (max-width: 960px) {

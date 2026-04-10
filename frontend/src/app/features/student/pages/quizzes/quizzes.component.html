@@ -73,8 +73,8 @@
             @if (filteredQuizzes().length) {
               <div class="quiz-list">
                 @for (quiz of filteredQuizzes(); track quiz.id) {
-                  <div class="quiz-tile">
-                    <button type="button" class="quiz-tile__launch" (click)="selectQuiz(quiz)">
+                  <div class="quiz-tile" [class.quiz-tile--opening]="openingQuizId() === quiz.id">
+                    <div class="quiz-tile__launch">
                       <div class="quiz-tile__top">
                         <div class="quiz-tile__copy">
                           <p class="quiz-tile__eyebrow">{{ selectedCourseTitle() }}</p>
@@ -93,11 +93,18 @@
                         <span>{{ quiz.total_points }} points</span>
                         <span>{{ quiz.shuffle_questions ? 'Shuffled' : 'Ordered' }}</span>
                       </div>
-                    </button>
+                    </div>
                     <div class="quiz-tile__footer">
                       <span>{{ quiz.published_at ? 'Published' : 'Draft' }}</span>
                       <div class="quiz-tile__footer-actions">
-                        <button mat-stroked-button type="button" (click)="selectQuiz(quiz)">Open</button>
+                        <button
+                          mat-stroked-button
+                          class="quiz-tile__take-quiz"
+                          type="button"
+                          [disabled]="detailLoading() || openingQuizId() === quiz.id || selectedQuiz()?.id === quiz.id"
+                          (click)="selectQuiz(quiz)">
+                          Take Quiz
+                        </button>
                         <a mat-button [routerLink]="['/app/student/results']">History</a>
                       </div>
                     </div>
@@ -148,72 +155,112 @@
                   </div>
                 </div>
 
-                <div class="exam-window__sections">
-                  <div class="exam-window__section exam-window__section--active">Question Paper</div>
-                  <div class="exam-window__section">Instructions</div>
+                <div class="exam-window__toolbar">
+                  <button
+                    mat-flat-button
+                    type="button"
+                    class="exam-window__instruction-button"
+                    [attr.aria-pressed]="showInstructions()"
+                    (click)="toggleInstructions()">
+                    Instructions
+                  </button>
                 </div>
 
                 <div class="exam-window__body">
                   <section class="exam-paper">
-                    <div class="exam-paper__top">
-                      <div>
-                        <p>Section 1</p>
-                        <strong>Question {{ activeQuestionIndex() + 1 }} of {{ examQuestions().length }}</strong>
-                      </div>
-                      <div class="exam-paper__status">
-                        <span>{{ answeredCount() }} answered</span>
-                        <span>{{ notVisitedCount() }} not visited</span>
-                      </div>
-                    </div>
-
                     @if (showInstructions()) {
-                      <div class="instructions-panel">
-                        <strong>Instructions</strong>
-                        <p>{{ quiz.instructions || quiz.description || 'Choose the best answer, mark any question for review, and use Save & Next to continue.' }}</p>
-                      </div>
-                    }
+                      <div class="exam-instructions">
+                        <div class="exam-instructions__header">
+                          <div>
+                            <p>Instructions</p>
+                            <strong>TCS NQT-style checklist</strong>
+                          </div>
+                          <span class="exam-instructions__badge">Read before starting</span>
+                        </div>
 
-                    @if (currentQuestion(); as question) {
-                      <div class="question-panel">
-                        <p class="question-panel__eyebrow">Question No. {{ activeQuestionIndex() + 1 }}</p>
-                        <h4>{{ question.question_text }}</h4>
-                        <div class="question-panel__meta">
-                          <span>{{ question.points }} points</span>
-                          <span>{{ question.allow_multiple_answers ? 'Multiple answers' : 'Single answer' }}</span>
+                        <p class="exam-instructions__lead">
+                          Follow these guidelines carefully before you begin the attempt. The paper below stays ready while you review the instructions.
+                        </p>
+
+                        <div class="exam-instructions__list">
+                          @for (instruction of quizInstructions(); track instruction.title; let index = $index) {
+                            <div class="exam-instructions__item">
+                              <span class="exam-instructions__index">{{ index + 1 }}</span>
+                              <div class="exam-instructions__copy">
+                                <strong>{{ instruction.title }}</strong>
+                                <ul class="exam-instructions__bullets">
+                                  @for (bullet of instruction.bullets; track bullet) {
+                                    <li>{{ bullet }}</li>
+                                  }
+                                </ul>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="exam-paper__top">
+                        <div>
+                          <p>Section 1</p>
+                          <strong>Question {{ activeQuestionIndex() + 1 }} of {{ examQuestions().length }}</strong>
+                        </div>
+                        <div class="exam-paper__status">
+                          <span>{{ answeredCount() }} answered</span>
+                          <span>{{ notVisitedCount() }} not visited</span>
                         </div>
                       </div>
 
-                      <div class="option-grid option-grid--exam">
-                        @for (option of question.options; track option.id; let optionIndex = $index) {
-                          <button
-                            type="button"
-                            class="option-card option-card--exam"
-                            [class.option-card--selected]="isSelected(question.id, option.id)"
-                            (click)="selectOption(question.id, option.id, question.allow_multiple_answers)">
-                            <span class="option-card__index">{{ optionLetter(optionIndex) }}</span>
-                            <span class="option-card__text">{{ option.option_text }}</span>
+                      @if (currentQuestion(); as question) {
+                        <div class="question-panel" [class.question-panel--review]="isCurrentQuestionFlagged() && !currentQuestionAnswered()">
+                          <p class="question-panel__eyebrow">Question No. {{ activeQuestionIndex() + 1 }}</p>
+                          <h4>{{ question.question_text }}</h4>
+                          <div class="question-panel__meta">
+                            <span>{{ question.points }} points</span>
+                            <span>{{ question.allow_multiple_answers ? 'Multiple answers' : 'Single answer' }}</span>
+                          </div>
+                        </div>
+
+                        <div class="option-grid option-grid--exam">
+                          @for (option of question.options; track option.id; let optionIndex = $index) {
+                            <button
+                              type="button"
+                              class="option-card option-card--exam"
+                              [class.option-card--selected]="isSelected(question.id, option.id)"
+                              [disabled]="submitting()"
+                              (click)="selectOption(question.id, option.id, question.allow_multiple_answers)">
+                              <span class="option-card__index">{{ optionLetter(optionIndex) }}</span>
+                              <span class="option-card__text">{{ option.option_text }}</span>
+                            </button>
+                          }
+                        </div>
+                      } @else {
+                        <app-empty-state
+                          icon="quiz"
+                          title="This quiz has no questions yet"
+                          description="The quiz is visible, but there are no questions to answer right now.">
+                        </app-empty-state>
+                      }
+
+                      <div class="exam-actions exam-actions--paper" [class.exam-actions--paper--final]="isLastQuestion()">
+                        @if (!isLastQuestion()) {
+                          <button mat-stroked-button type="button" (click)="markReviewAndNext()" [disabled]="submitting() || !currentQuestion()">
+                            {{ markReviewActionLabel() }}
+                          </button>
+                        }
+                        <button mat-stroked-button type="button" class="exam-actions__clear" (click)="clearCurrentAnswer()" [disabled]="submitting() || !currentQuestion()">
+                          Clear Response
+                        </button>
+                        @if (isLastQuestion()) {
+                          <button mat-flat-button color="primary" type="button" (click)="submitAttempt()" [disabled]="submitting() || !canSubmitAttempt()">
+                            Submit
+                          </button>
+                        } @else {
+                          <button mat-flat-button color="primary" type="button" (click)="saveAndNext()" [disabled]="submitting()">
+                            Save &amp; Next
                           </button>
                         }
                       </div>
-                    } @else {
-                      <app-empty-state
-                        icon="quiz"
-                        title="This quiz has no questions yet"
-                        description="The quiz is visible, but there are no questions to answer right now.">
-                      </app-empty-state>
                     }
-
-                    <div class="exam-actions exam-actions--paper">
-                      <button mat-stroked-button type="button" (click)="markReviewAndNext()" [disabled]="!currentQuestion()">
-                        Mark for Review &amp; Next
-                      </button>
-                      <button mat-stroked-button type="button" (click)="clearCurrentAnswer()" [disabled]="!currentQuestion()">
-                        Clear Response
-                      </button>
-                      <button mat-flat-button color="primary" type="button" (click)="saveAndNext()">
-                        Save &amp; Next
-                      </button>
-                    </div>
                   </section>
 
                   <aside class="exam-sidebar">
@@ -248,15 +295,16 @@
 
                     <div class="sidebar-card sidebar-card--palette">
                       <div class="sidebar-card__title">Question Palette</div>
-                      <div class="palette-grid">
-                        @for (item of questionNavigator(); track item.question.id) {
+                        <div class="palette-grid">
+                          @for (item of questionNavigator(); track item.question.id) {
                           <button
                             type="button"
                             class="palette-button"
                             [class.palette-button--answered]="item.answered"
-                            [class.palette-button--review]="item.flagged"
+                            [class.palette-button--unanswered]="!item.answered"
+                            [class.palette-button--review]="item.flagged && !item.answered"
                             [class.palette-button--current]="item.current"
-                            [class.palette-button--visited]="item.visited"
+                            [disabled]="submitting()"
                             (click)="activateQuestion(item.index)">
                             <span>{{ item.index + 1 }}</span>
                           </button>
@@ -264,24 +312,6 @@
                       </div>
                     </div>
 
-                    <div class="sidebar-actions">
-                      <button mat-stroked-button type="button" (click)="scrollQuestionPaper()">Question Paper</button>
-                      <button
-                        mat-stroked-button
-                        type="button"
-                        [attr.aria-pressed]="showInstructions()"
-                        (click)="toggleInstructions()">
-                        Instructions
-                      </button>
-                      <button mat-stroked-button type="button" (click)="openProfile()">Profile</button>
-                      <button
-                        mat-flat-button
-                        color="primary"
-                        type="button"
-                        (click)="submitAttempt()">
-                        Submit Test
-                      </button>
-                    </div>
                   </aside>
                 </div>
               </mat-card-content>

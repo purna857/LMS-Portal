@@ -21,9 +21,6 @@
           <span class="material-symbols-outlined">{{ desktop() ? (compactBrand() ? 'chevron_right' : 'chevron_left') : 'close' }}</span>
         </button>
       </div>
-      <div class="shell-sidenav__tenant">
-        <span>Enterprise LMS</span>
-      </div>
     </div>
 
     <div class="shell-sidenav__nav" #navScroller>
@@ -71,52 +68,80 @@
       </div>
 
       @if (toolbarSearchVisible()) {
-        <div class="shell-toolbar__center">
-          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="shell-toolbar__search">
-            <span matIconPrefix class="material-symbols-outlined shell-toolbar__search-icon">search</span>
-            <input
-              matInput
-              [value]="workspaceSearch.query()"
-              (input)="workspaceSearch.setQuery($any($event.target).value ?? '')"
-              [placeholder]="toolbarSearchPlaceholder()"
-              aria-label="Search current page" />
-            @if (workspaceSearch.query()) {
-              <button
-                mat-icon-button
-                matSuffix
-                type="button"
-                aria-label="Clear search"
-                (click)="workspaceSearch.clear()">
-                <span class="material-symbols-outlined">close</span>
-              </button>
-            }
-          </mat-form-field>
+        <div class="shell-toolbar__search-shell">
+          <div class="shell-toolbar__center">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="shell-toolbar__search">
+              <span matIconPrefix class="material-symbols-outlined shell-toolbar__search-icon">search</span>
+              <input
+                matInput
+                [value]="workspaceSearch.query()"
+                (input)="workspaceSearch.setQuery($any($event.target).value ?? '')"
+                [placeholder]="toolbarSearchPlaceholder()"
+                aria-label="Global search" />
+              @if (workspaceSearch.query()) {
+                <button
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  aria-label="Clear search"
+                  (click)="workspaceSearch.clear()">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              }
+            </mat-form-field>
+          </div>
+
+          @if (workspaceSearch.normalizedQuery()) {
+            <div class="shell-toolbar__search-results" role="listbox" aria-label="Global search results">
+              @if (searchSections().length) {
+                @for (section of searchSections(); track section.section) {
+                  <div class="shell-toolbar__search-group">
+                    <p class="shell-toolbar__search-group-label">{{ section.section }}</p>
+                    <div class="shell-toolbar__search-links">
+                      @for (item of section.items; track item.route) {
+                        <a
+                          class="shell-toolbar__search-link"
+                          [routerLink]="item.route"
+                          (click)="closeMobileNav()">
+                          <span class="material-symbols-outlined shell-toolbar__search-link-icon">{{ item.icon }}</span>
+                          <span class="shell-toolbar__search-link-copy">
+                            <strong>{{ item.label }}</strong>
+                            <small>{{ item.caption }}</small>
+                          </span>
+                        </a>
+                      }
+                    </div>
+                  </div>
+                }
+              } @else {
+                <div class="shell-toolbar__search-empty">
+                  <span class="material-symbols-outlined">search_off</span>
+                  <div>
+                    <strong>No matching pages found</strong>
+                    <p>Try a different keyword or clear the search to return to the workspace.</p>
+                  </div>
+                </div>
+              }
+            </div>
+          }
         </div>
       }
 
       <span class="shell-toolbar__spacer"></span>
 
       <button
+        class="shell-toolbar__notification-trigger"
         mat-icon-button
         type="button"
-        aria-label="Notifications"
-        [matMenuTriggerFor]="notificationMenu"
-        [matBadge]="notificationCount()"
+        [routerLink]="notificationCenterRoute()"
+        (click)="closeMobileNav()"
+        [attr.aria-label]="notificationCount() ? notificationCount() + ' unread notifications' : 'Notifications'"
+        [matBadge]="notificationCount() ? notificationCount() : null"
         [matBadgeHidden]="notificationCount() === 0"
-        matBadgeColor="warn">
+        matBadgeColor="warn"
+        matBadgeSize="large">
         <span class="material-symbols-outlined">notifications</span>
       </button>
-      <mat-menu #notificationMenu="matMenu" class="shell-menu">
-        <div class="shell-menu__panel">
-          <p class="shell-menu__eyebrow">Notifications</p>
-          @for (item of notificationItems(); track item) {
-            <div class="shell-menu__item">
-              <span class="material-symbols-outlined">circle_notifications</span>
-              <span>{{ item }}</span>
-            </div>
-          }
-        </div>
-      </mat-menu>
 
       <button
         #profileButton

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -8,11 +8,14 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { AdminActionDialogComponent } from '@app/features/admin/components/admin-action-dialog/admin-action-dialog.component';
 import type { AdminUserListItem } from '@app/features/admin/models/admin.models';
+import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { AdminPortalService } from '@app/features/admin/services/admin-portal.service';
 import { SessionService } from '@app/core/services/session.service';
 import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '@app/shared/components/page-header/page-header.component';
+import { portalDialogConfig } from '@app/shared/dialogs/portal-dialog-helpers';
 import { materialImports } from '@app/shared/material/material-imports';
+import { chipToneForRole, chipToneForUserStatus } from '@app/shared/utils/chip-tone';
 
 
 @Component({
@@ -23,16 +26,35 @@ import { materialImports } from '@app/shared/material/material-imports';
     <section class="page-section">
       <app-page-header
         eyebrow="Admin"
-        title="User Management"
+        title="User Governance"
         description="Manage user access, account status, and role coverage across the entire LMS platform.">
       </app-page-header>
+
+      <div class="page-grid">
+        @for (card of summaryCards(); track card.label) {
+          <mat-card class="stat-card stat-card--metric">
+            <mat-card-content>
+              <div class="metric-card__top">
+                <span class="metric-card__icon material-symbols-outlined">{{ card.icon }}</span>
+                <p class="metric-card__label">{{ card.label }}</p>
+              </div>
+              <strong class="metric-card__value">{{ card.value }}</strong>
+              <span class="metric-card__hint">{{ card.hint }}</span>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
 
       <mat-card class="surface-card">
         <mat-card-content>
           <form [formGroup]="filtersForm" class="toolbar-grid">
             <mat-form-field appearance="outline">
               <mat-label>Search users</mat-label>
-              <input matInput formControlName="search" placeholder="Name or email" />
+              <input
+                matInput
+                [value]="workspaceSearch.query()"
+                (input)="workspaceSearch.setQuery($any($event.target).value ?? '')"
+                placeholder="Name, email, or role" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -70,9 +92,9 @@ import { materialImports } from '@app/shared/material/material-imports';
             <mat-progress-bar mode="indeterminate"></mat-progress-bar>
           }
 
-          @if (users().length) {
+          @if (filteredUsers().length) {
             <div class="table-wrap">
-              <table mat-table [dataSource]="users()" class="data-table">
+              <table mat-table [dataSource]="filteredUsers()" class="data-table">
                 <ng-container matColumnDef="name">
                   <th mat-header-cell *matHeaderCellDef>User</th>
                   <td mat-cell *matCellDef="let user">
@@ -88,7 +110,7 @@ import { materialImports } from '@app/shared/material/material-imports';
                   <td mat-cell *matCellDef="let user">
                     <mat-chip-set>
                       @for (role of user.roles; track role) {
-                        <mat-chip>{{ role }}</mat-chip>
+                        <mat-chip [attr.data-tone]="chipToneForRole(role)">{{ role }}</mat-chip>
                       }
                     </mat-chip-set>
                   </td>
@@ -98,7 +120,7 @@ import { materialImports } from '@app/shared/material/material-imports';
                   <th mat-header-cell *matHeaderCellDef>Status</th>
                   <td mat-cell *matCellDef="let user">
                     <mat-chip-set>
-                      <mat-chip [highlighted]="user.status === 'active'">{{ user.status }}</mat-chip>
+                      <mat-chip [attr.data-tone]="chipToneForUserStatus(user.status)">{{ user.status }}</mat-chip>
                     </mat-chip-set>
                   </td>
                 </ng-container>
@@ -137,10 +159,16 @@ import { materialImports } from '@app/shared/material/material-imports';
                 <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
               </table>
             </div>
+          } @else if (users().length) {
+            <app-empty-state
+              icon="search_off"
+              [title]="workspaceSearch.normalizedQuery() ? 'No users match your search' : 'No users match this view'"
+              [description]="workspaceSearch.normalizedQuery() ? 'Try a different name, email, role, or status.' : 'Adjust the filters to see more user records or onboarding activity.'">
+            </app-empty-state>
           } @else {
             <app-empty-state
               icon="groups"
-              title="No users match this view"
+              title="No users found"
               description="Adjust the filters to see more user records or onboarding activity.">
             </app-empty-state>
           }
@@ -157,16 +185,65 @@ export class UserManagementComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly sessionService = inject(SessionService);
+  readonly workspaceSearch = inject(WorkspaceSearchService);
 
   readonly loading = signal(false);
   readonly users = signal<AdminUserListItem[]>([]);
   readonly displayedColumns = ['name', 'roles', 'status', 'activity', 'actions'];
+  readonly filteredUsers = computed(() => {
+    const query = this.workspaceSearch.normalizedQuery();
+    if (!query) {
+      return this.users();
+    }
+
+    return this.users().filter((user) =>
+      this.workspaceSearch.matches(
+        user.first_name,
+        user.last_name,
+        user.email,
+        user.phone ?? '',
+        user.status,
+        user.roles.join(' ')
+      )
+    );
+  });
+  readonly summaryCards = computed(() => {
+    const users = this.users();
+    return [
+      {
+        label: 'Total Users',
+        value: String(users.length),
+        hint: 'Accounts currently loaded in this workspace view',
+        icon: 'groups'
+      },
+      {
+        label: 'Active',
+        value: String(users.filter((user) => user.status === 'active').length),
+        hint: 'Users with active platform access',
+        icon: 'check_circle'
+      },
+      {
+        label: 'Suspended',
+        value: String(users.filter((user) => user.status === 'suspended').length),
+        hint: 'Accounts temporarily blocked from access',
+        icon: 'block'
+      },
+      {
+        label: 'Instructors',
+        value: String(users.filter((user) => user.roles.includes('instructor')).length),
+        hint: 'Teaching staff represented in the portal',
+        icon: 'school'
+      }
+    ];
+  });
 
   readonly filtersForm = this.formBuilder.group({
-    search: [''],
     status: [''],
     role: ['']
   });
+
+  readonly chipToneForRole = chipToneForRole;
+  readonly chipToneForUserStatus = chipToneForUserStatus;
 
   constructor() {
     this.loadUsers();
@@ -177,7 +254,6 @@ export class UserManagementComponent {
     const raw = this.filtersForm.getRawValue();
     this.adminPortalService
       .listUsers({
-        search: raw.search?.trim() || undefined,
         status: raw.status || undefined,
         role: raw.role || undefined,
         limit: 50,
@@ -198,10 +274,10 @@ export class UserManagementComponent {
 
   resetFilters(): void {
     this.filtersForm.reset({
-      search: '',
       status: '',
       role: ''
     });
+    this.workspaceSearch.clear();
     this.loadUsers();
   }
 
@@ -221,11 +297,7 @@ export class UserManagementComponent {
         confirmLabel: block ? 'Suspend User' : 'Restore User',
         confirmColor: block ? 'warn' : 'primary'
       },
-      panelClass: ['lms-dialog-panel'],
-      width: '420px',
-      maxWidth: '92vw',
-      maxHeight: '80vh',
-      autoFocus: false
+      ...portalDialogConfig('sm')
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {

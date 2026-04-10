@@ -1,38 +1,80 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { AdminActionDialogComponent } from '@app/features/admin/components/admin-action-dialog/admin-action-dialog.component';
 import { CourseEditorDialogComponent } from '@app/features/admin/components/course-editor-dialog/course-editor-dialog.component';
 import type { CourseCategory, CourseListItem } from '@app/features/admin/models/admin.models';
+import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { AdminPortalService } from '@app/features/admin/services/admin-portal.service';
 import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '@app/shared/components/page-header/page-header.component';
+import { portalDialogConfig } from '@app/shared/dialogs/portal-dialog-helpers';
 import { materialImports } from '@app/shared/material/material-imports';
+import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/utils/chip-tone';
 
 
 @Component({
   selector: 'app-course-management',
   standalone: true,
-  imports: [ReactiveFormsModule, EmptyStateComponent, PageHeaderComponent, ...materialImports],
+  imports: [ReactiveFormsModule, RouterLink, EmptyStateComponent, PageHeaderComponent, ...materialImports],
   template: `
     <section class="page-section">
       <app-page-header
         eyebrow="Admin"
-        title="Course Management"
+        title="Catalog Control"
         description="Oversee the catalog, refine course metadata, and control publishing state across the LMS.">
       </app-page-header>
+
+      <div class="page-grid">
+        @for (card of summaryCards(); track card.label) {
+          <mat-card class="stat-card stat-card--metric">
+            <mat-card-content>
+              <div class="metric-card__top">
+                <span class="metric-card__icon material-symbols-outlined">{{ card.icon }}</span>
+                <p class="metric-card__label">{{ card.label }}</p>
+              </div>
+              <strong class="metric-card__value">{{ card.value }}</strong>
+              <span class="metric-card__hint">{{ card.hint }}</span>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+
+      <mat-card class="surface-card workflow-card">
+        <mat-card-header>
+          <mat-card-title>Catalog Control Path</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p class="workflow-card__copy">
+            Keep the catalog moving through approvals, user governance, taxonomy, and reporting without leaving the page.
+          </p>
+
+          <div class="workflow-card__actions">
+            <a mat-stroked-button routerLink="/app/admin/approvals">Instructor Reviews</a>
+            <a mat-stroked-button routerLink="/app/admin/users">User Governance</a>
+            <a mat-stroked-button routerLink="/app/admin/categories">Taxonomy</a>
+            <a mat-stroked-button routerLink="/app/admin/analytics">Platform Reports</a>
+            <a mat-stroked-button routerLink="/app/admin/announcements">Broadcasts</a>
+          </div>
+        </mat-card-content>
+      </mat-card>
 
       <mat-card class="surface-card">
         <mat-card-content>
           <form [formGroup]="filtersForm" class="toolbar-grid">
             <mat-form-field appearance="outline">
               <mat-label>Search courses</mat-label>
-              <input matInput formControlName="search" placeholder="Course title or slug" />
+              <input
+                matInput
+                [value]="workspaceSearch.query()"
+                (input)="workspaceSearch.setQuery($any($event.target).value ?? '')"
+                placeholder="Title, slug, instructor, or category" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -69,9 +111,9 @@ import { materialImports } from '@app/shared/material/material-imports';
             <mat-progress-bar mode="indeterminate"></mat-progress-bar>
           }
 
-          @if (courses().length) {
+          @if (filteredCourses().length) {
             <div class="table-wrap">
-              <table mat-table [dataSource]="courses()" class="data-table">
+              <table mat-table [dataSource]="filteredCourses()" class="data-table">
                 <ng-container matColumnDef="title">
                   <th mat-header-cell *matHeaderCellDef>Course</th>
                   <td mat-cell *matCellDef="let course">
@@ -96,8 +138,8 @@ import { materialImports } from '@app/shared/material/material-imports';
                   <th mat-header-cell *matHeaderCellDef>Status</th>
                   <td mat-cell *matCellDef="let course">
                     <mat-chip-set>
-                      <mat-chip [highlighted]="course.status === 'published'">{{ course.status }}</mat-chip>
-                      <mat-chip>{{ course.visibility }}</mat-chip>
+                      <mat-chip [attr.data-tone]="chipToneForCourseStatus(course.status)">{{ course.status }}</mat-chip>
+                      <mat-chip [attr.data-tone]="chipToneForVisibility(course.visibility)">{{ course.visibility }}</mat-chip>
                     </mat-chip-set>
                   </td>
                 </ng-container>
@@ -121,10 +163,16 @@ import { materialImports } from '@app/shared/material/material-imports';
                 <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
               </table>
             </div>
+          } @else if (courses().length) {
+            <app-empty-state
+              icon="search_off"
+              [title]="workspaceSearch.normalizedQuery() ? 'No matching courses' : 'No courses match this view'"
+              [description]="workspaceSearch.normalizedQuery() ? 'Try a different search term or clear the current filters.' : 'Update the filters to find more of the catalog or newly authored courses.'">
+            </app-empty-state>
           } @else {
             <app-empty-state
               icon="library_add"
-              title="No courses match this view"
+              title="No courses found"
               description="Update the filters to find more of the catalog or newly authored courses.">
             </app-empty-state>
           }
@@ -137,6 +185,31 @@ import { materialImports } from '@app/shared/material/material-imports';
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .workflow-card {
+      overflow: hidden;
+    }
+
+    .workflow-card mat-card-content {
+      display: grid;
+      gap: 1rem;
+      padding-top: 0.35rem;
+    }
+
+    .workflow-card__copy {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.92rem;
+    }
+
+    .workflow-card__actions {
+      display: flex;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      align-items: center;
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -147,14 +220,65 @@ export class CourseManagementComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  readonly workspaceSearch = inject(WorkspaceSearchService);
 
   readonly loading = signal(false);
   readonly courses = signal<CourseListItem[]>([]);
   readonly categories = signal<CourseCategory[]>([]);
   readonly displayedColumns = ['title', 'category', 'owner', 'status', 'actions'];
+  readonly summaryCards = computed(() => {
+    const courses = this.courses();
+    return [
+      {
+        label: 'Total Courses',
+        value: String(courses.length),
+        hint: 'Catalog items currently loaded',
+        icon: 'library_books'
+      },
+      {
+        label: 'Published',
+        value: String(courses.filter((course) => course.status === 'published').length),
+        hint: 'Courses visible to learners',
+        icon: 'rocket_launch'
+      },
+      {
+        label: 'Drafts',
+        value: String(courses.filter((course) => course.status === 'draft').length),
+        hint: 'Courses still under review',
+        icon: 'edit_note'
+      },
+      {
+        label: 'Featured',
+        value: String(courses.filter((course) => course.is_featured).length),
+        hint: 'Highlighted in the catalog experience',
+        icon: 'star'
+      }
+    ];
+  });
+  readonly filteredCourses = computed(() => {
+    const query = this.workspaceSearch.normalizedQuery();
+    if (!query) {
+      return this.courses();
+    }
+
+    return this.courses().filter((course) =>
+      this.workspaceSearch.matches(
+        course.title,
+        course.slug,
+        course.short_description,
+        course.category_name,
+        course.primary_instructor_name,
+        course.language,
+        course.level,
+        course.status
+      )
+    );
+  });
+
+  readonly chipToneForCourseStatus = chipToneForCourseStatus;
+  readonly chipToneForVisibility = chipToneForVisibility;
 
   readonly filtersForm = this.formBuilder.group({
-    search: [''],
     status: [''],
     category_id: ['']
   });
@@ -179,7 +303,6 @@ export class CourseManagementComponent {
     this.adminPortalService.listCourses({
       limit: 50,
       offset: 0,
-      search: raw.search?.trim() || undefined,
       status: raw.status || undefined,
       category_id: raw.category_id || undefined
     })
@@ -198,10 +321,10 @@ export class CourseManagementComponent {
 
   resetFilters(): void {
     this.filtersForm.reset({
-      search: '',
       status: '',
       category_id: ''
     });
+    this.workspaceSearch.clear();
     this.loadCourses();
   }
 
@@ -219,9 +342,7 @@ export class CourseManagementComponent {
               course: detail,
               categories
             },
-            width: 'min(94vw, 760px)',
-            maxWidth: 'min(94vw, 760px)',
-            panelClass: ['lms-dialog-panel', 'lms-course-editor-dialog']
+            ...portalDialogConfig('xl')
           });
 
           dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {
@@ -256,11 +377,7 @@ export class CourseManagementComponent {
         confirmLabel: publish ? 'Publish' : 'Unpublish',
         confirmColor: publish ? 'primary' : 'warn'
       },
-      panelClass: ['lms-dialog-panel'],
-      width: '420px',
-      maxWidth: '92vw',
-      maxHeight: '80vh',
-      autoFocus: false
+      ...portalDialogConfig('sm')
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
@@ -292,11 +409,7 @@ export class CourseManagementComponent {
         confirmLabel: 'Delete Course',
         confirmColor: 'warn'
       },
-      panelClass: ['lms-dialog-panel'],
-      width: '420px',
-      maxWidth: '92vw',
-      maxHeight: '80vh',
-      autoFocus: false
+      ...portalDialogConfig('sm')
     });
 
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {

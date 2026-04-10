@@ -28,6 +28,11 @@ interface QuestionNavigatorItem {
   visited: boolean;
 }
 
+interface QuizInstructionItem {
+  title: string;
+  bullets: string[];
+}
+
 @Component({
   selector: 'app-student-quizzes',
   standalone: true,
@@ -57,13 +62,14 @@ export class StudentQuizzesComponent {
   readonly answers = signal<Record<string, string[]>>({});
   readonly reviewMarks = signal<Record<string, boolean>>({});
   readonly visitedQuestionIds = signal<Record<string, boolean>>({});
+  readonly openingQuizId = signal<string | null>(null);
   readonly activeQuestionIndex = signal(0);
   readonly catalogLoading = signal(false);
   readonly detailLoading = signal(false);
   readonly submitting = signal(false);
   readonly remainingSeconds = signal(0);
   readonly timerExpired = signal(false);
-  readonly showInstructions = signal(true);
+  readonly showInstructions = signal(false);
   readonly courseForm = this.formBuilder.group({
     course_id: ['']
   });
@@ -134,6 +140,65 @@ export class StudentQuizzesComponent {
     return Math.max(12, Math.ceil((this.examQuestions().length || quiz.question_count || 0) * 1.5));
   });
   readonly timeRemainingLabel = computed(() => this.formatDuration(this.remainingSeconds()));
+  readonly currentQuestionAnswered = computed(() => {
+    const question = this.currentQuestion();
+    return !!question && (this.answers()[question.id] ?? []).length > 0;
+  });
+  readonly isLastQuestion = computed(() => this.examQuestions().length > 0 && this.activeQuestionIndex() === this.examQuestions().length - 1);
+  readonly markReviewActionLabel = computed(() => this.currentQuestionAnswered() ? 'Mark for Review' : 'Mark for Review & Next');
+  readonly quizInstructions = computed<QuizInstructionItem[]>(() => {
+    const quiz = this.selectedQuiz();
+    if (!quiz) {
+      return [];
+    }
+
+    const totalQuestions = this.examQuestions().length || quiz.question_count || 0;
+
+    return [
+      {
+        title: `This quiz contains ${totalQuestions || 'multiple'} questions and must be completed in one sitting.`,
+        bullets: [
+          'Use the question palette to move between questions quickly.',
+          'Answer every question before you submit the attempt.'
+        ]
+      },
+      {
+        title: 'Read each question carefully before selecting an answer.',
+        bullets: [
+          'Some questions are single answer, while others may allow multiple answers.',
+          'Use Clear Response if you want to change your choice.'
+        ]
+      },
+      {
+        title: 'Click Save & Next to store your answer and continue.',
+        bullets: [
+          'Mark for Review keeps a question easy to return to later.',
+          'Answered questions appear green in the palette for quick tracking.'
+        ]
+      },
+      {
+        title: 'Questions marked for review are highlighted in violet.',
+        bullets: [
+          'You can revisit a marked question before final submission.',
+          'The review state stays visible on both the question and palette.'
+        ]
+      },
+      {
+        title: 'The Submit button appears only after the last question is reached.',
+        bullets: [
+          'Submit is enabled only when all questions have been answered.',
+          'After submission, the attempt is treated as final.'
+        ]
+      },
+      {
+        title: 'Keep an eye on the timer throughout the attempt.',
+        bullets: [
+          'Finish with a few minutes left so you can review flagged items.',
+          'Once time expires, the remaining answers are locked.'
+        ]
+      }
+    ];
+  });
   readonly canSubmitAttempt = computed(() => {
     const quiz = this.selectedQuiz();
     if (!quiz || this.examQuestions().length === 0) {
@@ -207,7 +272,13 @@ export class StudentQuizzesComponent {
   }
 
   selectQuiz(quiz: QuizListItem): void {
-    void this.router.navigate(['/app/student/quizzes', quiz.id]);
+    if (this.detailLoading() || this.openingQuizId() === quiz.id || this.selectedQuiz()?.id === quiz.id) {
+      return;
+    }
+
+    this.markQuizLaunch(quiz.id);
+    this.openingQuizId.set(quiz.id);
+    void this.router.navigate(['/app/student/quizzes', quiz.id], { replaceUrl: true });
   }
 
   loadAttemptHistory(quizId: string, requestToken = this.selectionToken): void {
@@ -312,15 +383,13 @@ export class StudentQuizzesComponent {
       return;
     }
 
-    this.answers.update((current) => {
-      if (!(question.id in current)) {
-        return current;
-      }
+    this.answers.set({});
+    this.reviewMarks.set({});
 
-      const next = { ...current };
-      delete next[question.id];
-      return next;
-    });
+    const firstQuestionId = this.examQuestions()[0]?.id ?? null;
+    this.visitedQuestionIds.set(firstQuestionId ? { [firstQuestionId]: true } : {});
+    this.activeQuestionIndex.set(0);
+    this.showInstructions.set(false);
   }
 
   optionLetter(index: number): string {
@@ -328,27 +397,30 @@ export class StudentQuizzesComponent {
   }
 
   markReviewAndNext(): void {
+    const question = this.currentQuestion();
+    if (!question) {
+      return;
+    }
+
+    const advanceToNext = !(this.answers()[question.id] ?? []).length;
     this.toggleReviewCurrentQuestion();
-    this.nextQuestion();
+    if (advanceToNext) {
+      this.nextQuestion();
+    }
   }
 
   saveAndNext(): void {
+    if (!this.currentQuestion()) {
+      return;
+    }
+
+    // Saving should only advance the attempt; answer/review state is already
+    // controlled by the option selection and mark-for-review actions.
     this.nextQuestion();
   }
 
   toggleInstructions(): void {
     this.showInstructions.update((current) => !current);
-  }
-
-  openProfile(): void {
-    void this.router.navigate(['/app/profile']);
-  }
-
-  scrollQuestionPaper(): void {
-    queueMicrotask(() => {
-      const questionPaper = document.querySelector('.exam-paper');
-      questionPaper?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
   }
 
   submitAttempt(): void {
@@ -400,6 +472,7 @@ export class StudentQuizzesComponent {
 
   private resetExamState(): void {
     this.stopTimer();
+    this.openingQuizId.set(null);
     this.selectedQuiz.set(null);
     this.examQuestions.set([]);
     this.attemptHistory.set([]);
@@ -410,10 +483,17 @@ export class StudentQuizzesComponent {
     this.remainingSeconds.set(0);
     this.timerExpired.set(false);
     this.submitting.set(false);
-    this.showInstructions.set(true);
+    this.showInstructions.set(false);
   }
 
   private loadQuizWorkspace(quizId: string): void {
+    if (!this.consumeQuizLaunch(quizId)) {
+      this.resetExamState();
+      this.detailLoading.set(false);
+      void this.router.navigate(['/app/student/quizzes'], { replaceUrl: true });
+      return;
+    }
+
     this.selectionToken += 1;
     const requestToken = this.selectionToken;
     this.detailLoading.set(true);
@@ -434,10 +514,12 @@ export class StudentQuizzesComponent {
           this.answers.set({});
           this.reviewMarks.set({});
           this.visitedQuestionIds.set(orderedQuestions[0]?.id ? { [orderedQuestions[0].id]: true } : {});
-          this.showInstructions.set(true);
+          this.showInstructions.set(false);
           this.loadAttemptHistory(detail.id, requestToken);
           this.startTimer(detail);
+          this.openingQuizId.set(null);
           this.detailLoading.set(false);
+          this.clearQuizLaunch(detail.id);
           this.scrollExamIntoView();
         },
         error: (error: HttpErrorResponse) => {
@@ -447,7 +529,9 @@ export class StudentQuizzesComponent {
 
           this.selectedQuiz.set(null);
           this.examQuestions.set([]);
+          this.openingQuizId.set(null);
           this.detailLoading.set(false);
+          this.clearQuizLaunch(quizId);
           this.snackBar.open(error.error?.detail ?? 'Unable to load quiz details.', 'Dismiss', { duration: 4500 });
           void this.router.navigate(['/app/student/quizzes']);
         }
@@ -507,6 +591,29 @@ export class StudentQuizzesComponent {
       const examWindow = document.querySelector('.exam-window');
       examWindow?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+  }
+
+  private quizLaunchKey(quizId: string): string {
+    return `student-quiz-launch:${quizId}`;
+  }
+
+  private markQuizLaunch(quizId: string): void {
+    sessionStorage.setItem(this.quizLaunchKey(quizId), String(Date.now()));
+  }
+
+  private consumeQuizLaunch(quizId: string): boolean {
+    const key = this.quizLaunchKey(quizId);
+    const token = sessionStorage.getItem(key);
+    if (!token) {
+      return false;
+    }
+
+    sessionStorage.removeItem(key);
+    return true;
+  }
+
+  private clearQuizLaunch(quizId: string): void {
+    sessionStorage.removeItem(this.quizLaunchKey(quizId));
   }
 
   private markQuestionVisited(questionId: string): void {

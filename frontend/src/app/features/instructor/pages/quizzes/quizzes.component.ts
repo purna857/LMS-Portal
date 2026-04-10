@@ -1,18 +1,22 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute } from '@angular/router';
 
 import { AdminActionDialogComponent } from '@app/features/admin/components/admin-action-dialog/admin-action-dialog.component';
 import { QuizDialogComponent } from '@app/features/instructor/components/quiz-dialog/quiz-dialog.component';
 import { QuizQuestionDialogComponent } from '@app/features/instructor/components/quiz-question-dialog/quiz-question-dialog.component';
 import type { CourseListItem, QuizDetail, QuizListItem, QuizQuestion } from '@app/features/instructor/models/instructor.models';
+import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { InstructorPortalService } from '@app/features/instructor/services/instructor-portal.service';
 import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '@app/shared/components/page-header/page-header.component';
+import { portalDialogConfig } from '@app/shared/dialogs/portal-dialog-helpers';
 import { materialImports } from '@app/shared/material/material-imports';
+import { chipToneForCourseStatus } from '@app/shared/utils/chip-tone';
 
 
 @Component({
@@ -23,9 +27,24 @@ import { materialImports } from '@app/shared/material/material-imports';
     <section class="page-section">
       <app-page-header
         eyebrow="Instructor"
-        title="Quizzes"
+        title="Assessments"
         description="Manage quiz structure, question sets, passing thresholds, and publishing state across your courses.">
       </app-page-header>
+
+      <div class="page-grid">
+        @for (card of summaryCards(); track card.label) {
+          <mat-card class="stat-card stat-card--metric">
+            <mat-card-content>
+              <div class="metric-card__top">
+                <span class="metric-card__icon material-symbols-outlined">{{ card.icon }}</span>
+                <p class="metric-card__label">{{ card.label }}</p>
+              </div>
+              <strong class="metric-card__value">{{ card.value }}</strong>
+              <span class="metric-card__hint">{{ card.hint }}</span>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
 
       <mat-card class="surface-card">
         <mat-card-content>
@@ -54,9 +73,9 @@ import { materialImports } from '@app/shared/material/material-imports';
               <mat-progress-bar mode="indeterminate"></mat-progress-bar>
             }
 
-            @if (quizzes().length) {
+            @if (filteredQuizzes().length) {
               <div class="table-wrap">
-                <table mat-table [dataSource]="quizzes()" class="data-table">
+                <table mat-table [dataSource]="filteredQuizzes()" class="data-table">
                   <ng-container matColumnDef="title">
                     <th mat-header-cell *matHeaderCellDef>Quiz</th>
                     <td mat-cell *matCellDef="let quiz">
@@ -70,9 +89,9 @@ import { materialImports } from '@app/shared/material/material-imports';
                   <ng-container matColumnDef="status">
                     <th mat-header-cell *matHeaderCellDef>Status</th>
                     <td mat-cell *matCellDef="let quiz">
-                      <mat-chip-set>
-                        <mat-chip [highlighted]="quiz.status === 'published'">{{ quiz.status }}</mat-chip>
-                        <mat-chip>{{ quiz.max_attempts }} attempts</mat-chip>
+                    <mat-chip-set>
+                        <mat-chip [attr.data-tone]="chipToneForCourseStatus(quiz.status)">{{ quiz.status }}</mat-chip>
+                        <mat-chip data-tone="info">{{ quiz.max_attempts }} attempts</mat-chip>
                       </mat-chip-set>
                     </td>
                   </ng-container>
@@ -92,6 +111,12 @@ import { materialImports } from '@app/shared/material/material-imports';
                   <tr mat-row *matRowDef="let row; columns: quizColumns"></tr>
                 </table>
               </div>
+            } @else if (quizzes().length) {
+              <app-empty-state
+                icon="search_off"
+                [title]="workspaceSearch.normalizedQuery() ? 'No matching quizzes' : 'No quizzes yet'"
+                [description]="workspaceSearch.normalizedQuery() ? 'Try a different quiz title, question count, or status.' : 'Create a quiz for the selected course to start building assessments.'">
+              </app-empty-state>
             } @else {
               <app-empty-state
                 icon="quiz"
@@ -111,16 +136,16 @@ import { materialImports } from '@app/shared/material/material-imports';
               <button mat-stroked-button type="button" [disabled]="!selectedQuizDetail()" (click)="openQuestionDialog()">Add Question</button>
             </div>
 
-            @if (selectedQuizDetail()?.questions?.length) {
+            @if (filteredSelectedQuestions().length) {
               <div class="stack-list">
-                @for (question of selectedQuizDetail()?.questions ?? []; track question.id) {
+                @for (question of filteredSelectedQuestions(); track question.id) {
                   <div class="stack-list__item">
                     <div>
                       <strong>{{ question.position }}. {{ question.question_text }}</strong>
                       <p>{{ question.points }} pts · {{ question.allow_multiple_answers ? 'Multiple answers' : 'Single answer' }}</p>
                       <mat-chip-set>
                         @for (option of question.options; track option.id) {
-                          <mat-chip [highlighted]="option.is_correct">{{ option.option_text }}</mat-chip>
+                          <mat-chip [attr.data-tone]="option.is_correct ? 'success' : 'neutral'">{{ option.option_text }}</mat-chip>
                         }
                       </mat-chip-set>
                     </div>
@@ -131,6 +156,12 @@ import { materialImports } from '@app/shared/material/material-imports';
                   </div>
                 }
               </div>
+            } @else if (selectedQuizDetail()?.questions?.length) {
+              <app-empty-state
+                icon="search_off"
+                [title]="workspaceSearch.normalizedQuery() ? 'No matching questions' : 'No quiz questions yet'"
+                [description]="workspaceSearch.normalizedQuery() ? 'Try another question text, option, or point value.' : 'Select a quiz and add questions to shape the assessment experience.'">
+              </app-empty-state>
             } @else {
               <app-empty-state
                 icon="help"
@@ -155,6 +186,7 @@ import { materialImports } from '@app/shared/material/material-imports';
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .inline-actions {
@@ -163,26 +195,40 @@ import { materialImports } from '@app/shared/material/material-imports';
 
     .stack-list {
       display: grid;
-      gap: 1rem;
+      gap: 0.9rem;
     }
 
     .stack-list__item {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 1rem;
       align-items: start;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .stack-list__item:last-child {
-      border-bottom: 0;
-      padding-bottom: 0;
+      padding: 1rem 1.05rem;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(248, 251, 255, 0.92), #ffffff 72%);
     }
 
     .stack-list__item p {
       margin: 0.35rem 0 0.75rem;
       color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .stack-list__item .mat-mdc-chip-set {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    @media (max-width: 720px) {
+      .stack-list__item {
+        grid-template-columns: 1fr;
+      }
+
+      .stack-list__item > :last-child {
+        justify-self: start;
+      }
     }
 
     @media (max-width: 1100px) {
@@ -199,6 +245,8 @@ export class QuizzesComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  readonly workspaceSearch = inject(WorkspaceSearchService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly courses = signal<CourseListItem[]>([]);
   readonly quizzes = signal<QuizListItem[]>([]);
@@ -206,6 +254,77 @@ export class QuizzesComponent {
   readonly selectedCourseId = signal<string | null>(null);
   readonly loading = signal(false);
   readonly quizColumns = ['title', 'status', 'actions'];
+  readonly chipToneForCourseStatus = chipToneForCourseStatus;
+  readonly summaryCards = computed(() => {
+    const quizzes = this.quizzes();
+    const selectedQuiz = this.selectedQuizDetail();
+    const totalQuestions = quizzes.reduce((sum, quiz) => sum + quiz.question_count, 0);
+    const totalPoints = quizzes.reduce((sum, quiz) => sum + quiz.total_points, 0);
+
+    return [
+      {
+        label: 'Quizzes',
+        value: String(quizzes.length),
+        hint: 'Assessment sets in the selected course',
+        icon: 'quiz'
+      },
+      {
+        label: 'Published',
+        value: String(quizzes.filter((quiz) => quiz.status === 'published').length),
+        hint: 'Quizzes currently available to learners',
+        icon: 'rocket_launch'
+      },
+      {
+        label: 'Questions',
+        value: String(selectedQuiz?.question_count ?? totalQuestions),
+        hint: 'Question count for the selected quiz or aggregate total',
+        icon: 'help'
+      },
+      {
+        label: 'Points',
+        value: String(selectedQuiz?.total_points ?? totalPoints),
+        hint: 'Scoring weight across the course quiz set',
+        icon: 'military_tech'
+      }
+    ];
+  });
+  readonly filteredQuizzes = computed(() => {
+    const query = this.workspaceSearch.normalizedQuery();
+    if (!query) {
+      return this.quizzes();
+    }
+
+    return this.quizzes().filter((quiz) =>
+      this.workspaceSearch.matches(
+        quiz.title,
+        quiz.description,
+        quiz.status,
+        String(quiz.question_count),
+        String(quiz.total_points)
+      )
+    );
+  });
+  readonly filteredSelectedQuestions = computed(() => {
+    const quiz = this.selectedQuizDetail();
+    const query = this.workspaceSearch.normalizedQuery();
+
+    if (!quiz) {
+      return [];
+    }
+
+    if (!query) {
+      return quiz.questions ?? [];
+    }
+
+    return (quiz.questions ?? []).filter((question) =>
+      this.workspaceSearch.matches(
+        question.question_text,
+        question.explanation,
+        String(question.points),
+        question.options.map((option) => option.option_text).join(' ')
+      )
+    );
+  });
 
   readonly courseForm = this.formBuilder.group({
     course_id: ['']
@@ -228,8 +347,9 @@ export class QuizzesComponent {
       .subscribe({
         next: (response) => {
           this.courses.set(response.items);
-          const first = response.items[0]?.id ?? '';
-          this.courseForm.patchValue({ course_id: first });
+          const preferredCourseId = this.route.snapshot.queryParamMap.get('courseId') ?? '';
+          const selectedCourseId = response.items.find((course) => course.id === preferredCourseId)?.id ?? response.items[0]?.id ?? '';
+          this.courseForm.patchValue({ course_id: selectedCourseId });
         },
         error: (error: HttpErrorResponse) => {
           this.snackBar.open(error.error?.detail ?? 'Unable to load instructor courses.', 'Dismiss', { duration: 4500 });
@@ -277,10 +397,7 @@ export class QuizzesComponent {
   private presentQuizDialog(data: { mode: 'create' | 'edit'; quiz?: QuizDetail }): void {
     const dialogRef = this.dialog.open(QuizDialogComponent, {
       data,
-      panelClass: ['lms-dialog-panel'],
-      width: 'min(94vw, 720px)',
-      maxWidth: 'min(94vw, 720px)',
-      autoFocus: false
+      ...portalDialogConfig('lg')
     });
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {
       const courseId = this.selectedCourseId();
@@ -323,11 +440,7 @@ export class QuizzesComponent {
         confirmLabel: 'Delete Quiz',
         confirmColor: 'warn'
       },
-      panelClass: ['lms-dialog-panel'],
-      width: '420px',
-      maxWidth: '92vw',
-      maxHeight: '80vh',
-      autoFocus: false
+      ...portalDialogConfig('sm')
     });
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!result) {
@@ -360,10 +473,7 @@ export class QuizzesComponent {
         mode: question ? 'edit' : 'create',
         question
       },
-      panelClass: ['lms-dialog-panel'],
-      width: 'min(94vw, 820px)',
-      maxWidth: 'min(94vw, 820px)',
-      autoFocus: false
+      ...portalDialogConfig('xl')
     });
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {
       if (!payload) {
@@ -394,11 +504,7 @@ export class QuizzesComponent {
         confirmLabel: 'Delete Question',
         confirmColor: 'warn'
       },
-      panelClass: ['lms-dialog-panel'],
-      width: '420px',
-      maxWidth: '92vw',
-      maxHeight: '80vh',
-      autoFocus: false
+      ...portalDialogConfig('sm')
     });
     dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!result) {
