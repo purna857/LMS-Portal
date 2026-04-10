@@ -3,7 +3,14 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import type { CourseModule, CourseModulePayload } from '@app/features/instructor/models/instructor.models';
-import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
+import {
+  BaseModalComponent,
+  ModalBodyComponent,
+  ModalFooterComponent,
+  ModalHeaderComponent,
+  ModalFormGridComponent,
+  ModalSectionComponent
+} from '@app/shared/components/base-modal/base-modal.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -16,25 +23,34 @@ export interface ModuleDialogData {
 @Component({
   selector: 'app-module-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
+  imports: [
+    ReactiveFormsModule,
+    BaseModalComponent,
+    ModalHeaderComponent,
+    ModalBodyComponent,
+    ModalFooterComponent,
+    ModalSectionComponent,
+    ModalFormGridComponent,
+    ...materialImports
+  ],
   template: `
-    <app-portal-dialog-shell
-      size="md"
-      eyebrow="Module builder"
-      [title]="data.mode === 'create' ? 'Create Module' : 'Edit Module'"
-      [description]="data.mode === 'create'
+    <app-base-modal size="md">
+      <app-modal-header
+        eyebrow="Module builder"
+        [title]="data.mode === 'create' ? 'Create Module' : 'Edit Module'"
+        [subtitle]="data.mode === 'create'
         ? 'Organize lessons into a focused module that gives learners a clear progression.'
         : 'Refine the module title, order, visibility, and preview access in one place.'"
-      (closeRequested)="dialogRef.close()">
-      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="module-form" (ngSubmit)="submit()">
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Module details</strong>
-              <p>Set the module title, order, and publication state.</p>
-            </div>
+        (closeRequested)="dialogRef.close()">
+      </app-modal-header>
 
-            <div class="dialog-grid">
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+      <app-modal-body>
+        <form [formGroup]="form" id="module-form" (ngSubmit)="submit()">
+          <app-modal-section
+            title="Module details"
+            description="Set the module title, order, and publication state.">
+            <app-modal-form-grid>
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Title</mat-label>
                 <input matInput formControlName="title" />
               </mat-form-field>
@@ -52,33 +68,31 @@ export interface ModuleDialogData {
                   <mat-option value="archived">Archived</mat-option>
                 </mat-select>
               </mat-form-field>
-            </div>
-          </section>
+            </app-modal-form-grid>
+          </app-modal-section>
 
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Access & summary</strong>
-              <p>Control preview access and provide a concise summary for the module.</p>
-            </div>
+          <app-modal-section
+            title="Access & summary"
+            description="Control preview access and provide a concise summary for the module.">
+            <app-modal-form-grid>
+              <mat-checkbox formControlName="is_preview" class="modal-form-grid__full">Allow preview access</mat-checkbox>
 
-            <div class="dialog-grid">
-              <mat-checkbox formControlName="is_preview" class="dialog-grid__full">Allow preview access</mat-checkbox>
-
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Description</mat-label>
                 <textarea matInput rows="4" formControlName="description"></textarea>
               </mat-form-field>
-            </div>
-          </section>
-      </form>
+            </app-modal-form-grid>
+          </app-modal-section>
+        </form>
+      </app-modal-body>
 
-      <div dialogFooter class="dialog-footer-actions">
+      <app-modal-footer>
         <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
         <button mat-flat-button color="primary" type="submit" form="module-form">
           {{ data.mode === 'create' ? 'Create Module' : 'Save Module' }}
         </button>
-      </div>
-    </app-portal-dialog-shell>
+      </app-modal-footer>
+    </app-base-modal>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

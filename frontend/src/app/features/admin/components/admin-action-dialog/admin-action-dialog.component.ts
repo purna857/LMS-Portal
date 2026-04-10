@@ -2,7 +2,14 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
-import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
+import {
+  BaseModalComponent,
+  ModalBodyComponent,
+  ModalFooterComponent,
+  ModalHeaderComponent,
+  ModalFormGridComponent,
+  ModalSectionComponent
+} from '@app/shared/components/base-modal/base-modal.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -25,45 +32,56 @@ export interface AdminActionDialogResult {
 @Component({
   selector: 'app-admin-action-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
+  imports: [
+    ReactiveFormsModule,
+    BaseModalComponent,
+    ModalHeaderComponent,
+    ModalBodyComponent,
+    ModalFooterComponent,
+    ModalSectionComponent,
+    ModalFormGridComponent,
+    ...materialImports
+  ],
   template: `
-    <app-portal-dialog-shell
-      size="sm"
-      [variant]="data.confirmColor === 'warn' ? 'destructive' : 'confirm'"
-      [eyebrow]="data.confirmColor === 'warn' ? 'Destructive action' : 'Action confirmation'"
-      [title]="data.title"
-      [description]="data.message"
-      [closeLabel]="'Close confirmation dialog'"
-      (closeRequested)="dialogRef.close()">
-      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="admin-action-form" (ngSubmit)="confirm()">
-        <div class="dialog-copy">
-          <p>{{ data.message }}</p>
-        </div>
+    <app-base-modal size="sm" [variant]="data.confirmColor === 'warn' ? 'destructive' : 'default'">
+      <app-modal-header
+        [eyebrow]="data.confirmColor === 'warn' ? 'Destructive action' : 'Action confirmation'"
+        [title]="data.title"
+        [subtitle]="data.message"
+        closeLabel="Close confirmation dialog"
+        (closeRequested)="dialogRef.close()">
+      </app-modal-header>
 
+      <app-modal-body>
+        <form [formGroup]="form" id="admin-action-form" (ngSubmit)="confirm()">
         @if (data.noteLabel) {
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>{{ data.noteLabel }}</strong>
-              <p>{{ data.noteRequired ? 'Add a short note before confirming this action.' : 'Optional note for the record.' }}</p>
-            </div>
-
-            <mat-form-field appearance="outline" class="dialog-grid__full">
-              <mat-label>{{ data.noteLabel }}</mat-label>
-              <textarea
-                matInput
-                rows="5"
-                [placeholder]="data.notePlaceholder ?? ''"
-                [formControl]="form.controls.note">
-              </textarea>
-              @if (form.controls.note.invalid && form.controls.note.touched) {
-                <mat-error>Review notes are required for this action.</mat-error>
-              }
-            </mat-form-field>
-          </section>
+          <app-modal-section
+            [title]="data.noteLabel"
+            [description]="data.noteRequired ? 'Add a short note before confirming this action.' : 'Optional note for the record.'">
+            <app-modal-form-grid [columns]="1">
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
+                <mat-label>{{ data.noteLabel }}</mat-label>
+                <textarea
+                  matInput
+                  rows="5"
+                  [placeholder]="data.notePlaceholder ?? ''"
+                  [formControl]="form.controls.note">
+                </textarea>
+                @if (form.controls.note.invalid && form.controls.note.touched) {
+                  <mat-error>Review notes are required for this action.</mat-error>
+                }
+              </mat-form-field>
+            </app-modal-form-grid>
+          </app-modal-section>
+        } @else {
+          <app-modal-section title="Confirm action" description="Review the impact, then confirm when you're ready.">
+            <p class="admin-action-dialog__message">{{ data.message }}</p>
+          </app-modal-section>
         }
-      </form>
+        </form>
+      </app-modal-body>
 
-      <div dialogFooter class="dialog-footer-actions">
+      <app-modal-footer>
         <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
         <button
           mat-flat-button
@@ -73,9 +91,16 @@ export interface AdminActionDialogResult {
           form="admin-action-form">
           {{ data.confirmLabel }}
         </button>
-      </div>
-    </app-portal-dialog-shell>
+      </app-modal-footer>
+    </app-base-modal>
   `,
+  styles: [`
+    .admin-action-dialog__message {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+  `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminActionDialogComponent {

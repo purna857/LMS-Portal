@@ -8,7 +8,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { AdminActionDialogComponent } from '@app/features/admin/components/admin-action-dialog/admin-action-dialog.component';
 import type { AdminUserListItem } from '@app/features/admin/models/admin.models';
-import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { AdminPortalService } from '@app/features/admin/services/admin-portal.service';
 import { SessionService } from '@app/core/services/session.service';
 import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
@@ -52,9 +51,9 @@ import { chipToneForRole, chipToneForUserStatus } from '@app/shared/utils/chip-t
               <mat-label>Search users</mat-label>
               <input
                 matInput
-                [value]="workspaceSearch.query()"
-                (input)="workspaceSearch.setQuery($any($event.target).value ?? '')"
-                placeholder="Name, email, or role" />
+                [value]="searchQuery()"
+                (input)="setSearchQuery($any($event.target).value ?? '')"
+                placeholder="Name, email, phone, or role" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -62,7 +61,7 @@ import { chipToneForRole, chipToneForUserStatus } from '@app/shared/utils/chip-t
               <mat-select formControlName="status">
                 <mat-option value="">All statuses</mat-option>
                 <mat-option value="active">Active</mat-option>
-                <mat-option value="suspended">Suspended</mat-option>
+                <mat-option value="suspended">Blocked</mat-option>
                 <mat-option value="inactive">Inactive</mat-option>
                 <mat-option value="pending">Pending</mat-option>
               </mat-select>
@@ -75,6 +74,16 @@ import { chipToneForRole, chipToneForUserStatus } from '@app/shared/utils/chip-t
                 <mat-option value="admin">Admin</mat-option>
                 <mat-option value="instructor">Instructor</mat-option>
                 <mat-option value="student">Student</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Sort by</mat-label>
+              <mat-select formControlName="sort">
+                <mat-option value="recent">Newest</mat-option>
+                <mat-option value="name">Name</mat-option>
+                <mat-option value="last_login">Last login</mat-option>
+                <mat-option value="status">Status</mat-option>
               </mat-select>
             </mat-form-field>
 
@@ -92,15 +101,27 @@ import { chipToneForRole, chipToneForUserStatus } from '@app/shared/utils/chip-t
             <mat-progress-bar mode="indeterminate"></mat-progress-bar>
           }
 
-          @if (filteredUsers().length) {
+          @if (pagedUsers().length) {
             <div class="table-wrap">
-              <table mat-table [dataSource]="filteredUsers()" class="data-table">
+              <table mat-table [dataSource]="pagedUsers()" class="data-table">
                 <ng-container matColumnDef="name">
                   <th mat-header-cell *matHeaderCellDef>User</th>
                   <td mat-cell *matCellDef="let user">
                     <div class="cell-title">
                       <strong>{{ user.first_name }} {{ user.last_name }}</strong>
                       <span>{{ user.email }}</span>
+                      <div class="user-meta">
+                        @if (user.email_verified) {
+                          <mat-chip-set>
+                            <mat-chip data-tone="success">Verified</mat-chip>
+                          </mat-chip-set>
+                        }
+                        @if (user.is_superuser) {
+                          <mat-chip-set>
+                            <mat-chip data-tone="info">Super Admin</mat-chip>
+                          </mat-chip-set>
+                        }
+                      </div>
                     </div>
                   </td>
                 </ng-container>
@@ -120,38 +141,71 @@ import { chipToneForRole, chipToneForUserStatus } from '@app/shared/utils/chip-t
                   <th mat-header-cell *matHeaderCellDef>Status</th>
                   <td mat-cell *matCellDef="let user">
                     <mat-chip-set>
-                      <mat-chip [attr.data-tone]="chipToneForUserStatus(user.status)">{{ user.status }}</mat-chip>
+                      <mat-chip [attr.data-tone]="chipToneForUserStatus(user.status)">{{ userStatusLabel(user.status) }}</mat-chip>
                     </mat-chip-set>
                   </td>
                 </ng-container>
 
                 <ng-container matColumnDef="activity">
-                  <th mat-header-cell *matHeaderCellDef>Last Login</th>
-                  <td mat-cell *matCellDef="let user">{{ user.last_login_at ? (user.last_login_at | date:'medium') : 'Never' }}</td>
+                  <th mat-header-cell *matHeaderCellDef>Activity</th>
+                  <td mat-cell *matCellDef="let user">
+                    <div class="cell-title">
+                      <strong>{{ user.last_login_at ? (user.last_login_at | date:'mediumDate') : 'Never' }}</strong>
+                      <span>{{ user.created_at | date:'mediumDate' }} joined</span>
+                    </div>
+                  </td>
                 </ng-container>
 
                 <ng-container matColumnDef="actions">
                   <th mat-header-cell *matHeaderCellDef>Actions</th>
                   <td mat-cell *matCellDef="let user">
-                    @if (user.status !== 'suspended') {
+                    <div class="action-row">
+                      @if (user.status === 'pending') {
+                        <button
+                          mat-stroked-button
+                          color="primary"
+                          type="button"
+                          [disabled]="!canUpdateStatus(user)"
+                          (click)="reviewUser(user, 'approve')">
+                          Approve
+                        </button>
+                        <button
+                          mat-stroked-button
+                          color="warn"
+                          type="button"
+                          [disabled]="!canUpdateStatus(user)"
+                          (click)="reviewUser(user, 'reject')">
+                          Reject
+                        </button>
+                      } @else if (user.status !== 'suspended') {
+                        <button
+                          mat-stroked-button
+                          color="warn"
+                          type="button"
+                          [disabled]="!canUpdateStatus(user)"
+                          (click)="toggleBlock(user, true)">
+                          Block
+                        </button>
+                      } @else {
+                        <button
+                          mat-stroked-button
+                          color="primary"
+                          type="button"
+                          [disabled]="!canUpdateStatus(user)"
+                          (click)="toggleBlock(user, false)">
+                          Restore
+                        </button>
+                      }
+
                       <button
-                        mat-stroked-button
-                        color="warn"
+                        mat-icon-button
                         type="button"
-                        [disabled]="!canUpdateStatus(user)"
-                        (click)="toggleBlock(user, true)">
-                        Suspend
+                        [matMenuTriggerFor]="userMenu"
+                        [matMenuTriggerData]="{ user: user }"
+                        [disabled]="!canUpdateStatus(user)">
+                        <span class="material-symbols-outlined">more_horiz</span>
                       </button>
-                    } @else {
-                      <button
-                        mat-stroked-button
-                        color="primary"
-                        type="button"
-                        [disabled]="!canUpdateStatus(user)"
-                        (click)="toggleBlock(user, false)">
-                        Restore
-                      </button>
-                    }
+                    </div>
                   </td>
                 </ng-container>
 
@@ -159,11 +213,31 @@ import { chipToneForRole, chipToneForUserStatus } from '@app/shared/utils/chip-t
                 <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
               </table>
             </div>
+
+            <div class="table-footer">
+              <p class="table-footer__summary">
+                Showing {{ pageStart() + 1 }}-{{ pageEnd() }} of {{ sortedUsers().length }} users
+              </p>
+
+              <div class="table-footer__actions">
+                <mat-form-field appearance="outline" class="table-footer__size">
+                  <mat-label>Rows</mat-label>
+                  <mat-select [value]="pageSize()" (valueChange)="setPageSize($event)">
+                    <mat-option [value]="5">5</mat-option>
+                    <mat-option [value]="10">10</mat-option>
+                    <mat-option [value]="20">20</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <button mat-stroked-button type="button" (click)="previousPage()" [disabled]="currentPage() === 0">Previous</button>
+                <button mat-stroked-button type="button" (click)="nextPage()" [disabled]="pageEnd() >= sortedUsers().length">Next</button>
+              </div>
+            </div>
           } @else if (users().length) {
             <app-empty-state
               icon="search_off"
-              [title]="workspaceSearch.normalizedQuery() ? 'No users match your search' : 'No users match this view'"
-              [description]="workspaceSearch.normalizedQuery() ? 'Try a different name, email, role, or status.' : 'Adjust the filters to see more user records or onboarding activity.'">
+              [title]="normalizedSearchQuery() ? 'No users match your search' : 'No users match this view'"
+              [description]="normalizedSearchQuery() ? 'Try a different name, email, role, or status.' : 'Adjust the filters to see more user records or onboarding activity.'">
             </app-empty-state>
           } @else {
             <app-empty-state
@@ -175,7 +249,79 @@ import { chipToneForRole, chipToneForUserStatus } from '@app/shared/utils/chip-t
         </mat-card-content>
       </mat-card>
     </section>
+
+    <mat-menu #userMenu="matMenu">
+      <ng-template matMenuContent let-user="user">
+        @if (user?.status === 'pending') {
+          <button mat-menu-item type="button" (click)="reviewUser(user, 'approve')">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>Approve User</span>
+          </button>
+          <button mat-menu-item type="button" (click)="reviewUser(user, 'reject')">
+            <span class="material-symbols-outlined">cancel</span>
+            <span>Reject User</span>
+          </button>
+        }
+        @if (user?.status !== 'suspended') {
+          <button mat-menu-item type="button" (click)="toggleBlock(user, true)">
+            <span class="material-symbols-outlined">block</span>
+            <span>Block User</span>
+          </button>
+        } @else {
+          <button mat-menu-item type="button" (click)="toggleBlock(user, false)">
+            <span class="material-symbols-outlined">lock_open</span>
+            <span>Restore Access</span>
+          </button>
+        }
+        <button mat-menu-item type="button" (click)="deleteUser(user)">
+          <span class="material-symbols-outlined">delete</span>
+          <span>Delete User</span>
+        </button>
+      </ng-template>
+    </mat-menu>
   `,
+  styles: [`
+    .action-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .user-meta {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+
+    .table-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+      padding-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .table-footer__summary {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .table-footer__actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .table-footer__size {
+      width: 96px;
+    }
+  `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserManagementComponent {
@@ -185,19 +331,23 @@ export class UserManagementComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly sessionService = inject(SessionService);
-  readonly workspaceSearch = inject(WorkspaceSearchService);
 
   readonly loading = signal(false);
   readonly users = signal<AdminUserListItem[]>([]);
+  readonly searchQuery = signal('');
+  readonly normalizedSearchQuery = computed(() => this.searchQuery().trim().toLowerCase());
+  readonly currentPage = signal(0);
+  readonly pageSize = signal(10);
   readonly displayedColumns = ['name', 'roles', 'status', 'activity', 'actions'];
   readonly filteredUsers = computed(() => {
-    const query = this.workspaceSearch.normalizedQuery();
+    const query = this.normalizedSearchQuery();
     if (!query) {
       return this.users();
     }
 
     return this.users().filter((user) =>
-      this.workspaceSearch.matches(
+      this.matchesSearch(
+        query,
         user.first_name,
         user.last_name,
         user.email,
@@ -207,6 +357,26 @@ export class UserManagementComponent {
       )
     );
   });
+  readonly sortedUsers = computed(() => {
+    const sort = this.filtersForm.controls.sort.value ?? 'recent';
+    const users = [...this.filteredUsers()];
+    return users.sort((a, b) => {
+      switch (sort) {
+        case 'name':
+          return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`);
+        case 'last_login':
+          return new Date(b.last_login_at ?? 0).getTime() - new Date(a.last_login_at ?? 0).getTime();
+        case 'status':
+          return this.userStatusLabel(a.status).localeCompare(this.userStatusLabel(b.status));
+        case 'recent':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+  });
+  readonly pageStart = computed(() => this.currentPage() * this.pageSize());
+  readonly pageEnd = computed(() => Math.min(this.pageStart() + this.pageSize(), this.sortedUsers().length));
+  readonly pagedUsers = computed(() => this.sortedUsers().slice(this.pageStart(), this.pageEnd()));
   readonly summaryCards = computed(() => {
     const users = this.users();
     return [
@@ -223,10 +393,16 @@ export class UserManagementComponent {
         icon: 'check_circle'
       },
       {
-        label: 'Suspended',
+        label: 'Blocked',
         value: String(users.filter((user) => user.status === 'suspended').length),
         hint: 'Accounts temporarily blocked from access',
         icon: 'block'
+      },
+      {
+        label: 'Pending',
+        value: String(users.filter((user) => user.status === 'pending').length),
+        hint: 'Accounts waiting for admin approval',
+        icon: 'hourglass_top'
       },
       {
         label: 'Instructors',
@@ -239,7 +415,8 @@ export class UserManagementComponent {
 
   readonly filtersForm = this.formBuilder.group({
     status: [''],
-    role: ['']
+    role: [''],
+    sort: ['recent']
   });
 
   readonly chipToneForRole = chipToneForRole;
@@ -251,6 +428,7 @@ export class UserManagementComponent {
 
   loadUsers(): void {
     this.loading.set(true);
+    this.currentPage.set(0);
     const raw = this.filtersForm.getRawValue();
     this.adminPortalService
       .listUsers({
@@ -275,10 +453,39 @@ export class UserManagementComponent {
   resetFilters(): void {
     this.filtersForm.reset({
       status: '',
-      role: ''
+      role: '',
+      sort: 'recent'
     });
-    this.workspaceSearch.clear();
+    this.currentPage.set(0);
+    this.searchQuery.set('');
     this.loadUsers();
+  }
+
+  setSearchQuery(value: string): void {
+    this.searchQuery.set(String(value).trimStart());
+    this.currentPage.set(0);
+  }
+
+  userStatusLabel(status: string): string {
+    if (status === 'suspended') {
+      return 'Blocked';
+    }
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(Number(size));
+    this.currentPage.set(0);
+  }
+
+  previousPage(): void {
+    this.currentPage.update((page) => Math.max(0, page - 1));
+  }
+
+  nextPage(): void {
+    if (this.pageEnd() < this.sortedUsers().length) {
+      this.currentPage.update((page) => page + 1);
+    }
   }
 
   isCurrentUser(user: AdminUserListItem): boolean {
@@ -289,12 +496,20 @@ export class UserManagementComponent {
     return !this.isCurrentUser(user) && !user.is_superuser;
   }
 
+  private matchesSearch(query: string, ...values: Array<string | null | undefined>): boolean {
+    return values
+      .filter((value): value is string => !!value)
+      .join(' ')
+      .toLowerCase()
+      .includes(query);
+  }
+
   toggleBlock(user: AdminUserListItem, block: boolean): void {
     const dialogRef = this.dialog.open(AdminActionDialogComponent, {
       data: {
-        title: block ? 'Suspend User' : 'Restore User',
-        message: `${block ? 'Suspend' : 'Restore'} access for ${user.first_name} ${user.last_name}?`,
-        confirmLabel: block ? 'Suspend User' : 'Restore User',
+        title: block ? 'Block User' : 'Restore User',
+        message: `${block ? 'Block' : 'Restore'} access for ${user.first_name} ${user.last_name}?`,
+        confirmLabel: block ? 'Block User' : 'Restore User',
         confirmColor: block ? 'warn' : 'primary'
       },
       ...portalDialogConfig('sm')
@@ -318,6 +533,70 @@ export class UserManagementComponent {
           this.snackBar.open(error.error?.detail ?? 'Unable to update user status.', 'Dismiss', { duration: 4500 });
         }
       });
+    });
+  }
+
+  reviewUser(user: AdminUserListItem, mode: 'approve' | 'reject'): void {
+    const dialogRef = this.dialog.open(AdminActionDialogComponent, {
+      data: {
+        title: `${mode === 'approve' ? 'Approve' : 'Reject'} User`,
+        message: `${mode === 'approve' ? 'Approve' : 'Reject'} access for ${user.first_name} ${user.last_name}?`,
+        confirmLabel: mode === 'approve' ? 'Approve User' : 'Reject User',
+        confirmColor: mode === 'approve' ? 'primary' : 'warn',
+        noteLabel: 'Review Notes',
+        notePlaceholder: 'Add optional review notes for this account decision'
+      },
+      ...portalDialogConfig('sm')
+    });
+
+    dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+      if (!result) {
+        return;
+      }
+
+      const request$ = mode === 'approve'
+        ? this.adminPortalService.approveUser(user.id, result.note)
+        : this.adminPortalService.rejectUser(user.id, result.note);
+
+      request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (response) => {
+          this.snackBar.open(response.message, 'Dismiss', { duration: 3200 });
+          this.loadUsers();
+        },
+        error: (error: HttpErrorResponse) => {
+          this.snackBar.open(error.error?.detail ?? 'Unable to update the user review state.', 'Dismiss', { duration: 4500 });
+        }
+      });
+    });
+  }
+
+  deleteUser(user: AdminUserListItem): void {
+    const dialogRef = this.dialog.open(AdminActionDialogComponent, {
+      data: {
+        title: 'Delete User',
+        message: `Delete ${user.first_name} ${user.last_name}'s account from the platform? This action cannot be undone.`,
+        confirmLabel: 'Delete User',
+        confirmColor: 'warn'
+      },
+      ...portalDialogConfig('sm')
+    });
+
+    dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+      if (!result) {
+        return;
+      }
+
+      this.adminPortalService.deleteUser(user.id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (response) => {
+            this.snackBar.open(response.message, 'Dismiss', { duration: 3200 });
+            this.loadUsers();
+          },
+          error: (error: HttpErrorResponse) => {
+            this.snackBar.open(error.error?.detail ?? 'Unable to delete the user.', 'Dismiss', { duration: 4500 });
+          }
+        });
     });
   }
 }

@@ -3,7 +3,14 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import type { AssignmentGradePayload, AssignmentSubmission } from '@app/features/instructor/models/instructor.models';
-import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
+import {
+  BaseModalComponent,
+  ModalBodyComponent,
+  ModalFooterComponent,
+  ModalHeaderComponent,
+  ModalFormGridComponent,
+  ModalSectionComponent
+} from '@app/shared/components/base-modal/base-modal.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -16,20 +23,27 @@ export interface AssignmentReviewDialogData {
 @Component({
   selector: 'app-assignment-review-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
+  imports: [
+    ReactiveFormsModule,
+    BaseModalComponent,
+    ModalHeaderComponent,
+    ModalBodyComponent,
+    ModalFooterComponent,
+    ModalSectionComponent,
+    ModalFormGridComponent,
+    ...materialImports
+  ],
   template: `
-    <app-portal-dialog-shell
-      size="lg"
-      eyebrow="Submission review"
-      title="Review Submission"
-      description="Review the learner submission, confirm the score, and leave feedback before saving the grade."
-      (closeRequested)="dialogRef.close()">
-      <div dialogBody class="dialog-grid dialog-grid--single" id="assignment-review-body">
-        <section class="dialog-section">
-          <div class="dialog-section__title">
-            <strong>{{ data.submission.student_name }}</strong>
-            <p>{{ data.submission.student_email }}</p>
-          </div>
+    <app-base-modal size="lg">
+      <app-modal-header
+        eyebrow="Submission review"
+        title="Review Submission"
+        subtitle="Review the learner submission, confirm the score, and leave feedback before saving the grade."
+        (closeRequested)="dialogRef.close()">
+      </app-modal-header>
+
+      <app-modal-body>
+        <app-modal-section [title]="data.submission.student_name" [description]="data.submission.student_email">
           <mat-chip-set>
             <mat-chip>{{ data.submission.status }}</mat-chip>
             <mat-chip>{{ data.maxScore }} pts max</mat-chip>
@@ -37,49 +51,37 @@ export interface AssignmentReviewDialogData {
               <mat-chip>Late</mat-chip>
             }
           </mat-chip-set>
-        </section>
+        </app-modal-section>
 
         <div class="submission-preview">
           @if (data.submission.submission_text) {
-            <section class="dialog-section">
-              <div class="dialog-section__title">
-                <strong>Submission text</strong>
-              </div>
+            <app-modal-section title="Submission text">
               <p>{{ data.submission.submission_text }}</p>
-            </section>
+            </app-modal-section>
           }
 
           @if (data.submission.submission_link) {
-            <section class="dialog-section">
-              <div class="dialog-section__title">
-                <strong>Submission link</strong>
-              </div>
+            <app-modal-section title="Submission link">
               <a [href]="data.submission.submission_link" target="_blank" rel="noreferrer">
                 {{ data.submission.submission_link }}
               </a>
-            </section>
+            </app-modal-section>
           }
 
           @if (data.submission.submission_file_url && data.submission.submission_file_name) {
-            <section class="dialog-section">
-              <div class="dialog-section__title">
-                <strong>Uploaded file</strong>
-              </div>
+            <app-modal-section title="Uploaded file">
               <a [href]="data.submission.submission_file_url" target="_blank" rel="noreferrer">
                 {{ data.submission.submission_file_name }}
               </a>
-            </section>
+            </app-modal-section>
           }
         </div>
 
-        <form [formGroup]="form" class="dialog-grid dialog-grid--single" id="assignment-review-form" (ngSubmit)="submit()">
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Review & grade</strong>
-              <p>Assign a score and provide feedback that helps the learner improve.</p>
-            </div>
-
-            <div class="dialog-grid">
+        <form [formGroup]="form" id="assignment-review-form" (ngSubmit)="submit()">
+          <app-modal-section
+            title="Review & grade"
+            description="Assign a score and provide feedback that helps the learner improve.">
+            <app-modal-form-grid>
               <mat-form-field appearance="outline">
                 <mat-label>Score</mat-label>
                 <input matInput type="number" formControlName="score" />
@@ -88,20 +90,20 @@ export interface AssignmentReviewDialogData {
                 }
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Feedback</mat-label>
                 <textarea matInput rows="5" formControlName="feedback"></textarea>
               </mat-form-field>
-            </div>
-          </section>
+            </app-modal-form-grid>
+          </app-modal-section>
         </form>
-      </div>
+      </app-modal-body>
 
-      <div dialogFooter class="dialog-footer-actions">
+      <app-modal-footer>
         <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
         <button mat-flat-button color="primary" type="submit" form="assignment-review-form">Save Review</button>
-      </div>
-    </app-portal-dialog-shell>
+      </app-modal-footer>
+    </app-base-modal>
   `,
   styles: [`
     .submission-preview {

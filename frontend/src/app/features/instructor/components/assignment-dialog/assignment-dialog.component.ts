@@ -5,7 +5,14 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import type { Assignment, AssignmentPayload, CourseModule, Lesson } from '@app/features/instructor/models/instructor.models';
-import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
+import {
+  BaseModalComponent,
+  ModalBodyComponent,
+  ModalFooterComponent,
+  ModalHeaderComponent,
+  ModalFormGridComponent,
+  ModalSectionComponent
+} from '@app/shared/components/base-modal/base-modal.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -20,25 +27,34 @@ export interface AssignmentDialogData {
 @Component({
   selector: 'app-assignment-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
+  imports: [
+    ReactiveFormsModule,
+    BaseModalComponent,
+    ModalHeaderComponent,
+    ModalBodyComponent,
+    ModalFooterComponent,
+    ModalSectionComponent,
+    ModalFormGridComponent,
+    ...materialImports
+  ],
   template: `
-    <app-portal-dialog-shell
-      size="xl"
-      eyebrow="Assignment builder"
-      [title]="data.mode === 'create' ? 'Create Assignment' : 'Edit Assignment'"
-      [description]="data.mode === 'create'
+    <app-base-modal size="xl">
+      <app-modal-header
+        eyebrow="Assignment builder"
+        [title]="data.mode === 'create' ? 'Create Assignment' : 'Edit Assignment'"
+        [subtitle]="data.mode === 'create'
         ? 'Create an assignment with module binding, due dates, and scoring details ready for students.'
         : 'Update the assignment structure, rules, and publishing state from a single focused modal.'"
-      (closeRequested)="dialogRef.close()">
-      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="assignment-form" (ngSubmit)="submit()">
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Assignment details</strong>
-              <p>Attach the assignment to the right course structure and set the scoring model.</p>
-            </div>
+        (closeRequested)="dialogRef.close()">
+      </app-modal-header>
 
-            <div class="dialog-grid">
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+      <app-modal-body>
+        <form [formGroup]="form" id="assignment-form" (ngSubmit)="submit()">
+          <app-modal-section
+            title="Assignment details"
+            description="Attach the assignment to the right course structure and set the scoring model.">
+            <app-modal-form-grid>
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Title</mat-label>
                 <input matInput formControlName="title" />
               </mat-form-field>
@@ -87,38 +103,36 @@ export interface AssignmentDialogData {
                   <mat-option value="archived">Archived</mat-option>
                 </mat-select>
               </mat-form-field>
-            </div>
-          </section>
+            </app-modal-form-grid>
+          </app-modal-section>
 
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Submission rules</strong>
-              <p>Set delivery expectations, supporting copy, and timing flexibility for learners.</p>
-            </div>
+          <app-modal-section
+            title="Submission rules"
+            description="Set delivery expectations, supporting copy, and timing flexibility for learners.">
+            <app-modal-form-grid>
+              <mat-checkbox formControlName="allow_late_submission" class="modal-form-grid__full">Allow late submissions</mat-checkbox>
 
-            <div class="dialog-grid">
-              <mat-checkbox formControlName="allow_late_submission" class="dialog-grid__full">Allow late submissions</mat-checkbox>
-
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Description</mat-label>
                 <textarea matInput rows="3" formControlName="description"></textarea>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Instructions</mat-label>
                 <textarea matInput rows="5" formControlName="instructions"></textarea>
               </mat-form-field>
-            </div>
-          </section>
-      </form>
+            </app-modal-form-grid>
+          </app-modal-section>
+        </form>
+      </app-modal-body>
 
-      <div dialogFooter class="dialog-footer-actions">
+      <app-modal-footer>
         <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
         <button mat-flat-button color="primary" type="submit" form="assignment-form">
           {{ data.mode === 'create' ? 'Create Assignment' : 'Save Assignment' }}
         </button>
-      </div>
-    </app-portal-dialog-shell>
+      </app-modal-footer>
+    </app-base-modal>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

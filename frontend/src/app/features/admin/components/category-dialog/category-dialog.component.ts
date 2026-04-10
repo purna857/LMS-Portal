@@ -3,7 +3,14 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import type { CourseCategory, CourseCategoryPayload } from '@app/features/admin/models/admin.models';
-import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
+import {
+  BaseModalComponent,
+  ModalBodyComponent,
+  ModalFooterComponent,
+  ModalHeaderComponent,
+  ModalFormGridComponent,
+  ModalSectionComponent
+} from '@app/shared/components/base-modal/base-modal.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -17,24 +24,33 @@ export interface CategoryDialogData {
 @Component({
   selector: 'app-category-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
+  imports: [
+    ReactiveFormsModule,
+    BaseModalComponent,
+    ModalHeaderComponent,
+    ModalBodyComponent,
+    ModalFooterComponent,
+    ModalSectionComponent,
+    ModalFormGridComponent,
+    ...materialImports
+  ],
   template: `
-    <app-portal-dialog-shell
-      size="md"
-      eyebrow="Catalog structure"
-      [title]="data.mode === 'create' ? 'Create Category' : 'Edit Category'"
-      [description]="data.mode === 'create'
+    <app-base-modal size="md">
+      <app-modal-header
+        eyebrow="Catalog structure"
+        [title]="data.mode === 'create' ? 'Create Category' : 'Edit Category'"
+        [subtitle]="data.mode === 'create'
         ? 'Add a category that helps learners and instructors navigate the catalog more easily.'
         : 'Adjust the category naming, hierarchy, and ordering without breaking the structure.'"
-      (closeRequested)="dialogRef.close()">
-      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="category-form" (ngSubmit)="submit()">
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Category details</strong>
-              <p>Capture the display name, slug, hierarchy, and ordering in one place.</p>
-            </div>
+        (closeRequested)="dialogRef.close()">
+      </app-modal-header>
 
-            <div class="dialog-grid">
+      <app-modal-body>
+        <form [formGroup]="form" id="category-form" (ngSubmit)="submit()">
+          <app-modal-section
+            title="Category details"
+            description="Capture the display name, slug, hierarchy, and ordering in one place.">
+            <app-modal-form-grid>
               <mat-form-field appearance="outline">
                 <mat-label>Name</mat-label>
                 <input matInput formControlName="name" />
@@ -58,7 +74,7 @@ export interface CategoryDialogData {
                 <input matInput type="number" formControlName="sort_order" />
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Parent Category</mat-label>
                 <mat-select formControlName="parent_id">
                   <mat-option [value]="null">None</mat-option>
@@ -67,31 +83,29 @@ export interface CategoryDialogData {
                   }
                 </mat-select>
               </mat-form-field>
-            </div>
-          </section>
+            </app-modal-form-grid>
+          </app-modal-section>
 
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Description</strong>
-              <p>Provide supporting copy that helps the catalog feel organized and descriptive.</p>
-            </div>
-
-            <div class="dialog-grid">
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+          <app-modal-section
+            title="Description"
+            description="Provide supporting copy that helps the catalog feel organized and descriptive.">
+            <app-modal-form-grid [columns]="1">
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Description</mat-label>
                 <textarea matInput rows="4" formControlName="description"></textarea>
               </mat-form-field>
-            </div>
-          </section>
-      </form>
+            </app-modal-form-grid>
+          </app-modal-section>
+        </form>
+      </app-modal-body>
 
-      <div dialogFooter class="dialog-footer-actions">
+      <app-modal-footer>
         <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
         <button mat-flat-button color="primary" type="submit" form="category-form">
           {{ data.mode === 'create' ? 'Create' : 'Save Changes' }}
         </button>
-      </div>
-    </app-portal-dialog-shell>
+      </app-modal-footer>
+    </app-base-modal>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

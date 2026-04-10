@@ -7,7 +7,6 @@ import { catchError } from 'rxjs/operators';
 
 import type { AdminAssignmentTrackerItem, AdminDashboardStats } from '@app/features/admin/models/admin.models';
 import { AdminPortalService } from '@app/features/admin/services/admin-portal.service';
-import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '@app/shared/components/page-header/page-header.component';
 import { materialImports } from '@app/shared/material/material-imports';
@@ -26,6 +25,40 @@ import { chipToneForSubmissionStatus } from '@app/shared/utils/chip-tone';
         description="Track platform health, teaching capacity, assessment coverage, and operational throughput from one reporting view.">
       </app-page-header>
 
+      <mat-card class="surface-card">
+        <mat-card-content class="snapshot-toolbar">
+          <div>
+            <p class="snapshot-toolbar__eyebrow">Analytics Window</p>
+            <h2>Executive Snapshot</h2>
+            <span>Current metrics are generated from the existing admin analytics feed.</span>
+          </div>
+
+          <mat-chip-set>
+            <mat-chip highlighted>Current view</mat-chip>
+            <mat-chip data-tone="info">Backend-safe</mat-chip>
+          </mat-chip-set>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="surface-card">
+        <mat-card-content class="reports-filter-bar">
+          <mat-form-field appearance="outline">
+            <mat-label>Search assignment activity</mat-label>
+            <input
+              matInput
+              [value]="searchQuery()"
+              (input)="setSearchQuery($any($event.target).value ?? '')"
+              placeholder="Assignment, course, learner, status, or file" />
+          </mat-form-field>
+
+          <div class="reports-filter-bar__actions">
+            <button mat-stroked-button type="button" [class.is-active]="timeWindow() === '7d'" (click)="setTimeWindow('7d')">Last 7 days</button>
+            <button mat-stroked-button type="button" [class.is-active]="timeWindow() === '30d'" (click)="setTimeWindow('30d')">Last 30 days</button>
+            <button mat-flat-button color="primary" type="button" [disabled]="timeWindow() === 'all'" (click)="setTimeWindow('all')">All activity</button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
       @if (loading()) {
         <mat-progress-bar mode="indeterminate"></mat-progress-bar>
         <div class="page-grid">
@@ -39,7 +72,10 @@ import { chipToneForSubmissionStatus } from '@app/shared/utils/chip-tone';
         @for (card of reportCards(); track card.label) {
           <mat-card class="stat-card stat-card--metric">
             <mat-card-content>
-              <p class="metric-card__label">{{ card.label }}</p>
+              <div class="metric-card__top">
+                <span class="metric-card__icon material-symbols-outlined">{{ card.icon }}</span>
+                <p class="metric-card__label">{{ card.label }}</p>
+              </div>
               <strong class="metric-card__value">{{ card.value }}</strong>
               <span class="metric-card__hint">{{ card.hint }}</span>
             </mat-card-content>
@@ -74,6 +110,32 @@ import { chipToneForSubmissionStatus } from '@app/shared/utils/chip-tone';
           </mat-card-content>
         </mat-card>
       </div>
+
+      <mat-card class="surface-card">
+        <mat-card-header>
+          <mat-card-title>Core Platform Totals</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="page-grid">
+            <div class="report-cell">
+              <strong>{{ stats()?.total_students ?? 0 }}</strong>
+              <span>Total users currently enrolled as students</span>
+            </div>
+            <div class="report-cell">
+              <strong>{{ stats()?.total_courses ?? 0 }}</strong>
+              <span>Courses currently tracked in the catalog</span>
+            </div>
+            <div class="report-cell">
+              <strong>{{ stats()?.total_instructors ?? 0 }}</strong>
+              <span>Active instructors available to teach</span>
+            </div>
+            <div class="report-cell">
+              <strong>{{ stats()?.total_enrollments ?? 0 }}</strong>
+              <span>Total enrollments represented in the existing analytics feed</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
 
       <mat-card class="surface-card">
         <mat-card-header>
@@ -131,8 +193,8 @@ import { chipToneForSubmissionStatus } from '@app/shared/utils/chip-tone';
           } @else if (assignmentTracker().length) {
             <app-empty-state
               icon="search_off"
-              [title]="workspaceSearch.normalizedQuery() ? 'No matching assignments' : 'Assignment activity will appear here'"
-              [description]="workspaceSearch.normalizedQuery() ? 'Try a different assignment title, course, student, or status.' : 'Assignment submissions will appear here once students start turning in work.'">
+              [title]="normalizedSearchQuery() ? 'No matching assignments' : 'Assignment activity will appear here'"
+              [description]="normalizedSearchQuery() ? 'Try a different assignment title, course, student, or status.' : 'Assignment submissions will appear here once students start turning in work.'">
             </app-empty-state>
           } @else {
             <app-empty-state
@@ -143,47 +205,61 @@ import { chipToneForSubmissionStatus } from '@app/shared/utils/chip-tone';
           }
         </mat-card-content>
       </mat-card>
-
-      <mat-card class="visual-card">
-        <mat-card-header>
-          <mat-card-title>Executive Snapshot</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="mini-chart">
-            @for (height of [40, 64, 58, 72, 84, 76]; track height) {
-              <div class="mini-chart__bar" [style.height.%]="height"></div>
-            }
-          </div>
-          <p class="visual-card__summary">Publishing coverage, active enrollment utilization, and assessment volume all indicate healthy platform momentum.</p>
-        </mat-card-content>
-      </mat-card>
     </section>
   `,
   styles: [`
-    .metric-card__label,
-    .metric-card__hint {
-      display: block;
+    .snapshot-toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
-    .metric-card__label {
-      margin-bottom: 0.65rem;
+    .snapshot-toolbar__eyebrow {
+      margin: 0 0 0.4rem;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      font-size: 0.76rem;
+      font-size: 0.7rem;
       font-weight: 700;
     }
 
-    .metric-card__value {
-      display: block;
-      font-size: clamp(1.7rem, 2vw, 2.4rem);
+    .snapshot-toolbar h2 {
+      margin: 0;
+      font-size: 1.35rem;
       letter-spacing: -0.04em;
     }
 
-    .metric-card__hint {
-      margin-top: 0.55rem;
+    .snapshot-toolbar span,
+    .progress-copy span,
+    .report-cell span {
       color: var(--muted);
-      line-height: 1.45;
+    }
+
+    .reports-filter-bar {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .reports-filter-bar > .mat-mdc-form-field {
+      flex: 1 1 320px;
+      min-width: 0;
+    }
+
+    .reports-filter-bar__actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .reports-filter-bar__actions .is-active {
+      border-color: rgba(37, 99, 235, 0.44);
+      color: var(--primary);
+      background: rgba(219, 234, 254, 0.55);
     }
 
     .progress-copy {
@@ -194,11 +270,6 @@ import { chipToneForSubmissionStatus } from '@app/shared/utils/chip-tone';
 
     .progress-copy strong {
       font-size: 2rem;
-    }
-
-    .progress-copy span,
-    .report-cell span {
-      color: var(--muted);
     }
 
     .report-cell {
@@ -213,12 +284,6 @@ import { chipToneForSubmissionStatus } from '@app/shared/utils/chip-tone';
     .report-cell strong {
       font-size: 1.8rem;
       letter-spacing: -0.04em;
-    }
-
-    .visual-card__summary {
-      margin: 1rem 0 0;
-      color: var(--muted);
-      line-height: 1.6;
     }
 
     .stack-list {
@@ -264,12 +329,12 @@ import { chipToneForSubmissionStatus } from '@app/shared/utils/chip-tone';
     }
 
     @media (max-width: 720px) {
-      .stack-list__item {
-        grid-template-columns: 1fr;
+      .reports-filter-bar__actions {
+        width: 100%;
       }
 
-      .stack-list__item > :last-child {
-        justify-self: start;
+      .reports-filter-bar__actions > .mat-mdc-button-base {
+        flex: 1 1 0;
       }
     }
   `],
@@ -279,19 +344,21 @@ export class ReportsComponent {
   private readonly adminPortalService = inject(AdminPortalService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
-  readonly workspaceSearch = inject(WorkspaceSearchService);
 
   readonly loading = signal(true);
   readonly stats = signal<AdminDashboardStats | null>(null);
   readonly assignmentTracker = signal<AdminAssignmentTrackerItem[]>([]);
+  readonly searchQuery = signal('');
+  readonly timeWindow = signal<'7d' | '30d' | 'all'>('30d');
+  readonly normalizedSearchQuery = computed(() => this.searchQuery().trim().toLowerCase());
   readonly filteredAssignmentTracker = computed(() => {
-    const query = this.workspaceSearch.normalizedQuery();
-    if (!query) {
-      return this.assignmentTracker();
-    }
+    const query = this.normalizedSearchQuery();
+    const minimumDate = this.minimumVisibleDate();
 
-    return this.assignmentTracker().filter((item) =>
-      this.workspaceSearch.matches(
+    return this.assignmentTracker().filter((item) => {
+      const matchesDate = !minimumDate || new Date(item.submitted_at).getTime() >= minimumDate;
+      const matchesQuery = !query || this.matchesSearch(
+        query,
         item.assignment_title,
         item.course_title,
         item.student_name,
@@ -299,8 +366,9 @@ export class ReportsComponent {
         item.status,
         item.feedback,
         item.submission_file_name
-      )
-    );
+      );
+      return matchesDate && matchesQuery;
+    });
   });
 
   readonly activeEnrollmentRate = computed(() => {
@@ -334,10 +402,10 @@ export class ReportsComponent {
     }
 
     return [
-      { label: 'Total Students', value: String(stats.total_students), hint: 'Learners onboarded into the LMS' },
-      { label: 'Total Instructors', value: String(stats.total_instructors), hint: 'Teaching capacity available' },
-      { label: 'Pending Approvals', value: String(stats.pending_approvals), hint: 'Applications waiting on admin review' },
-      { label: 'Published Courses', value: String(stats.published_courses), hint: `${stats.total_courses} courses exist in total` }
+      { label: 'Total Users', value: String(stats.total_students + stats.total_instructors), hint: 'Current students and instructors in the platform', icon: 'groups' },
+      { label: 'Total Courses', value: String(stats.total_courses), hint: `${stats.published_courses} currently published`, icon: 'library_books' },
+      { label: 'Active Instructors', value: String(stats.total_instructors), hint: 'Teaching capacity available right now', icon: 'school' },
+      { label: 'Enrollments', value: String(stats.total_enrollments), hint: `${stats.active_enrollments} active or completed`, icon: 'trending_up' }
     ];
   });
 
@@ -362,5 +430,33 @@ export class ReportsComponent {
           this.snackBar.open(error.error?.detail ?? 'Unable to load analytics.', 'Dismiss', { duration: 4500 });
         }
       });
+  }
+
+  setSearchQuery(value: string): void {
+    this.searchQuery.set(String(value).trimStart());
+  }
+
+  setTimeWindow(window: '7d' | '30d' | 'all'): void {
+    this.timeWindow.set(window);
+  }
+
+  private minimumVisibleDate(): number | null {
+    const window = this.timeWindow();
+    const now = Date.now();
+    if (window === '7d') {
+      return now - (7 * 24 * 60 * 60 * 1000);
+    }
+    if (window === '30d') {
+      return now - (30 * 24 * 60 * 60 * 1000);
+    }
+    return null;
+  }
+
+  private matchesSearch(query: string, ...values: Array<string | null | undefined>): boolean {
+    return values
+      .filter((value): value is string => !!value)
+      .join(' ')
+      .toLowerCase()
+      .includes(query);
   }
 }

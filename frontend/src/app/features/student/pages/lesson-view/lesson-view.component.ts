@@ -447,11 +447,11 @@ const COURSE_VIDEO_PREVIEWS: Record<string, CourseVideoPreview> = {
     .player-shell {
       display: grid;
       gap: 0;
-      border: 1px solid rgba(221, 230, 242, 0.92);
+      border: 1px solid #d7d7d7;
       border-radius: 32px;
-      background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+      background: #ffffff;
       overflow: hidden;
-      box-shadow: 0 26px 60px rgba(15, 23, 42, 0.09);
+      box-shadow: none;
     }
 
     .player-shell__header {
@@ -461,20 +461,14 @@ const COURSE_VIDEO_PREVIEWS: Record<string, CourseVideoPreview> = {
       justify-content: space-between;
       gap: 1rem;
       padding: 1rem 1.3rem;
-      background: linear-gradient(135deg, #111827 0%, #1e2233 55%, #171b29 100%);
-      color: #fff;
-      overflow: hidden;
+      background: #f6f8fb;
+      color: #111827;
+      border-bottom: 1px solid #e1e5eb;
+      overflow: visible;
     }
 
     .player-shell__header::after {
-      content: '';
-      position: absolute;
-      inset: auto -4rem -6rem auto;
-      width: 16rem;
-      height: 16rem;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, rgba(59, 130, 246, 0.04) 40%, transparent 72%);
-      pointer-events: none;
+      content: none;
     }
 
     .player-shell__brand,
@@ -490,15 +484,16 @@ const COURSE_VIDEO_PREVIEWS: Record<string, CourseVideoPreview> = {
       width: 42px;
       height: 42px;
       border-radius: 999px;
-      color: #fff;
+      color: #1f2937;
       text-decoration: none;
-      background: rgba(255, 255, 255, 0.08);
+      background: #eef2f7;
+      border: 1px solid #d8dee8;
     }
 
     .player-shell__course span,
     .player-shell__progress span {
       display: block;
-      color: rgba(255, 255, 255, 0.7);
+      color: #6b778c;
       font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -509,13 +504,14 @@ const COURSE_VIDEO_PREVIEWS: Record<string, CourseVideoPreview> = {
       display: block;
       font-size: 0.92rem;
       font-weight: 700;
+      color: #172033;
     }
 
     .player-shell__progress-bar {
       width: 140px;
       height: 8px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.12);
+      background: #dde3eb;
       overflow: hidden;
     }
 
@@ -523,7 +519,7 @@ const COURSE_VIDEO_PREVIEWS: Record<string, CourseVideoPreview> = {
       display: block;
       height: 100%;
       border-radius: inherit;
-      background: linear-gradient(90deg, #7dd3fc 0%, #3b82f6 100%);
+      background: #5d7fd6;
     }
 
     .player-shell__body {

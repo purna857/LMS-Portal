@@ -3,7 +3,14 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import type { Lesson, LessonPayload } from '@app/features/instructor/models/instructor.models';
-import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
+import {
+  BaseModalComponent,
+  ModalBodyComponent,
+  ModalFooterComponent,
+  ModalHeaderComponent,
+  ModalFormGridComponent,
+  ModalSectionComponent
+} from '@app/shared/components/base-modal/base-modal.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -16,25 +23,34 @@ export interface LessonDialogData {
 @Component({
   selector: 'app-lesson-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
+  imports: [
+    ReactiveFormsModule,
+    BaseModalComponent,
+    ModalHeaderComponent,
+    ModalBodyComponent,
+    ModalFooterComponent,
+    ModalSectionComponent,
+    ModalFormGridComponent,
+    ...materialImports
+  ],
   template: `
-    <app-portal-dialog-shell
-      size="lg"
-      eyebrow="Lesson builder"
-      [title]="data.mode === 'create' ? 'Create Lesson' : 'Edit Lesson'"
-      [description]="data.mode === 'create'
+    <app-base-modal size="lg">
+      <app-modal-header
+        eyebrow="Lesson builder"
+        [title]="data.mode === 'create' ? 'Create Lesson' : 'Edit Lesson'"
+        [subtitle]="data.mode === 'create'
         ? 'Create a lesson with the right media type, ordering, and learner access level.'
         : 'Update the lesson details, content, and publishing state without leaving the modal.'"
-      (closeRequested)="dialogRef.close()">
-      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="lesson-form" (ngSubmit)="submit()">
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Lesson details</strong>
-              <p>Set the lesson title, type, position, and publication state.</p>
-            </div>
+        (closeRequested)="dialogRef.close()">
+      </app-modal-header>
 
-            <div class="dialog-grid">
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+      <app-modal-body>
+        <form [formGroup]="form" id="lesson-form" (ngSubmit)="submit()">
+          <app-modal-section
+            title="Lesson details"
+            description="Set the lesson title, type, position, and publication state.">
+            <app-modal-form-grid>
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Title</mat-label>
                 <input matInput formControlName="title" />
               </mat-form-field>
@@ -66,49 +82,46 @@ export interface LessonDialogData {
                 <mat-label>Duration (Minutes)</mat-label>
                 <input matInput type="number" formControlName="duration_minutes" />
               </mat-form-field>
-            </div>
-          </section>
+            </app-modal-form-grid>
+          </app-modal-section>
 
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Content & access</strong>
-              <p>Control preview access and provide the lesson content that matches the selected type.</p>
-            </div>
-
-            <div class="dialog-grid">
-              <mat-checkbox formControlName="is_preview" class="dialog-grid__full">Allow preview access</mat-checkbox>
-
+          <app-modal-section
+            title="Content & access"
+            description="Control preview access and provide the lesson content that matches the selected type.">
+            <app-modal-form-grid>
+              <mat-checkbox formControlName="is_preview" class="modal-form-grid__full">Allow preview access</mat-checkbox>
               @if (showContent()) {
-                <mat-form-field appearance="outline" class="dialog-grid__full">
+                <mat-form-field appearance="outline" class="modal-form-grid__full">
                   <mat-label>Content</mat-label>
                   <textarea matInput rows="5" formControlName="content"></textarea>
                 </mat-form-field>
               }
 
               @if (showVideo()) {
-                <mat-form-field appearance="outline" class="dialog-grid__full">
+                <mat-form-field appearance="outline" class="modal-form-grid__full">
                   <mat-label>Video URL</mat-label>
                   <input matInput formControlName="video_url" />
                 </mat-form-field>
               }
 
               @if (showResource()) {
-                <mat-form-field appearance="outline" class="dialog-grid__full">
+                <mat-form-field appearance="outline" class="modal-form-grid__full">
                   <mat-label>Resource URL</mat-label>
                   <input matInput formControlName="resource_url" />
                 </mat-form-field>
               }
-            </div>
-          </section>
-      </form>
+            </app-modal-form-grid>
+          </app-modal-section>
+        </form>
+      </app-modal-body>
 
-      <div dialogFooter class="dialog-footer-actions">
+      <app-modal-footer>
         <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
         <button mat-flat-button color="primary" type="submit" form="lesson-form">
           {{ data.mode === 'create' ? 'Create Lesson' : 'Save Lesson' }}
         </button>
-      </div>
-    </app-portal-dialog-shell>
+      </app-modal-footer>
+    </app-base-modal>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

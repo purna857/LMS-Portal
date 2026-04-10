@@ -5,12 +5,12 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { AdminActionDialogComponent } from '@app/features/admin/components/admin-action-dialog/admin-action-dialog.component';
 import { CourseEditorDialogComponent } from '@app/features/admin/components/course-editor-dialog/course-editor-dialog.component';
 import type { CourseCategory, CourseListItem } from '@app/features/admin/models/admin.models';
-import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { AdminPortalService } from '@app/features/admin/services/admin-portal.service';
 import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '@app/shared/components/page-header/page-header.component';
@@ -72,8 +72,8 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
               <mat-label>Search courses</mat-label>
               <input
                 matInput
-                [value]="workspaceSearch.query()"
-                (input)="workspaceSearch.setQuery($any($event.target).value ?? '')"
+                [value]="searchQuery()"
+                (input)="setSearchQuery($any($event.target).value ?? '')"
                 placeholder="Title, slug, instructor, or category" />
             </mat-form-field>
 
@@ -97,6 +97,16 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
               </mat-select>
             </mat-form-field>
 
+            <mat-form-field appearance="outline">
+              <mat-label>Sort by</mat-label>
+              <mat-select formControlName="sort">
+                <mat-option value="recent">Newest</mat-option>
+                <mat-option value="title">Title</mat-option>
+                <mat-option value="instructor">Instructor</mat-option>
+                <mat-option value="status">Status</mat-option>
+              </mat-select>
+            </mat-form-field>
+
             <div class="toolbar-grid__actions">
               <button mat-stroked-button type="button" (click)="resetFilters()">Reset</button>
               <button mat-flat-button color="primary" type="button" (click)="loadCourses()">Apply Filters</button>
@@ -111,15 +121,23 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
             <mat-progress-bar mode="indeterminate"></mat-progress-bar>
           }
 
-          @if (filteredCourses().length) {
+          @if (pagedCourses().length) {
             <div class="table-wrap">
-              <table mat-table [dataSource]="filteredCourses()" class="data-table">
+              <table mat-table [dataSource]="pagedCourses()" class="data-table">
                 <ng-container matColumnDef="title">
                   <th mat-header-cell *matHeaderCellDef>Course</th>
                   <td mat-cell *matCellDef="let course">
                     <div class="cell-title">
                       <strong>{{ course.title }}</strong>
                       <span>{{ course.short_description || course.slug }}</span>
+                      <div class="course-meta">
+                        @if (course.is_featured) {
+                          <mat-chip-set>
+                            <mat-chip data-tone="info">Featured</mat-chip>
+                          </mat-chip-set>
+                        }
+                        <span>{{ course.created_at | date:'mediumDate' }}</span>
+                      </div>
                     </div>
                   </td>
                 </ng-container>
@@ -131,7 +149,22 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
 
                 <ng-container matColumnDef="owner">
                   <th mat-header-cell *matHeaderCellDef>Instructor</th>
-                  <td mat-cell *matCellDef="let course">{{ course.primary_instructor_name || 'Unknown' }}</td>
+                  <td mat-cell *matCellDef="let course">
+                    <div class="cell-title">
+                      <strong>{{ course.primary_instructor_name || 'Unknown' }}</strong>
+                      <span>{{ course.language | uppercase }} · {{ course.level }}</span>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="learners">
+                  <th mat-header-cell *matHeaderCellDef>Learners</th>
+                  <td mat-cell *matCellDef="let course">
+                    <div class="cell-title">
+                      <strong>{{ enrollmentCount(course.id) }}</strong>
+                      <span>{{ enrollmentCount(course.id) === 1 ? 'enrolled learner' : 'enrolled learners' }}</span>
+                    </div>
+                  </td>
                 </ng-container>
 
                 <ng-container matColumnDef="status">
@@ -154,7 +187,13 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
                       } @else {
                         <button mat-stroked-button color="primary" type="button" (click)="togglePublish(course, true)">Publish</button>
                       }
-                      <button mat-stroked-button color="warn" type="button" (click)="deleteCourse(course)">Delete</button>
+                      <button
+                        mat-icon-button
+                        type="button"
+                        [matMenuTriggerFor]="courseMenu"
+                        [matMenuTriggerData]="{ course: course }">
+                        <span class="material-symbols-outlined">more_horiz</span>
+                      </button>
                     </div>
                   </td>
                 </ng-container>
@@ -163,11 +202,31 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
                 <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
               </table>
             </div>
+
+            <div class="table-footer">
+              <p class="table-footer__summary">
+                Showing {{ pageStart() + 1 }}-{{ pageEnd() }} of {{ sortedCourses().length }} courses
+              </p>
+
+              <div class="table-footer__actions">
+                <mat-form-field appearance="outline" class="table-footer__size">
+                  <mat-label>Rows</mat-label>
+                  <mat-select [value]="pageSize()" (valueChange)="setPageSize($event)">
+                    <mat-option [value]="5">5</mat-option>
+                    <mat-option [value]="10">10</mat-option>
+                    <mat-option [value]="20">20</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <button mat-stroked-button type="button" (click)="previousPage()" [disabled]="currentPage() === 0">Previous</button>
+                <button mat-stroked-button type="button" (click)="nextPage()" [disabled]="pageEnd() >= sortedCourses().length">Next</button>
+              </div>
+            </div>
           } @else if (courses().length) {
             <app-empty-state
               icon="search_off"
-              [title]="workspaceSearch.normalizedQuery() ? 'No matching courses' : 'No courses match this view'"
-              [description]="workspaceSearch.normalizedQuery() ? 'Try a different search term or clear the current filters.' : 'Update the filters to find more of the catalog or newly authored courses.'">
+              [title]="normalizedSearchQuery() ? 'No matching courses' : 'No courses match this view'"
+              [description]="normalizedSearchQuery() ? 'Try a different search term or clear the current filters.' : 'Update the filters to find more of the catalog or newly authored courses.'">
             </app-empty-state>
           } @else {
             <app-empty-state
@@ -179,6 +238,30 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
         </mat-card-content>
       </mat-card>
     </section>
+
+    <mat-menu #courseMenu="matMenu">
+      <ng-template matMenuContent let-course="course">
+        <button mat-menu-item type="button" (click)="editCourse(course)">
+          <span class="material-symbols-outlined">edit</span>
+          <span>Edit course</span>
+        </button>
+        @if (course?.status === 'published') {
+          <button mat-menu-item type="button" (click)="togglePublish(course, false)">
+            <span class="material-symbols-outlined">unpublished</span>
+            <span>Unpublish</span>
+          </button>
+        } @else {
+          <button mat-menu-item type="button" (click)="togglePublish(course, true)">
+            <span class="material-symbols-outlined">publish</span>
+            <span>Publish</span>
+          </button>
+        }
+        <button mat-menu-item type="button" (click)="deleteCourse(course)">
+          <span class="material-symbols-outlined">delete</span>
+          <span>Delete course</span>
+        </button>
+      </ng-template>
+    </mat-menu>
   `,
   styles: [`
     .action-row {
@@ -186,6 +269,7 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
       gap: 0.5rem;
       flex-wrap: wrap;
       align-items: center;
+      justify-content: flex-end;
     }
 
     .workflow-card {
@@ -205,11 +289,44 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
       font-size: 0.92rem;
     }
 
-    .workflow-card__actions {
+    .workflow-card__actions,
+    .course-meta {
       display: flex;
       gap: 0.7rem;
       flex-wrap: wrap;
       align-items: center;
+    }
+
+    .course-meta {
+      margin-top: 0.5rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .table-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+      padding-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .table-footer__summary {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .table-footer__actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .table-footer__size {
+      width: 96px;
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -220,14 +337,19 @@ export class CourseManagementComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
-  readonly workspaceSearch = inject(WorkspaceSearchService);
 
   readonly loading = signal(false);
   readonly courses = signal<CourseListItem[]>([]);
   readonly categories = signal<CourseCategory[]>([]);
-  readonly displayedColumns = ['title', 'category', 'owner', 'status', 'actions'];
+  readonly courseEnrollmentCounts = signal<Record<string, number>>({});
+  readonly searchQuery = signal('');
+  readonly normalizedSearchQuery = computed(() => this.searchQuery().trim().toLowerCase());
+  readonly currentPage = signal(0);
+  readonly pageSize = signal(10);
+  readonly displayedColumns = ['title', 'category', 'owner', 'learners', 'status', 'actions'];
   readonly summaryCards = computed(() => {
     const courses = this.courses();
+    const totalLearners = Object.values(this.courseEnrollmentCounts()).reduce((sum, count) => sum + count, 0);
     return [
       {
         label: 'Total Courses',
@@ -248,6 +370,12 @@ export class CourseManagementComponent {
         icon: 'edit_note'
       },
       {
+        label: 'Learner Seats',
+        value: String(totalLearners),
+        hint: 'Existing enrollments across loaded courses',
+        icon: 'group'
+      },
+      {
         label: 'Featured',
         value: String(courses.filter((course) => course.is_featured).length),
         hint: 'Highlighted in the catalog experience',
@@ -256,13 +384,14 @@ export class CourseManagementComponent {
     ];
   });
   readonly filteredCourses = computed(() => {
-    const query = this.workspaceSearch.normalizedQuery();
+    const query = this.normalizedSearchQuery();
     if (!query) {
       return this.courses();
     }
 
     return this.courses().filter((course) =>
-      this.workspaceSearch.matches(
+      this.matchesSearch(
+        query,
         course.title,
         course.slug,
         course.short_description,
@@ -274,13 +403,34 @@ export class CourseManagementComponent {
       )
     );
   });
+  readonly sortedCourses = computed(() => {
+    const sort = this.filtersForm.controls.sort.value ?? 'recent';
+    const courses = [...this.filteredCourses()];
+    return courses.sort((a, b) => {
+      switch (sort) {
+        case 'title':
+          return a.title.localeCompare(b.title);
+        case 'instructor':
+          return (a.primary_instructor_name ?? '').localeCompare(b.primary_instructor_name ?? '');
+        case 'status':
+          return a.status.localeCompare(b.status);
+        case 'recent':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+  });
+  readonly pageStart = computed(() => this.currentPage() * this.pageSize());
+  readonly pageEnd = computed(() => Math.min(this.pageStart() + this.pageSize(), this.sortedCourses().length));
+  readonly pagedCourses = computed(() => this.sortedCourses().slice(this.pageStart(), this.pageEnd()));
 
   readonly chipToneForCourseStatus = chipToneForCourseStatus;
   readonly chipToneForVisibility = chipToneForVisibility;
 
   readonly filtersForm = this.formBuilder.group({
     status: [''],
-    category_id: ['']
+    category_id: [''],
+    sort: ['recent']
   });
 
   constructor() {
@@ -299,6 +449,7 @@ export class CourseManagementComponent {
 
   loadCourses(): void {
     this.loading.set(true);
+    this.currentPage.set(0);
     const raw = this.filtersForm.getRawValue();
     this.adminPortalService.listCourses({
       limit: 50,
@@ -310,6 +461,7 @@ export class CourseManagementComponent {
       .subscribe({
         next: (response) => {
           this.courses.set(response.items);
+          this.loadEnrollmentCounts(response.items);
           this.loading.set(false);
         },
         error: (error: HttpErrorResponse) => {
@@ -322,10 +474,75 @@ export class CourseManagementComponent {
   resetFilters(): void {
     this.filtersForm.reset({
       status: '',
-      category_id: ''
+      category_id: '',
+      sort: 'recent'
     });
-    this.workspaceSearch.clear();
+    this.currentPage.set(0);
+    this.searchQuery.set('');
     this.loadCourses();
+  }
+
+  setSearchQuery(value: string): void {
+    this.searchQuery.set(String(value).trimStart());
+    this.currentPage.set(0);
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(Number(size));
+    this.currentPage.set(0);
+  }
+
+  enrollmentCount(courseId: string): number {
+    return this.courseEnrollmentCounts()[courseId] ?? 0;
+  }
+
+  previousPage(): void {
+    this.currentPage.update((page) => Math.max(0, page - 1));
+  }
+
+  nextPage(): void {
+    if (this.pageEnd() < this.sortedCourses().length) {
+      this.currentPage.update((page) => page + 1);
+    }
+  }
+
+  private matchesSearch(query: string, ...values: Array<string | null | undefined>): boolean {
+    return values
+      .filter((value): value is string => !!value)
+      .join(' ')
+      .toLowerCase()
+      .includes(query);
+  }
+
+  private loadEnrollmentCounts(courses: CourseListItem[]): void {
+    if (!courses.length) {
+      this.courseEnrollmentCounts.set({});
+      return;
+    }
+
+    forkJoin(
+      courses.map((course) =>
+        this.adminPortalService.getEnrollmentStats(course.id).pipe(
+          catchError(() =>
+            of({
+              total_enrollments: 0,
+              active_enrollments: 0,
+              completed_enrollments: 0,
+              dropped_enrollments: 0,
+              suspended_enrollments: 0
+            })
+          )
+        )
+      )
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((stats) => {
+        const counts = courses.reduce<Record<string, number>>((result, course, index) => {
+          result[course.id] = stats[index]?.total_enrollments ?? 0;
+          return result;
+        }, {});
+        this.courseEnrollmentCounts.set(counts);
+      });
   }
 
   editCourse(course: CourseListItem): void {

@@ -83,12 +83,7 @@ body {
   min-height: 100vh;
   font-size: 15px;
   line-height: 1.5;
-  background:
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 28%),
-    radial-gradient(circle at 82% 10%, rgba(20, 184, 166, 0.07), transparent 20%),
-    radial-gradient(circle at 88% 92%, rgba(59, 130, 246, 0.06), transparent 18%),
-    linear-gradient(180deg, #f8fbff 0%, #ffffff 24%, #f6f9ff 100%);
-  background-attachment: fixed;
+  background: #f7f7f7;
 }
 
 button,
@@ -592,6 +587,32 @@ a {
   --mdc-snackbar-container-shape: 18px;
 }
 
+html body .mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: #1f2933;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #ffffff;
+}
+
+html body .mat-mdc-snack-bar-container .mat-mdc-snack-bar-action {
+  min-height: 2.4rem !important;
+  padding: 0 1rem !important;
+  border-radius: 8px !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border: 1px solid #2563eb !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+html body .mat-mdc-snack-bar-container .mat-mdc-snack-bar-action:hover,
+html body .mat-mdc-snack-bar-container .mat-mdc-snack-bar-action:focus,
+html body .mat-mdc-snack-bar-container .mat-mdc-snack-bar-action:active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: none !important;
+}
+
 .mat-mdc-menu-panel,
 .mat-mdc-dialog-surface {
   border-radius: 24px !important;
@@ -749,18 +770,20 @@ a {
 
 .lms-dialog-panel {
   display: flex !important;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
   width: min(96vw, 1120px) !important;
   max-width: min(96vw, 1120px) !important;
-  max-height: min(92dvh, calc(100vh - 20px)) !important;
+  max-height: 90vh !important;
 }
 
 .lms-dialog-panel.cdk-overlay-pane {
   display: flex !important;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  max-height: min(92dvh, calc(100vh - 20px)) !important;
+  width: auto !important;
+  height: 90vh !important;
+  max-height: 90vh !important;
 }
 
 .lms-dialog-panel--sm {
@@ -787,7 +810,9 @@ a {
   display: flex !important;
   width: 100% !important;
   height: 100% !important;
-  max-height: min(92dvh, calc(100vh - 20px)) !important;
+  min-height: 0 !important;
+  max-height: 90vh !important;
+  overflow: hidden !important;
   padding: 0 !important;
 }
 
@@ -796,144 +821,37 @@ a {
   flex-direction: column !important;
   width: 100% !important;
   height: 100% !important;
+  flex: 1 1 auto !important;
   min-height: 0 !important;
-  max-height: min(92dvh, calc(100vh - 20px)) !important;
+  max-height: 90vh !important;
   overflow: hidden !important;
+  padding: 0 !important;
   border-radius: 28px !important;
   border: 1px solid rgba(148, 163, 184, 0.18) !important;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(248, 251, 255, 0.99)) !important;
   box-shadow: 0 30px 80px rgba(15, 23, 42, 0.16) !important;
 }
 
-.lms-dialog-panel .portal-dialog-shell {
+.lms-dialog-panel .base-modal {
   border-radius: inherit;
-  width: 100%;
   height: 100%;
-  min-height: 0;
-}
-
-.portal-dialog-shell .dialog-grid {
-  display: grid;
-  gap: 0.9rem 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  min-height: 0;
-}
-
-.portal-dialog-shell .dialog-grid__full {
-  grid-column: 1 / -1;
-}
-
-.portal-dialog-shell .dialog-grid--single {
-  grid-template-columns: 1fr;
-}
-
-.portal-dialog-shell .dialog-copy {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.portal-dialog-shell .dialog-copy p {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.55;
-}
-
-.portal-dialog-shell .dialog-section {
-  display: grid;
-  gap: 0.85rem;
-  padding: 1rem 1.05rem;
-  border-radius: 20px;
-  border: 1px solid var(--dialog-section-border, rgba(148, 163, 184, 0.14));
-  background: var(--dialog-section-bg, linear-gradient(180deg, rgba(248, 251, 255, 0.95), #ffffff 68%));
-}
-
-.portal-dialog-shell .dialog-section__title {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.portal-dialog-shell .dialog-section__title strong {
-  font-size: 0.92rem;
-  line-height: 1.25;
-  letter-spacing: -0.02em;
-}
-
-.portal-dialog-shell .dialog-section__title p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.78rem;
-  line-height: 1.45;
-}
-
-.portal-dialog-shell .mat-mdc-form-field {
   width: 100%;
-  margin-top: 0.15rem;
-  margin-bottom: 0.15rem;
-}
-
-.portal-dialog-shell .mat-mdc-form-field-subscript-wrapper {
-  padding-bottom: 0.35rem;
-}
-
-.portal-dialog-shell .mat-mdc-checkbox {
-  margin-top: 0.15rem;
-  margin-bottom: 0.05rem;
-}
-
-.portal-dialog-shell .mat-mdc-raised-button,
-.portal-dialog-shell .mat-mdc-unelevated-button,
-.portal-dialog-shell .mat-mdc-outlined-button,
-.portal-dialog-shell .mat-mdc-button-base {
-  min-height: 2.8rem;
-}
-
-.portal-dialog-shell .dialog-footer-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-left: auto;
-}
-
-.portal-dialog-shell .dialog-footer-actions--split {
-  width: 100%;
-  justify-content: space-between;
-  margin-left: 0;
-}
-
-.portal-dialog-shell .dialog-footer-actions .mat-mdc-button-base,
-.portal-dialog-shell .dialog-footer-actions a.mat-mdc-button-base {
-  min-width: 8.75rem;
-}
-
-.portal-dialog-shell .dialog-footer-actions .mat-mdc-button-base {
-  border-radius: 16px;
-}
-
-@media (max-width: 720px) {
-  .portal-dialog-shell .dialog-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .portal-dialog-shell .dialog-footer-actions,
-  .portal-dialog-shell .dialog-footer-actions--split {
-    width: 100%;
-    justify-content: stretch;
-  }
-
-  .portal-dialog-shell .dialog-footer-actions .mat-mdc-button-base,
-  .portal-dialog-shell .dialog-footer-actions a.mat-mdc-button-base {
-    flex: 1 1 0;
-    min-width: 0;
-  }
+  max-height: 90vh;
+  min-height: 0;
 }
 
 .lms-dialog-panel .mdc-dialog__container,
 .lms-dialog-panel .mat-mdc-dialog-inner-container {
-  max-height: calc(100vh - 20px) !important;
+  max-height: 90vh !important;
   min-height: 0 !important;
+  overflow: hidden !important;
 }
+
+
+.cdk-global-scrollblock {
+  overflow-y: hidden !important;
+}
+
 
 .lms-assignment-submit-dialog .mat-mdc-dialog-surface {
   transform: scale(0.9) !important;
@@ -1098,8 +1016,8 @@ html body :is(
   .shell-toolbar__notification-trigger
 ) {
   position: relative;
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06) !important;
-  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base) !important;
+  box-shadow: none !important;
+  transition: none !important;
 }
 
 html body :is(
@@ -1118,8 +1036,8 @@ html body :is(
   .progress-card,
   .dashboard-metric-card
 ):hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.09) !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 html body :is(
@@ -1138,11 +1056,1155 @@ html body :is(
   .progress-card,
   .dashboard-metric-card
 )::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--primary), rgba(20, 184, 166, 0.9), rgba(96, 165, 250, 0.96));
-  opacity: 0.92;
-  pointer-events: none;
+  content: none !important;
+}
+
+/* Global plain-mode normalization across Admin, Instructor, and Student portals. */
+html,
+body,
+body *,
+body *::before,
+body *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+body,
+.app-shell,
+.shell-container,
+.shell-content,
+.shell-main,
+.shell-main__scroll,
+.page-section,
+.dashboard-page,
+.page-grid,
+.dashboard-hero,
+.dashboard-split,
+.dashboard-metrics {
+  background-image: none !important;
+}
+
+html body :is(
+  .surface-card,
+  .stat-card,
+  .visual-card,
+  .page-header,
+  .empty-state,
+  .mat-mdc-card,
+  .mat-mdc-menu-panel,
+  .mat-mdc-dialog-surface,
+  .table-wrap,
+  .stack-list__item,
+  .lesson-row,
+  .shell-sidenav,
+  .shell-toolbar,
+  .shell-menu__panel,
+  .workflow-step,
+  .report-cell,
+  .activity-list__item,
+  .nav-link,
+  .course-card,
+  .quiz-tile,
+  .option-card,
+  .history-item,
+  .profile-summary-card,
+  .profile-form-card,
+  .profile-security-card,
+  .library-toolbar,
+  .notification-item,
+  .exam-window,
+  .progress-card,
+  .login-card
+) {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #d7d7d7 !important;
+}
+
+html body :is(
+  .data-table th,
+  .data-table td,
+  .table-wrap,
+  .stack-list__item,
+  .lesson-row,
+  .workflow-step,
+  .report-cell,
+  .activity-list__item,
+  .mat-mdc-menu-panel,
+  .mat-mdc-dialog-surface
+) {
+  background-image: none !important;
+}
+
+html body :is(
+  .mat-mdc-text-field-wrapper,
+  .mdc-text-field--outlined,
+  .mat-mdc-select-trigger,
+  .mat-mdc-form-field-flex,
+  .mat-mdc-card,
+  .surface-card,
+  .stat-card,
+  .visual-card,
+  .page-header,
+  .empty-state,
+  .table-wrap,
+  .nav-link,
+  .shell-toolbar__profile,
+  .shell-toolbar__search-link,
+  .shell-toolbar__search-results,
+  .mat-mdc-dialog-surface,
+  .mat-mdc-menu-panel
+) {
+  border-color: #d7d7d7 !important;
+}
+
+html body *:hover,
+html body *:focus,
+html body *:active {
+  transform: none !important;
+  filter: none !important;
+}
+
+html body :not(button):not(.mat-mdc-button-base):not(a.mat-mdc-button-base):not(.mat-mdc-icon-button):not(.mat-mdc-unelevated-button):not(.mat-mdc-outlined-button):not(.mat-mdc-raised-button):hover,
+html body :not(button):not(.mat-mdc-button-base):not(a.mat-mdc-button-base):not(.mat-mdc-icon-button):not(.mat-mdc-unelevated-button):not(.mat-mdc-outlined-button):not(.mat-mdc-raised-button):focus,
+html body :not(button):not(.mat-mdc-button-base):not(a.mat-mdc-button-base):not(.mat-mdc-icon-button):not(.mat-mdc-unelevated-button):not(.mat-mdc-outlined-button):not(.mat-mdc-raised-button):active {
+  background-image: none !important;
+}
+
+html body :is(
+  .surface-card:hover,
+  .stat-card:hover,
+  .visual-card:hover,
+  .page-header:hover,
+  .empty-state:hover,
+  .table-wrap:hover,
+  .stack-list__item:hover,
+  .lesson-row:hover,
+  .workflow-step:hover,
+  .report-cell:hover,
+  .activity-list__item:hover,
+  .nav-link:hover,
+  .mat-mdc-card:hover,
+  .mat-mdc-menu-item:hover,
+  .mat-mdc-list-item:hover,
+  .mat-mdc-chip:hover,
+  .shell-toolbar__search-link:hover,
+  .shell-toolbar__profile:hover
+) {
+  background: inherit !important;
+  border-color: #d7d7d7 !important;
+}
+
+html body :is(
+  .mat-mdc-unelevated-button,
+  .mat-mdc-raised-button,
+  .mat-mdc-outlined-button,
+  .mat-mdc-button-base,
+  button,
+  a.mat-mdc-button-base
+) {
+  min-height: 2.75rem !important;
+  padding: 0.7rem 1rem !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  text-transform: none !important;
+}
+
+html body :is(.mat-mdc-unelevated-button, .mat-mdc-raised-button):not([disabled]) {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+html body :is(.mat-mdc-outlined-button, .mat-mdc-button-base):not(.mat-mdc-unelevated-button):not(.mat-mdc-raised-button) {
+  border-color: #d7d7d7 !important;
+}
+
+html body :is(
+  .mat-mdc-unelevated-button:hover,
+  .mat-mdc-raised-button:hover,
+  .mat-mdc-outlined-button:hover,
+  .mat-mdc-button-base:hover,
+  button:hover,
+  a.mat-mdc-button-base:hover
+) {
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html body :is(
+  .mdc-text-field--outlined,
+  .mat-mdc-form-field-focus-overlay,
+  .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+  .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+  .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing
+) {
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html body .mdc-text-field--outlined {
+  --mdc-outlined-text-field-outline-color: #d7d7d7;
+  --mdc-outlined-text-field-hover-outline-color: #d7d7d7;
+  --mdc-outlined-text-field-focus-outline-color: #b8b8b8;
+  --mdc-outlined-text-field-focus-outline-width: 1px;
+}
+
+html body :is(
+  .mat-mdc-chip,
+  .mini-badges span,
+  .filter-pill,
+  .result-score-chip,
+  .result-status-chip,
+  .notification-read-chip
+) {
+  background: #f1f1f1 !important;
+  color: #333333 !important;
+  border: 1px solid #d7d7d7 !important;
+}
+
+/* Final application-wide neutral mode. Keep this block last so component styles cannot reintroduce hover effects, shadows, gradients, or blue borders. */
+:root {
+  --border: #d7d7d7;
+  --border-strong: #cfcfcf;
+  --primary-soft: #f1f1f1;
+  --primary-ink: #333333;
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-lg: none;
+  --transition-base: 0ms linear;
+}
+
+html body,
+html body *,
+html body *::before,
+html body *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  background-image: none !important;
+}
+
+html body * {
+  transition-property: none !important;
+}
+
+html body *:hover,
+html body *:focus,
+html body *:active,
+html body *:hover::before,
+html body *:focus::before,
+html body *:active::before,
+html body *:hover::after,
+html body *:focus::after,
+html body *:active::after {
+  transform: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  background-image: none !important;
+}
+
+html body :is(
+  .surface-card,
+  .stat-card,
+  .visual-card,
+  .dashboard-kpi-card,
+  .dashboard-metric-card,
+  .page-header,
+  .empty-state,
+  .mat-mdc-card,
+  .mat-mdc-dialog-surface,
+  .mat-mdc-menu-panel,
+  .table-wrap,
+  .stack-list__item,
+  .lesson-row,
+  .shell-sidenav,
+  .shell-toolbar,
+  .shell-menu__panel,
+  .shell-toolbar__profile,
+  .shell-toolbar__search-results,
+  .shell-toolbar__search-link,
+  .course-card,
+  .course-table-card,
+  .quiz-tile,
+  .quiz-list-card,
+  .option-card,
+  .history-item,
+  .profile-summary-card,
+  .profile-form-card,
+  .profile-security-card,
+  .library-toolbar,
+  .notification-item,
+  .exam-window,
+  .progress-card,
+  .certificate-card,
+  .login-card,
+  .workflow-step,
+  .report-cell,
+  .activity-list__item,
+  .answer-list__item,
+  .result-breakdown,
+  .lecture-item,
+  .outline-list__item
+) {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #d7d7d7 !important;
+  box-shadow: none !important;
+}
+
+html body :is(
+  .surface-card,
+  .stat-card,
+  .visual-card,
+  .dashboard-kpi-card,
+  .dashboard-metric-card,
+  .page-header,
+  .empty-state,
+  .mat-mdc-card,
+  .mat-mdc-dialog-surface,
+  .mat-mdc-menu-panel,
+  .table-wrap,
+  .stack-list__item,
+  .lesson-row,
+  .shell-sidenav,
+  .shell-toolbar,
+  .shell-menu__panel,
+  .shell-toolbar__profile,
+  .shell-toolbar__search-results,
+  .shell-toolbar__search-link,
+  .course-card,
+  .course-table-card,
+  .quiz-tile,
+  .quiz-list-card,
+  .option-card,
+  .history-item,
+  .profile-summary-card,
+  .profile-form-card,
+  .profile-security-card,
+  .library-toolbar,
+  .notification-item,
+  .exam-window,
+  .progress-card,
+  .certificate-card,
+  .login-card,
+  .workflow-step,
+  .report-cell,
+  .activity-list__item,
+  .answer-list__item,
+  .result-breakdown,
+  .lecture-item,
+  .outline-list__item
+):hover,
+html body :is(
+  .surface-card,
+  .stat-card,
+  .visual-card,
+  .dashboard-kpi-card,
+  .dashboard-metric-card,
+  .page-header,
+  .empty-state,
+  .mat-mdc-card,
+  .mat-mdc-dialog-surface,
+  .mat-mdc-menu-panel,
+  .table-wrap,
+  .stack-list__item,
+  .lesson-row,
+  .shell-sidenav,
+  .shell-toolbar,
+  .shell-menu__panel,
+  .shell-toolbar__profile,
+  .shell-toolbar__search-results,
+  .shell-toolbar__search-link,
+  .course-card,
+  .course-table-card,
+  .quiz-tile,
+  .quiz-list-card,
+  .option-card,
+  .history-item,
+  .profile-summary-card,
+  .profile-form-card,
+  .profile-security-card,
+  .library-toolbar,
+  .notification-item,
+  .exam-window,
+  .progress-card,
+  .certificate-card,
+  .login-card,
+  .workflow-step,
+  .report-cell,
+  .activity-list__item,
+  .answer-list__item,
+  .result-breakdown,
+  .lecture-item,
+  .outline-list__item
+):focus,
+html body :is(
+  .surface-card,
+  .stat-card,
+  .visual-card,
+  .dashboard-kpi-card,
+  .dashboard-metric-card,
+  .page-header,
+  .empty-state,
+  .mat-mdc-card,
+  .mat-mdc-dialog-surface,
+  .mat-mdc-menu-panel,
+  .table-wrap,
+  .stack-list__item,
+  .lesson-row,
+  .shell-sidenav,
+  .shell-toolbar,
+  .shell-menu__panel,
+  .shell-toolbar__profile,
+  .shell-toolbar__search-results,
+  .shell-toolbar__search-link,
+  .course-card,
+  .course-table-card,
+  .quiz-tile,
+  .quiz-list-card,
+  .option-card,
+  .history-item,
+  .profile-summary-card,
+  .profile-form-card,
+  .profile-security-card,
+  .library-toolbar,
+  .notification-item,
+  .exam-window,
+  .progress-card,
+  .certificate-card,
+  .login-card,
+  .workflow-step,
+  .report-cell,
+  .activity-list__item,
+  .answer-list__item,
+  .result-breakdown,
+  .lecture-item,
+  .outline-list__item
+):active {
+  background-color: #ffffff !important;
+  border-color: #d7d7d7 !important;
+}
+
+html body :is(
+  .data-table th,
+  .data-table td,
+  .data-table tbody tr:nth-child(even) td,
+  .data-table tbody tr:hover td,
+  .mat-mdc-table .mat-mdc-row:hover,
+  .mat-mdc-table .mat-mdc-cell,
+  .mat-mdc-table .mat-mdc-header-cell
+) {
+  background: #ffffff !important;
+  border-color: #d7d7d7 !important;
+  box-shadow: none !important;
+}
+
+html body :is(
+  .mat-mdc-form-field-focus-overlay,
+  .mat-mdc-button-persistent-ripple,
+  .mat-mdc-button-ripple,
+  .mdc-button__ripple,
+  .mdc-list-item__ripple,
+  .mdc-evolution-chip__ripple,
+  .mat-mdc-option-ripple
+) {
+  background: transparent !important;
+  opacity: 0 !important;
+}
+
+html body :is(
+  .mdc-text-field--outlined,
+  .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+  .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+  .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing,
+  .mat-mdc-form-field:hover .mdc-notched-outline__leading,
+  .mat-mdc-form-field:hover .mdc-notched-outline__notch,
+  .mat-mdc-form-field:hover .mdc-notched-outline__trailing,
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing
+) {
+  border-color: #d7d7d7 !important;
+  box-shadow: none !important;
+}
+
+html body .mdc-text-field--outlined {
+  --mdc-outlined-text-field-outline-color: #d7d7d7;
+  --mdc-outlined-text-field-hover-outline-color: #d7d7d7;
+  --mdc-outlined-text-field-focus-outline-color: #d7d7d7;
+  --mdc-outlined-text-field-focus-outline-width: 1px;
+}
+
+html body :is(.profile-avatar, .shell-toolbar__avatar, .shell-sidenav__avatar) {
+  display: grid !important;
+  place-items: center !important;
+  background-color: #f1f1f1 !important;
+  background-image: none !important;
+  border: 1px solid #d7d7d7 !important;
+  color: #333333 !important;
+  opacity: 1 !important;
+}
+
+html body :is(.profile-avatar img, .shell-toolbar__avatar img, .shell-sidenav__avatar img) {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html body :is(
+  .mat-mdc-button-base,
+  .mat-mdc-raised-button,
+  .mat-mdc-unelevated-button,
+  .mat-mdc-outlined-button,
+  button,
+  a.mat-mdc-button-base
+) {
+  box-shadow: none !important;
+  background-image: none !important;
+  transition-property: none !important;
+}
+
+html body :is(
+  .mat-mdc-button-base:hover,
+  .mat-mdc-button-base:focus,
+  .mat-mdc-button-base:active,
+  .mat-mdc-raised-button:hover,
+  .mat-mdc-raised-button:focus,
+  .mat-mdc-raised-button:active,
+  .mat-mdc-unelevated-button:hover,
+  .mat-mdc-unelevated-button:focus,
+  .mat-mdc-unelevated-button:active,
+  .mat-mdc-outlined-button:hover,
+  .mat-mdc-outlined-button:focus,
+  .mat-mdc-outlined-button:active,
+  button:hover,
+  button:focus,
+  button:active,
+  a.mat-mdc-button-base:hover,
+  a.mat-mdc-button-base:focus,
+  a.mat-mdc-button-base:active
+) {
+  box-shadow: none !important;
+  background-image: none !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+html body :is(.mat-mdc-outlined-button, .mat-mdc-button-base):not(.mat-mdc-unelevated-button):not(.mat-mdc-raised-button),
+html body :is(.mat-mdc-outlined-button, .mat-mdc-button-base):not(.mat-mdc-unelevated-button):not(.mat-mdc-raised-button):hover,
+html body :is(.mat-mdc-outlined-button, .mat-mdc-button-base):not(.mat-mdc-unelevated-button):not(.mat-mdc-raised-button):focus,
+html body :is(.mat-mdc-outlined-button, .mat-mdc-button-base):not(.mat-mdc-unelevated-button):not(.mat-mdc-raised-button):active {
+  border-color: #d7d7d7 !important;
+}
+
+html body :is(
+  .data-table th,
+  .data-table td,
+  .mat-mdc-header-cell,
+  .mat-mdc-cell
+) {
+  padding: 1rem 1.25rem !important;
+  vertical-align: middle !important;
+}
+
+html body :is(
+  .data-table tr,
+  .data-table td,
+  .data-table th,
+  .mat-mdc-row,
+  .mat-mdc-header-row,
+  .mat-mdc-cell,
+  .mat-mdc-header-cell,
+  .mat-mdc-row:hover,
+  .mat-mdc-row:focus,
+  .mat-mdc-row:active,
+  .mat-mdc-row.cdk-focused,
+  .mat-mdc-row.cdk-program-focused,
+  .mat-mdc-row.mdc-data-table__row--selected,
+  .mat-mdc-row[aria-selected='true']
+) {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html body :is(.cell-title, .user-meta) {
+  align-items: flex-start !important;
+}
+
+html body .cell-title {
+  gap: 0.3rem !important;
+}
+
+html body .user-meta {
+  display: flex !important;
+  gap: 0.45rem !important;
+  margin-top: 0.55rem !important;
+  padding: 0 !important;
+}
+
+html body :is(
+  .mat-mdc-chip,
+  .mdc-evolution-chip,
+  .mat-mdc-standard-chip,
+  .mat-mdc-chip.mat-mdc-chip-highlighted,
+  .mat-mdc-chip.mat-mdc-chip-selected,
+  .mat-mdc-chip:hover,
+  .mat-mdc-chip:focus,
+  .mat-mdc-chip:active,
+  .mat-mdc-standard-chip:hover,
+  .mat-mdc-standard-chip:focus,
+  .mat-mdc-standard-chip:active
+) {
+  min-height: 2.25rem !important;
+  height: 2.25rem !important;
+  border: 1px solid #d7d7d7 !important;
+  background: #f1f1f1 !important;
+  background-color: #f1f1f1 !important;
+  background-image: none !important;
+  color: #333333 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html body :is(
+  .mat-mdc-chip,
+  .mat-mdc-standard-chip,
+  .mdc-evolution-chip
+) {
+  --mdc-chip-elevated-container-color: #f1f1f1;
+  --mdc-chip-flat-selected-outline-color: #d7d7d7;
+  --mdc-chip-focus-state-layer-color: transparent;
+  --mdc-chip-hover-state-layer-color: transparent;
+  --mdc-chip-selected-focus-state-layer-color: transparent;
+  --mdc-chip-selected-hover-state-layer-color: transparent;
+  --mdc-chip-hover-state-layer-opacity: 0;
+  --mdc-chip-focus-state-layer-opacity: 0;
+  --mdc-chip-selected-hover-state-layer-opacity: 0;
+  --mdc-chip-selected-focus-state-layer-opacity: 0;
+}
+
+html body :is(
+  .mdc-evolution-chip__action,
+  .mdc-evolution-chip__action--primary,
+  .mat-mdc-chip-action
+),
+html body :is(
+  .mdc-evolution-chip__action:hover,
+  .mdc-evolution-chip__action:focus,
+  .mdc-evolution-chip__action:active,
+  .mdc-evolution-chip__action--primary:hover,
+  .mdc-evolution-chip__action--primary:focus,
+  .mdc-evolution-chip__action--primary:active,
+  .mat-mdc-chip-action:hover,
+  .mat-mdc-chip-action:focus,
+  .mat-mdc-chip-action:active
+) {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html body .shell-toolbar__profile.mat-mdc-button-base,
+html body .shell-toolbar__profile.mat-mdc-button-base:hover,
+html body .shell-toolbar__profile.mat-mdc-button-base:focus,
+html body .shell-toolbar__profile.mat-mdc-button-base:active {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.8rem !important;
+  min-height: 3rem !important;
+  height: 3rem !important;
+  max-width: 18rem !important;
+  padding: 0.25rem 1rem 0.25rem 0.55rem !important;
+  border: 1px solid #d7d7d7 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #111111 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+html body .shell-toolbar__profile .mdc-button__label {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.8rem !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+html body .shell-toolbar__profile .shell-toolbar__avatar {
+  width: 2.45rem !important;
+  height: 2.45rem !important;
+  min-width: 2.45rem !important;
+  min-height: 2.45rem !important;
+  border-radius: 10px !important;
+}
+
+html body .shell-toolbar__profile .shell-toolbar__identity {
+  display: grid !important;
+  gap: 0.08rem !important;
+  min-width: 0 !important;
+  line-height: 1.1 !important;
+  text-align: left !important;
+}
+
+html body .shell-toolbar__profile .shell-toolbar__identity strong,
+html body .shell-toolbar__profile .shell-toolbar__identity small {
+  display: block !important;
+  max-width: 12rem !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body .shell-toolbar__profile .shell-toolbar__identity strong {
+  font-size: 0.95rem !important;
+  line-height: 1.15 !important;
+}
+
+html body .shell-toolbar__profile .shell-toolbar__identity small {
+  font-size: 0.78rem !important;
+  line-height: 1.1 !important;
+}
+
+html body .shell-toolbar__notification-trigger.mat-mdc-icon-button,
+html body .shell-toolbar__notification-trigger.mat-mdc-icon-button:hover,
+html body .shell-toolbar__notification-trigger.mat-mdc-icon-button:focus,
+html body .shell-toolbar__notification-trigger.mat-mdc-icon-button:active {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 3rem !important;
+  height: 3rem !important;
+  min-width: 3rem !important;
+  min-height: 3rem !important;
+  padding: 0 !important;
+  border: 1px solid #d7d7d7 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+html body .shell-toolbar__notification-trigger .material-symbols-outlined {
+  font-size: 1.25rem !important;
+  line-height: 1 !important;
+}
+
+html body :is(
+  .mat-mdc-button-base,
+  .mat-mdc-raised-button,
+  .mat-mdc-unelevated-button,
+  .mat-mdc-outlined-button,
+  button.mat-mdc-button-base,
+  a.mat-mdc-button-base
+) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 2.75rem !important;
+  padding: 0.65rem 1rem !important;
+  border-radius: 12px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+html body :is(
+  .mat-mdc-button-base:hover,
+  .mat-mdc-button-base:focus,
+  .mat-mdc-button-base:active,
+  .mat-mdc-button-base.cdk-focused,
+  .mat-mdc-button-base.cdk-program-focused,
+  .mat-mdc-button-base.cdk-keyboard-focused,
+  button.mat-mdc-button-base:hover,
+  button.mat-mdc-button-base:focus,
+  button.mat-mdc-button-base:active,
+  a.mat-mdc-button-base:hover,
+  a.mat-mdc-button-base:focus,
+  a.mat-mdc-button-base:active
+) {
+  background-image: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+html body :is(
+  .mat-mdc-outlined-button,
+  .mat-mdc-outlined-button:hover,
+  .mat-mdc-outlined-button:focus,
+  .mat-mdc-outlined-button:active,
+  .mat-mdc-button-base:not(.mat-mdc-unelevated-button):not(.mat-mdc-raised-button),
+  .mat-mdc-button-base:not(.mat-mdc-unelevated-button):not(.mat-mdc-raised-button):hover,
+  .mat-mdc-button-base:not(.mat-mdc-unelevated-button):not(.mat-mdc-raised-button):focus,
+  .mat-mdc-button-base:not(.mat-mdc-unelevated-button):not(.mat-mdc-raised-button):active
+) {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border-color: #d7d7d7 !important;
+}
+
+html body :is(
+  .mat-mdc-icon-button,
+  .mat-mdc-icon-button:hover,
+  .mat-mdc-icon-button:focus,
+  .mat-mdc-icon-button:active
+) {
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #d7d7d7 !important;
+}
+
+html body :is(
+  .mat-mdc-menu-item,
+  .mat-mdc-menu-item:hover,
+  .mat-mdc-menu-item:focus,
+  .mat-mdc-menu-item:active,
+  .mat-mdc-list-item,
+  .mat-mdc-list-item:hover,
+  .mat-mdc-list-item:focus,
+  .mat-mdc-list-item:active,
+  .mdc-list-item,
+  .mdc-list-item:hover,
+  .mdc-list-item:focus,
+  .mdc-list-item:active
+) {
+  min-height: 3rem !important;
+  padding: 0.75rem 1rem !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #d7d7d7 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+html body :is(
+  a,
+  a:hover,
+  a:focus,
+  a:active,
+  .nav-link,
+  .nav-link:hover,
+  .nav-link:focus,
+  .nav-link:active,
+  .shell-toolbar__search-link,
+  .shell-toolbar__search-link:hover,
+  .shell-toolbar__search-link:focus,
+  .shell-toolbar__search-link:active,
+  [role='button'],
+  [role='button']:hover,
+  [role='button']:focus,
+  [role='button']:active
+) {
+  background-image: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+html body :is(
+  .surface-card,
+  .stat-card,
+  .visual-card,
+  .dashboard-kpi-card,
+  .dashboard-metric-card,
+  .page-header,
+  .empty-state,
+  .mat-mdc-card,
+  .table-wrap,
+  .stack-list__item,
+  .lesson-row,
+  .course-card,
+  .quiz-tile,
+  .option-card,
+  .history-item,
+  .profile-fact,
+  .profile-summary-card,
+  .profile-form-card,
+  .profile-security-card,
+  .notification-item,
+  .exam-window,
+  .progress-card,
+  .certificate-card,
+  .result-breakdown,
+  .lecture-item,
+  .outline-list__item
+),
+html body :is(
+  .surface-card,
+  .stat-card,
+  .visual-card,
+  .dashboard-kpi-card,
+  .dashboard-metric-card,
+  .page-header,
+  .empty-state,
+  .mat-mdc-card,
+  .table-wrap,
+  .stack-list__item,
+  .lesson-row,
+  .course-card,
+  .quiz-tile,
+  .option-card,
+  .history-item,
+  .profile-fact,
+  .profile-summary-card,
+  .profile-form-card,
+  .profile-security-card,
+  .notification-item,
+  .exam-window,
+  .progress-card,
+  .certificate-card,
+  .result-breakdown,
+  .lecture-item,
+  .outline-list__item
+):hover,
+html body :is(
+  .surface-card,
+  .stat-card,
+  .visual-card,
+  .dashboard-kpi-card,
+  .dashboard-metric-card,
+  .page-header,
+  .empty-state,
+  .mat-mdc-card,
+  .table-wrap,
+  .stack-list__item,
+  .lesson-row,
+  .course-card,
+  .quiz-tile,
+  .option-card,
+  .history-item,
+  .profile-fact,
+  .profile-summary-card,
+  .profile-form-card,
+  .profile-security-card,
+  .notification-item,
+  .exam-window,
+  .progress-card,
+  .certificate-card,
+  .result-breakdown,
+  .lecture-item,
+  .outline-list__item
+):focus,
+html body :is(
+  .surface-card,
+  .stat-card,
+  .visual-card,
+  .dashboard-kpi-card,
+  .dashboard-metric-card,
+  .page-header,
+  .empty-state,
+  .mat-mdc-card,
+  .table-wrap,
+  .stack-list__item,
+  .lesson-row,
+  .course-card,
+  .quiz-tile,
+  .option-card,
+  .history-item,
+  .profile-fact,
+  .profile-summary-card,
+  .profile-form-card,
+  .profile-security-card,
+  .notification-item,
+  .exam-window,
+  .progress-card,
+  .certificate-card,
+  .result-breakdown,
+  .lecture-item,
+  .outline-list__item
+):active {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #d7d7d7 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+html body :is(
+  .mdc-button__ripple,
+  .mat-mdc-button-ripple,
+  .mat-mdc-button-persistent-ripple,
+  .mdc-icon-button__ripple,
+  .mat-mdc-focus-indicator::before,
+  .mat-mdc-focus-indicator::after,
+  .mdc-list-item__ripple,
+  .mat-mdc-menu-ripple,
+  .mat-ripple-element
+) {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  opacity: 0 !important;
+}
+
+html body .shell-sidenav__toggle.mat-mdc-icon-button,
+html body .shell-sidenav__toggle.mat-mdc-icon-button:hover,
+html body .shell-sidenav__toggle.mat-mdc-icon-button:focus,
+html body .shell-sidenav__toggle.mat-mdc-icon-button:active {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 3.25rem !important;
+  height: 3.25rem !important;
+  min-width: 3.25rem !important;
+  min-height: 3.25rem !important;
+  padding: 0 !important;
+  border: 1px solid #d7d7d7 !important;
+  border-radius: 12px !important;
+  background: #f1f1f1 !important;
+  background-color: #f1f1f1 !important;
+  background-image: none !important;
+  color: #111111 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+html body .shell-sidenav__toggle .material-symbols-outlined {
+  font-size: 1.55rem !important;
+  line-height: 1 !important;
+  font-weight: 700 !important;
+}
+
+html body .shell-toolbar__search-shell {
+  flex: 1 1 560px !important;
+  min-width: 18rem !important;
+  max-width: 640px !important;
+  justify-content: center !important;
+}
+
+html body .shell-toolbar__center {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+html body .shell-toolbar__search.mat-mdc-form-field {
+  width: min(100%, 560px) !important;
+  min-width: 18rem !important;
+}
+
+html body .shell-toolbar__search .mat-mdc-text-field-wrapper,
+html body .shell-toolbar__search .mat-mdc-form-field-flex {
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+
+html body .shell-toolbar__search .mat-mdc-form-field-infix {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+html body .shell-toolbar__search input.mat-mdc-input-element {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+html body .shell-toolbar__search .mat-mdc-form-field-icon-suffix,
+html body .shell-toolbar__search .mat-mdc-form-field-text-suffix {
+  flex: 0 0 auto !important;
+  padding-right: 0.35rem !important;
+}
+
+html body .shell-toolbar__search button.mat-mdc-icon-button,
+html body .shell-toolbar__search button.mat-mdc-icon-button:hover,
+html body .shell-toolbar__search button.mat-mdc-icon-button:focus,
+html body .shell-toolbar__search button.mat-mdc-icon-button:active {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  min-width: 2.25rem !important;
+  min-height: 2.25rem !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+html body .shell-toolbar__search-results {
+  width: min(100vw - 2rem, 560px) !important;
+  max-width: 560px !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+}
+
+html body .shell-toolbar__search-results:hover,
+html body .shell-toolbar__search-results:focus,
+html body .shell-toolbar__search-results:active,
+html body .shell-toolbar__search-results:focus-within {
+  transform: translateX(-50%) !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html body .shell-toolbar__search-link,
+html body .shell-toolbar__search-link:hover,
+html body .shell-toolbar__search-link:focus,
+html body .shell-toolbar__search-link:active {
+  transform: none !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html body .mat-mdc-snack-bar-container .mat-mdc-snack-bar-action,
+html body .mat-mdc-snack-bar-container .mat-mdc-snack-bar-action:hover,
+html body .mat-mdc-snack-bar-container .mat-mdc-snack-bar-action:focus,
+html body .mat-mdc-snack-bar-container .mat-mdc-snack-bar-action:active,
+html body .mat-mdc-snack-bar-container button.mat-mdc-button-base,
+html body .mat-mdc-snack-bar-container button.mat-mdc-button-base:hover,
+html body .mat-mdc-snack-bar-container button.mat-mdc-button-base:focus,
+html body .mat-mdc-snack-bar-container button.mat-mdc-button-base:active {
+  min-width: 6.5rem !important;
+  min-height: 3rem !important;
+  padding: 0 1.15rem !important;
+  border: 1px solid #2563eb !important;
+  border-radius: 8px !important;
+  background: #2563eb !important;
+  background-color: #2563eb !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+
+html body .mat-mdc-snack-bar-container .mat-mdc-snack-bar-action .mdc-button__label,
+html body .mat-mdc-snack-bar-container button.mat-mdc-button-base .mdc-button__label,
+html body .mat-mdc-snack-bar-container .mat-mdc-button-touch-target {
+  color: #ffffff !important;
+  opacity: 1 !important;
 }

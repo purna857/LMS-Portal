@@ -4,8 +4,9 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import type { ChartConfiguration } from 'chart.js';
+import { catchError } from 'rxjs/operators';
 
 import type {
   AdminDashboardStats,
@@ -149,14 +150,15 @@ import { materialImports } from '@app/shared/material/material-imports';
                 <div class="stack-list">
                   @for (course of recentCourses(); track course.id) {
                     <div class="stack-list__item">
-                      <div>
-                        <strong>{{ course.title }}</strong>
-                        <p>{{ course.primary_instructor_name || 'Unassigned' }}</p>
-                      </div>
-                      <div class="mini-badges">
-                        <span>{{ course.status }}</span>
-                        <span>{{ course.visibility }}</span>
-                      </div>
+                    <div>
+                      <strong>{{ course.title }}</strong>
+                      <p>{{ course.primary_instructor_name || 'Unassigned' }}</p>
+                    </div>
+                    <div class="mini-badges">
+                      <span>{{ enrollmentCount(course.id) }} learners</span>
+                      <span>{{ course.status }}</span>
+                      <span>{{ course.visibility }}</span>
+                    </div>
                     </div>
                   }
                 </div>
@@ -619,6 +621,7 @@ export class AdminDashboardComponent {
   readonly recentUsers = signal<AdminUserListItem[]>([]);
   readonly pendingApprovals = signal<InstructorApprovalItem[]>([]);
   readonly recentCourses = signal<CourseListItem[]>([]);
+  readonly recentCourseEnrollmentCounts = signal<Record<string, number>>({});
   readonly activeSeatValue = signal('0');
   readonly workflowSteps = computed(() => {
     const pendingApprovals = this.stats()?.pending_approvals ?? 0;
@@ -724,6 +727,10 @@ export class AdminDashboardComponent {
     this.loadDashboard();
   }
 
+  enrollmentCount(courseId: string): number {
+    return this.recentCourseEnrollmentCounts()[courseId] ?? 0;
+  }
+
   private loadDashboard(): void {
     this.loading.set(true);
     forkJoin({
@@ -739,6 +746,7 @@ export class AdminDashboardComponent {
           this.recentUsers.set(users.items);
           this.pendingApprovals.set(approvals.items.slice(0, 5));
           this.recentCourses.set(courses.items.slice(0, 4));
+          this.loadRecentCourseEnrollmentCounts(courses.items.slice(0, 4));
           this.activeSeatValue.set(String(stats.active_enrollments));
           this.overviewChartData.set({
             labels: ['Students', 'Instructors', 'Courses', 'Enrollments', 'Assignments', 'Quizzes'],
@@ -796,6 +804,37 @@ export class AdminDashboardComponent {
           this.loading.set(false);
           this.snackBar.open(error.error?.detail ?? 'Unable to load admin dashboard.', 'Dismiss', { duration: 4500 });
         }
+      });
+  }
+
+  private loadRecentCourseEnrollmentCounts(courses: CourseListItem[]): void {
+    if (!courses.length) {
+      this.recentCourseEnrollmentCounts.set({});
+      return;
+    }
+
+    forkJoin(
+      courses.map((course) =>
+        this.adminPortalService.getEnrollmentStats(course.id).pipe(
+          catchError(() =>
+            of({
+              total_enrollments: 0,
+              active_enrollments: 0,
+              completed_enrollments: 0,
+              dropped_enrollments: 0,
+              suspended_enrollments: 0
+            })
+          )
+        )
+      )
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((stats) => {
+        const counts = courses.reduce<Record<string, number>>((result, course, index) => {
+          result[course.id] = stats[index]?.total_enrollments ?? 0;
+          return result;
+        }, {});
+        this.recentCourseEnrollmentCounts.set(counts);
       });
   }
 }

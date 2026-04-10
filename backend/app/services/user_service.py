@@ -1,10 +1,11 @@
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.security import get_password_hash, verify_password
+from app.models.course import CourseInstructor
 from app.models.instructor_approval_request import InstructorApprovalRequest
 from app.models.refresh_token import RefreshToken
 from app.models.user import User, UserRole
@@ -144,6 +145,71 @@ class UserService:
         ]
         return AdminUserListResponse(items=items, total=total, limit=limit, offset=offset)
 
+    async def approve_user_account(
+        self,
+        user_id: UUID,
+        reviewer: User,
+        review_notes: str | None = None,
+    ) -> str:
+        user = await self._get_user_or_raise(user_id)
+        if user.id == reviewer.id:
+            raise UserServiceError("You cannot approve your own account")
+        if user.is_superuser:
+            raise UserServiceError("Superuser accounts do not require admin approval")
+
+        latest_request = await self._get_latest_instructor_approval_request(user.id)
+        if latest_request is not None:
+            latest_request.status = "approved"
+            latest_request.reviewed_at = utc_now()
+            latest_request.reviewed_by = reviewer.id
+            latest_request.review_notes = review_notes
+
+        user.status = "active"
+        await self.session.commit()
+        return "User approved successfully"
+
+    async def reject_user_account(
+        self,
+        user_id: UUID,
+        reviewer: User,
+        review_notes: str | None = None,
+    ) -> str:
+        user = await self._get_user_or_raise(user_id)
+        if user.id == reviewer.id:
+            raise UserServiceError("You cannot reject your own account")
+        if user.is_superuser:
+            raise UserServiceError("Superuser accounts cannot be rejected")
+
+        latest_request = await self._get_latest_instructor_approval_request(user.id)
+        if latest_request is not None:
+            latest_request.status = "rejected"
+            latest_request.reviewed_at = utc_now()
+            latest_request.reviewed_by = reviewer.id
+            latest_request.review_notes = review_notes
+
+        user.status = "inactive"
+        await self._revoke_active_refresh_tokens(user.id)
+        await self.session.commit()
+        return "User rejected successfully"
+
+    async def delete_user_account(
+        self,
+        user_id: UUID,
+        reviewer: User,
+    ) -> str:
+        user = await self._get_user_or_raise(user_id)
+        if user.id == reviewer.id:
+            raise UserServiceError("You cannot delete your own account")
+        if user.is_superuser:
+            raise UserServiceError("Superuser accounts cannot be deleted")
+
+        await self.session.execute(
+            delete(CourseInstructor).where(CourseInstructor.instructor_id == user.id)
+        )
+        await self.session.delete(user)
+        await self.session.commit()
+        return "User deleted successfully"
+
     async def update_user_status(self, user_id: UUID, blocked: bool) -> CurrentProfileResponse:
         user = await self._get_user_or_raise(user_id)
         if user.is_superuser:
@@ -155,13 +221,7 @@ class UserService:
             user.status = await self._resolve_unblocked_status(user)
 
         if blocked:
-            revoke_statement = select(RefreshToken).where(
-                RefreshToken.user_id == user.id,
-                RefreshToken.revoked_at.is_(None),
-            )
-            refresh_tokens = (await self.session.execute(revoke_statement)).scalars().all()
-            for token in refresh_tokens:
-                token.revoked_at = utc_now()
+            await self._revoke_active_refresh_tokens(user.id)
 
         await self.session.commit()
         return self._serialize_current_profile(user)
@@ -243,13 +303,7 @@ class UserService:
         approval_request.reviewed_by = reviewer.id
         approval_request.review_notes = payload.review_notes
         approval_request.user.status = "inactive"
-        revoke_statement = select(RefreshToken).where(
-            RefreshToken.user_id == approval_request.user.id,
-            RefreshToken.revoked_at.is_(None),
-        )
-        refresh_tokens = (await self.session.execute(revoke_statement)).scalars().all()
-        for token in refresh_tokens:
-            token.revoked_at = utc_now()
+        await self._revoke_active_refresh_tokens(approval_request.user.id)
         await self.session.commit()
         return InstructorApprovalActionResponse(
             message="Instructor request rejected",
@@ -311,6 +365,15 @@ class UserService:
             .order_by(InstructorApprovalRequest.created_at.desc())
         )
         return (await self.session.execute(statement)).scalars().first()
+
+    async def _revoke_active_refresh_tokens(self, user_id: UUID) -> None:
+        revoke_statement = select(RefreshToken).where(
+            RefreshToken.user_id == user_id,
+            RefreshToken.revoked_at.is_(None),
+        )
+        refresh_tokens = (await self.session.execute(revoke_statement)).scalars().all()
+        for token in refresh_tokens:
+            token.revoked_at = utc_now()
 
     def _serialize_current_profile(self, user: User) -> CurrentProfileResponse:
         profile_payload = None

@@ -501,6 +501,29 @@ type ProfileFact = {
       align-items: flex-start;
       gap: 0.85rem;
       padding: 1.2rem 1.2rem 0;
+      text-align: left;
+    }
+
+    :host ::ng-deep .profile-form-card__header .mat-mdc-card-header-text,
+    :host ::ng-deep .profile-security-card__header .mat-mdc-card-header-text {
+      width: 100%;
+      margin: 0;
+      text-align: left;
+    }
+
+    .profile-form-card__header > div,
+    .profile-security-card__header > div {
+      flex: 1 1 auto;
+      min-width: 0;
+      text-align: left;
+    }
+
+    .profile-form-card__header mat-card-title,
+    .profile-security-card__header mat-card-title {
+      display: block;
+      margin: 0;
+      color: #172033;
+      text-align: left;
     }
 
     .profile-form-card__subtitle,
@@ -518,8 +541,9 @@ type ProfileFact = {
       justify-content: center;
       padding: 0.45rem 0.8rem;
       border-radius: 999px;
-      background: #edf4ff;
-      color: var(--primary);
+      background: #edf4ff !important;
+      color: var(--primary) !important;
+      border: 1px solid rgba(37, 99, 235, 0.08);
       font-weight: 800;
       font-size: 0.78rem;
       text-transform: uppercase;

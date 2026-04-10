@@ -5,8 +5,10 @@ import { ApiClientService } from '@app/core/api/api-client.service';
 import { AnalyticsApiService } from '@app/core/api/services/analytics-api.service';
 import { AssignmentApiService } from '@app/core/api/services/assignment-api.service';
 import { CourseApiService } from '@app/core/api/services/course-api.service';
+import { EnrollmentApiService } from '@app/core/api/services/enrollment-api.service';
 import { NotificationApiService } from '@app/core/api/services/notification-api.service';
 import type { MessageResponse } from '@app/core/models/auth.model';
+import type { EnrollmentStats } from '@app/features/instructor/models/instructor.models';
 import type {
   AdminDashboardStats,
   AdminAssignmentTrackerListResponse,
@@ -34,6 +36,7 @@ export class AdminPortalService {
   private readonly analyticsApi = inject(AnalyticsApiService);
   private readonly assignmentApi = inject(AssignmentApiService);
   private readonly courseApi = inject(CourseApiService);
+  private readonly enrollmentApi = inject(EnrollmentApiService);
   private readonly notificationApi = inject(NotificationApiService);
 
   getAdminDashboardStats(): Observable<AdminDashboardStats> {
@@ -50,6 +53,22 @@ export class AdminPortalService {
 
   unblockUser(userId: string): Observable<MessageResponse> {
     return this.api.post<MessageResponse>(`/users/${userId}/unblock`, {});
+  }
+
+  approveUser(userId: string, reviewNotes?: string): Observable<MessageResponse> {
+    return this.api.post<MessageResponse>(`/users/${userId}/approve`, {
+      review_notes: reviewNotes?.trim() || null
+    });
+  }
+
+  rejectUser(userId: string, reviewNotes?: string): Observable<MessageResponse> {
+    return this.api.post<MessageResponse>(`/users/${userId}/reject`, {
+      review_notes: reviewNotes?.trim() || null
+    });
+  }
+
+  deleteUser(userId: string): Observable<MessageResponse> {
+    return this.api.delete<MessageResponse>(`/users/${userId}`);
   }
 
   listInstructorApprovals(status?: string): Observable<InstructorApprovalListResponse> {
@@ -124,5 +143,9 @@ export class AdminPortalService {
 
   listAssignmentTracker(): Observable<AdminAssignmentTrackerListResponse> {
     return this.assignmentApi.listAdminAssignmentTracker();
+  }
+
+  getEnrollmentStats(courseId?: string): Observable<EnrollmentStats> {
+    return this.enrollmentApi.getEnrollmentStats(courseId);
   }
 }

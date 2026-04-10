@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { catchError, forkJoin, map, of } from 'rxjs';
 
 import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
@@ -56,6 +57,8 @@ export class StudentQuizzesComponent {
   readonly enrolledCourses = signal<EnrolledCourseItem[]>([]);
   readonly selectedCourseId = signal('');
   readonly quizzes = signal<QuizListItem[]>([]);
+  readonly quizAttemptCounts = signal<Record<string, number>>({});
+  readonly quizAttemptStatusLoaded = signal<Record<string, boolean>>({});
   readonly selectedQuiz = signal<QuizDetail | null>(null);
   readonly examQuestions = signal<QuizQuestion[]>([]);
   readonly attemptHistory = signal<QuizAttemptHistoryItem[]>([]);
@@ -158,7 +161,7 @@ export class StudentQuizzesComponent {
       {
         title: `This quiz contains ${totalQuestions || 'multiple'} questions and must be completed in one sitting.`,
         bullets: [
-          'Use the question palette to move between questions quickly.',
+          'Use the question palette to move between questions.',
           'Answer every question before you submit the attempt.'
         ]
       },
@@ -261,10 +264,13 @@ export class StudentQuizzesComponent {
       .subscribe({
         next: (response) => {
           this.quizzes.set(response.items);
+          this.loadQuizAttemptStatuses(response.items);
           this.catalogLoading.set(false);
         },
         error: (error: HttpErrorResponse) => {
           this.quizzes.set([]);
+          this.quizAttemptCounts.set({});
+          this.quizAttemptStatusLoaded.set({});
           this.catalogLoading.set(false);
           this.snackBar.open(error.error?.detail ?? 'Unable to load quizzes.', 'Dismiss', { duration: 4500 });
         }
@@ -272,6 +278,11 @@ export class StudentQuizzesComponent {
   }
 
   selectQuiz(quiz: QuizListItem): void {
+    if (this.quizAttemptsCompleted(quiz)) {
+      this.snackBar.open('Quiz attempts are already completed.', 'Dismiss', { duration: 3200 });
+      return;
+    }
+
     if (this.detailLoading() || this.openingQuizId() === quiz.id || this.selectedQuiz()?.id === quiz.id) {
       return;
     }
@@ -470,6 +481,22 @@ export class StudentQuizzesComponent {
     });
   }
 
+  quizAttemptStatusPending(quiz: QuizListItem): boolean {
+    return !this.quizAttemptStatusLoaded()[quiz.id];
+  }
+
+  quizAttemptsUsed(quiz: QuizListItem): number {
+    return this.quizAttemptCounts()[quiz.id] ?? 0;
+  }
+
+  quizAttemptsCompleted(quiz: QuizListItem): boolean {
+    if (this.quizAttemptStatusPending(quiz)) {
+      return false;
+    }
+
+    return this.quizAttemptsUsed(quiz) >= quiz.max_attempts;
+  }
+
   private resetExamState(): void {
     this.stopTimer();
     this.openingQuizId.set(null);
@@ -484,6 +511,37 @@ export class StudentQuizzesComponent {
     this.timerExpired.set(false);
     this.submitting.set(false);
     this.showInstructions.set(false);
+  }
+
+  private loadQuizAttemptStatuses(quizzes: QuizListItem[]): void {
+    this.quizAttemptCounts.set({});
+    this.quizAttemptStatusLoaded.set({});
+
+    if (!quizzes.length) {
+      return;
+    }
+
+    const statusRequests = quizzes.map((quiz) =>
+      this.studentPortalService.getQuizAttemptHistory(quiz.id).pipe(
+        map((history) => ({ quizId: quiz.id, attempts: history.items.length })),
+        catchError(() => of({ quizId: quiz.id, attempts: 0 }))
+      )
+    );
+
+    forkJoin(statusRequests)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((statuses) => {
+        const counts: Record<string, number> = {};
+        const loaded: Record<string, boolean> = {};
+
+        for (const status of statuses) {
+          counts[status.quizId] = status.attempts;
+          loaded[status.quizId] = true;
+        }
+
+        this.quizAttemptCounts.set(counts);
+        this.quizAttemptStatusLoaded.set(loaded);
+      });
   }
 
   private loadQuizWorkspace(quizId: string): void {

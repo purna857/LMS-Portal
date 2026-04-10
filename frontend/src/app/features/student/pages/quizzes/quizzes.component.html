@@ -82,7 +82,7 @@
                         </div>
                         <mat-chip-set>
                           <mat-chip [highlighted]="quiz.status === 'published'">{{ quiz.status }}</mat-chip>
-                          <mat-chip>{{ quiz.max_attempts }} attempts</mat-chip>
+                          <mat-chip>{{ quizAttemptsUsed(quiz) }}/{{ quiz.max_attempts }} attempts</mat-chip>
                         </mat-chip-set>
                       </div>
                       <p class="quiz-tile__description">
@@ -101,9 +101,9 @@
                           mat-stroked-button
                           class="quiz-tile__take-quiz"
                           type="button"
-                          [disabled]="detailLoading() || openingQuizId() === quiz.id || selectedQuiz()?.id === quiz.id"
+                          [disabled]="detailLoading() || openingQuizId() === quiz.id || selectedQuiz()?.id === quiz.id || quizAttemptStatusPending(quiz) || quizAttemptsCompleted(quiz)"
                           (click)="selectQuiz(quiz)">
-                          Take Quiz
+                          {{ quizAttemptsCompleted(quiz) ? 'Attempts complete' : 'Take Quiz' }}
                         </button>
                         <a mat-button [routerLink]="['/app/student/results']">History</a>
                       </div>
@@ -173,7 +173,7 @@
                         <div class="exam-instructions__header">
                           <div>
                             <p>Instructions</p>
-                            <strong>TCS NQT-style checklist</strong>
+                            <strong>Quiz instructions</strong>
                           </div>
                           <span class="exam-instructions__badge">Read before starting</span>
                         </div>

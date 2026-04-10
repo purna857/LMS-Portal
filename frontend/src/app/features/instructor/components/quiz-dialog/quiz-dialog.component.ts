@@ -4,7 +4,14 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import type { QuizDetail, QuizPayload } from '@app/features/instructor/models/instructor.models';
-import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
+import {
+  BaseModalComponent,
+  ModalBodyComponent,
+  ModalFooterComponent,
+  ModalHeaderComponent,
+  ModalFormGridComponent,
+  ModalSectionComponent
+} from '@app/shared/components/base-modal/base-modal.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -17,48 +24,54 @@ export interface QuizDialogData {
 @Component({
   selector: 'app-quiz-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
+  imports: [
+    ReactiveFormsModule,
+    BaseModalComponent,
+    ModalHeaderComponent,
+    ModalBodyComponent,
+    ModalFooterComponent,
+    ModalSectionComponent,
+    ModalFormGridComponent,
+    ...materialImports
+  ],
   template: `
-    <app-portal-dialog-shell
-      size="lg"
-      eyebrow="Quiz builder"
-      [title]="data.mode === 'create' ? 'Create Quiz' : 'Edit Quiz'"
-      [description]="data.mode === 'create'
+    <app-base-modal size="xl">
+      <app-modal-header
+        eyebrow="Quiz builder"
+        [title]="data.mode === 'create' ? 'Create Quiz' : 'Edit Quiz'"
+        [subtitle]="data.mode === 'create'
         ? 'Set up the quiz experience, scoring rules, and learner instructions in one clean panel.'
         : 'Adjust the quiz details, publishing status, and evaluation settings without leaving the screen.'"
-      (closeRequested)="dialogRef.close()">
-      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="quiz-form" (ngSubmit)="submit()">
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Quiz details</strong>
-              <p>Define the quiz identity, learner instructions, and overall framing.</p>
-            </div>
+        (closeRequested)="dialogRef.close()">
+      </app-modal-header>
 
-            <div class="dialog-grid">
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+      <app-modal-body>
+        <form [formGroup]="form" id="quiz-form" (ngSubmit)="submit()">
+          <app-modal-section
+            title="Quiz details"
+            description="Define the quiz identity, learner instructions, and overall framing.">
+            <app-modal-form-grid>
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Title</mat-label>
                 <input matInput formControlName="title" />
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Description</mat-label>
                 <textarea matInput rows="3" formControlName="description"></textarea>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Instructions</mat-label>
                 <textarea matInput rows="4" formControlName="instructions"></textarea>
               </mat-form-field>
-            </div>
-          </section>
+            </app-modal-form-grid>
+          </app-modal-section>
 
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Scoring & delivery</strong>
-              <p>Set the score thresholds, attempts, status, and question ordering behavior.</p>
-            </div>
-
-            <div class="dialog-grid">
+          <app-modal-section
+            title="Scoring & delivery"
+            description="Set the score thresholds, attempts, status, and question ordering behavior.">
+            <app-modal-form-grid>
               <mat-form-field appearance="outline">
                 <mat-label>Passing Score</mat-label>
                 <input matInput type="number" formControlName="passing_score" />
@@ -78,18 +91,19 @@ export interface QuizDialogData {
                 </mat-select>
               </mat-form-field>
 
-              <mat-checkbox formControlName="shuffle_questions" class="dialog-grid__full">Shuffle questions for students</mat-checkbox>
-            </div>
-          </section>
-      </form>
+              <mat-checkbox formControlName="shuffle_questions" class="modal-form-grid__full">Shuffle questions for students</mat-checkbox>
+            </app-modal-form-grid>
+          </app-modal-section>
+        </form>
+      </app-modal-body>
 
-      <div dialogFooter class="dialog-footer-actions">
+      <app-modal-footer>
         <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
         <button mat-flat-button color="primary" type="submit" form="quiz-form">
           {{ data.mode === 'create' ? 'Create Quiz' : 'Save Quiz' }}
         </button>
-      </div>
-    </app-portal-dialog-shell>
+      </app-modal-footer>
+    </app-base-modal>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

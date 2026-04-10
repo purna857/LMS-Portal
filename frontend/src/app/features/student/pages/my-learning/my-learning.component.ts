@@ -460,6 +460,8 @@ const COURSE_VIDEO_PREVIEWS: Record<string, { url: string; label: string }> = {
     }
 
     .course-card__footer span {
+      flex: 1 1 auto;
+      min-width: 0;
       color: #5f6f86;
       font-size: 0.82rem;
       line-height: 1.4;
@@ -473,16 +475,17 @@ const COURSE_VIDEO_PREVIEWS: Record<string, { url: string; label: string }> = {
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      flex: 0 0 auto;
       min-height: 42px;
       padding: 0 1rem;
       border-radius: 999px;
-      background: linear-gradient(135deg, #1d63e8 0%, #2f80ff 100%);
+      background: #2563eb;
       color: #ffffff;
       font-size: 0.8rem;
       font-weight: 700;
       text-decoration: none;
       white-space: nowrap;
-      box-shadow: 0 14px 26px rgba(29, 99, 232, 0.24);
+      box-shadow: none;
     }
 
     :host ::ng-deep .course-actions-menu .mat-mdc-menu-content {

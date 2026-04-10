@@ -2,14 +2,16 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
+import { AnnouncementDialogComponent } from '@app/features/admin/components/announcement-dialog/announcement-dialog.component';
 import type { NotificationItem } from '@app/features/admin/models/admin.models';
-import { WorkspaceSearchService } from '@app/core/services/workspace-search.service';
 import { AdminPortalService } from '@app/features/admin/services/admin-portal.service';
 import { EmptyStateComponent } from '@app/shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '@app/shared/components/page-header/page-header.component';
+import { portalDialogConfig } from '@app/shared/dialogs/portal-dialog-helpers';
 import { materialImports } from '@app/shared/material/material-imports';
 import { chipToneForNotificationType } from '@app/shared/utils/chip-tone';
 
@@ -41,113 +43,99 @@ import { chipToneForNotificationType } from '@app/shared/utils/chip-tone';
         }
       </div>
 
-      <div class="announcement-layout">
-        <mat-card class="surface-card">
-          <mat-card-header>
-            <mat-card-title>Create Announcement</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <form [formGroup]="announcementForm" class="form-grid">
-              <mat-form-field appearance="outline" class="form-grid__full">
-                <mat-label>Title</mat-label>
-                <input matInput formControlName="title" />
-                @if (announcementForm.controls.title.invalid && announcementForm.controls.title.touched) {
-                  <mat-error>Title is required.</mat-error>
-                }
-              </mat-form-field>
+      <mat-card class="surface-card">
+        <mat-card-content>
+          <form [formGroup]="filterForm" class="toolbar-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Search broadcasts</mat-label>
+              <input
+                matInput
+                [value]="searchQuery()"
+                (input)="setSearchQuery($any($event.target).value ?? '')"
+                placeholder="Title, body, or type" />
+            </mat-form-field>
 
-              <mat-form-field appearance="outline" class="form-grid__full">
-                <mat-label>Message</mat-label>
-                <textarea matInput rows="6" formControlName="body"></textarea>
-                @if (announcementForm.controls.body.invalid && announcementForm.controls.body.touched) {
-                  <mat-error>Message body is required.</mat-error>
-                }
-              </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Read status</mat-label>
+              <mat-select formControlName="read_state">
+                <mat-option value="">All</mat-option>
+                <mat-option value="unread">Unread</mat-option>
+                <mat-option value="read">Read</mat-option>
+              </mat-select>
+            </mat-form-field>
 
-              <mat-form-field appearance="outline" class="form-grid__full">
-                <mat-label>Target Roles</mat-label>
-                <mat-select formControlName="target_roles" multiple>
-                  <mat-option value="admin">Admins</mat-option>
-                  <mat-option value="instructor">Instructors</mat-option>
-                  <mat-option value="student">Students</mat-option>
-                </mat-select>
-                <mat-hint>Leave empty to notify all active users.</mat-hint>
-              </mat-form-field>
-            </form>
-          </mat-card-content>
-          <mat-card-actions align="end">
-            <button mat-flat-button color="primary" type="button" (click)="createAnnouncement()">Publish Announcement</button>
-          </mat-card-actions>
-        </mat-card>
+            <mat-form-field appearance="outline">
+              <mat-label>Type</mat-label>
+              <mat-select formControlName="type">
+                <mat-option value="">All types</mat-option>
+                <mat-option value="platform">Platform</mat-option>
+                <mat-option value="course">Course</mat-option>
+              </mat-select>
+            </mat-form-field>
 
-        <mat-card class="surface-card">
-          <mat-card-header>
-            <mat-card-title>My Notification Feed</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            @if (loading()) {
-              <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-            }
+            <div class="toolbar-grid__actions">
+              <button mat-stroked-button type="button" (click)="resetFilters()">Reset</button>
+              <button mat-flat-button color="primary" type="button" (click)="openAnnouncementDialog()">Create Broadcast</button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
 
-            @if (filteredNotifications().length) {
-              <div class="stack-list">
-                @for (notification of filteredNotifications(); track notification.id) {
-                  <div class="stack-list__item">
-                    <div>
-                      <strong>{{ notification.title }}</strong>
-                      <p>{{ notification.body }}</p>
-                      <div class="stack-list__meta">
-                        <mat-chip-set>
-                          <mat-chip [attr.data-tone]="chipToneForNotificationType(notification.notification_type)">{{ notification.notification_type }}</mat-chip>
-                        </mat-chip-set>
-                        <span>{{ notification.created_at | date:'medium' }}</span>
-                      </div>
+      <mat-card class="surface-card">
+        <mat-card-header>
+          <mat-card-title>Broadcast Feed</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (loading()) {
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          }
+
+          @if (filteredNotifications().length) {
+            <div class="stack-list">
+              @for (notification of filteredNotifications(); track notification.id) {
+                <div class="stack-list__item">
+                  <div>
+                    <strong>{{ notification.title }}</strong>
+                    <p>{{ notification.body }}</p>
+                    <div class="stack-list__meta">
+                      <mat-chip-set>
+                        <mat-chip [attr.data-tone]="chipToneForNotificationType(notification.notification_type)">{{ notification.notification_type }}</mat-chip>
+                        @if (!notification.is_read) {
+                          <mat-chip data-tone="warning">Unread</mat-chip>
+                        } @else {
+                          <mat-chip data-tone="success">Read</mat-chip>
+                        }
+                      </mat-chip-set>
+                      <span>{{ notification.created_at | date:'medium' }}</span>
                     </div>
+                  </div>
 
+                  <div class="feed-actions">
                     @if (!notification.is_read) {
                       <button mat-stroked-button type="button" (click)="markAsRead(notification)">Mark Read</button>
-                    } @else {
-                      <mat-chip-set>
-                        <mat-chip data-tone="success">Read</mat-chip>
-                      </mat-chip-set>
                     }
                   </div>
-                }
-              </div>
-            } @else if (notifications().length) {
-              <app-empty-state
-                icon="search_off"
-                [title]="workspaceSearch.normalizedQuery() ? 'No matching notifications' : 'No notifications yet'"
-                [description]="workspaceSearch.normalizedQuery() ? 'Try a different announcement title, message, or type.' : 'Announcements you publish and platform notifications will appear here.'">
-              </app-empty-state>
-            } @else {
-              <app-empty-state
-                icon="campaign"
-                title="No notifications yet"
-                description="Announcements you publish and platform notifications will appear here.">
-              </app-empty-state>
-            }
-          </mat-card-content>
-        </mat-card>
-      </div>
+                </div>
+              }
+            </div>
+          } @else if (notifications().length) {
+            <app-empty-state
+              icon="search_off"
+              [title]="normalizedSearchQuery() ? 'No matching notifications' : 'No notifications yet'"
+              [description]="normalizedSearchQuery() ? 'Try a different announcement title, message, or type.' : 'Announcements you publish and platform notifications will appear here.'">
+            </app-empty-state>
+          } @else {
+            <app-empty-state
+              icon="campaign"
+              title="No notifications yet"
+              description="Announcements you publish and platform notifications will appear here.">
+            </app-empty-state>
+          }
+        </mat-card-content>
+      </mat-card>
     </section>
   `,
   styles: [`
-    .announcement-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-      gap: 1.25rem;
-    }
-
-    .form-grid {
-      display: grid;
-      gap: 1rem;
-    }
-
-    .form-grid__full {
-      grid-column: 1 / -1;
-    }
-
     .stack-list {
       display: grid;
       gap: 0.9rem;
@@ -175,6 +163,7 @@ import { chipToneForNotificationType } from '@app/shared/utils/chip-tone';
       align-items: center;
       gap: 0.75rem;
       flex-wrap: wrap;
+      margin-top: 0.85rem;
       color: var(--muted);
       font-size: 0.84rem;
     }
@@ -185,18 +174,14 @@ import { chipToneForNotificationType } from '@app/shared/utils/chip-tone';
       gap: 0.35rem;
     }
 
-    @media (max-width: 720px) {
-      .stack-list__item {
-        grid-template-columns: 1fr;
-      }
-
-      .stack-list__item > :last-child {
-        justify-self: start;
-      }
+    .feed-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
-    @media (max-width: 1100px) {
-      .announcement-layout {
+    @media (max-width: 720px) {
+      .stack-list__item {
         grid-template-columns: 1fr;
       }
     }
@@ -208,10 +193,12 @@ export class AnnouncementsComponent {
   private readonly adminPortalService = inject(AdminPortalService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
-  readonly workspaceSearch = inject(WorkspaceSearchService);
+  private readonly dialog = inject(MatDialog);
 
   readonly loading = signal(false);
   readonly notifications = signal<NotificationItem[]>([]);
+  readonly searchQuery = signal('');
+  readonly normalizedSearchQuery = computed(() => this.searchQuery().trim().toLowerCase());
   readonly summaryCards = computed(() => {
     const notifications = this.notifications();
     return [
@@ -243,25 +230,24 @@ export class AnnouncementsComponent {
   });
 
   readonly chipToneForNotificationType = chipToneForNotificationType;
+  readonly filterForm = this.formBuilder.group({
+    read_state: [''],
+    type: ['']
+  });
   readonly filteredNotifications = computed(() => {
-    const query = this.workspaceSearch.normalizedQuery();
-    if (!query) {
-      return this.notifications();
-    }
-
-    return this.notifications().filter((notification) =>
-      this.workspaceSearch.matches(
+    const query = this.normalizedSearchQuery();
+    const raw = this.filterForm.getRawValue();
+    return this.notifications().filter((notification) => {
+      const matchesRead = !raw.read_state || (raw.read_state === 'read' ? notification.is_read : !notification.is_read);
+      const matchesType = !raw.type || notification.notification_type === raw.type;
+      const matchesQuery = !query || this.matchesSearch(
+        query,
         notification.title,
         notification.body,
         notification.notification_type
-      )
-    );
-  });
-
-  readonly announcementForm = this.formBuilder.group({
-    title: ['', [Validators.required, Validators.maxLength(255)]],
-    body: ['', [Validators.required]],
-    target_roles: [[] as string[]]
+      );
+      return matchesRead && matchesType && matchesQuery;
+    });
   });
 
   constructor() {
@@ -284,33 +270,37 @@ export class AnnouncementsComponent {
       });
   }
 
-  createAnnouncement(): void {
-    this.announcementForm.markAllAsTouched();
-    if (this.announcementForm.invalid) {
-      return;
-    }
+  resetFilters(): void {
+    this.filterForm.reset({
+      read_state: '',
+      type: ''
+    });
+    this.searchQuery.set('');
+  }
 
-    const raw = this.announcementForm.getRawValue();
-    this.adminPortalService.createPlatformAnnouncement({
-      title: String(raw.title ?? '').trim(),
-      body: String(raw.body ?? '').trim(),
-      target_roles: raw.target_roles?.length ? raw.target_roles : null
-    })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.snackBar.open('Platform announcement published.', 'Dismiss', { duration: 3200 });
-          this.announcementForm.reset({
-            title: '',
-            body: '',
-            target_roles: []
-          });
-          this.loadNotifications();
-        },
-        error: (error: HttpErrorResponse) => {
-          this.snackBar.open(error.error?.detail ?? 'Unable to publish the announcement.', 'Dismiss', { duration: 4500 });
-        }
-      });
+  setSearchQuery(value: string): void {
+    this.searchQuery.set(String(value).trimStart());
+  }
+
+  openAnnouncementDialog(): void {
+    const dialogRef = this.dialog.open(AnnouncementDialogComponent, portalDialogConfig('lg'));
+    dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((payload) => {
+      if (!payload) {
+        return;
+      }
+
+      this.adminPortalService.createPlatformAnnouncement(payload)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.snackBar.open('Platform announcement published.', 'Dismiss', { duration: 3200 });
+            this.loadNotifications();
+          },
+          error: (error: HttpErrorResponse) => {
+            this.snackBar.open(error.error?.detail ?? 'Unable to publish the announcement.', 'Dismiss', { duration: 4500 });
+          }
+        });
+    });
   }
 
   markAsRead(notification: NotificationItem): void {
@@ -324,5 +314,13 @@ export class AnnouncementsComponent {
           this.snackBar.open(error.error?.detail ?? 'Unable to mark notification as read.', 'Dismiss', { duration: 4500 });
         }
       });
+  }
+
+  private matchesSearch(query: string, ...values: Array<string | null | undefined>): boolean {
+    return values
+      .filter((value): value is string => !!value)
+      .join(' ')
+      .toLowerCase()
+      .includes(query);
   }
 }

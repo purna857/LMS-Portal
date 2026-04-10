@@ -4,7 +4,14 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import type { CourseCategory, CourseDetail, CourseUpdatePayload } from '@app/features/admin/models/admin.models';
 import type { CourseCreatePayload } from '@app/features/instructor/models/instructor.models';
-import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
+import {
+  BaseModalComponent,
+  ModalBodyComponent,
+  ModalFooterComponent,
+  ModalHeaderComponent,
+  ModalFormGridComponent,
+  ModalSectionComponent
+} from '@app/shared/components/base-modal/base-modal.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -18,25 +25,34 @@ export interface CourseEditorDialogData {
 @Component({
   selector: 'app-course-editor-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
+  imports: [
+    ReactiveFormsModule,
+    BaseModalComponent,
+    ModalHeaderComponent,
+    ModalBodyComponent,
+    ModalFooterComponent,
+    ModalSectionComponent,
+    ModalFormGridComponent,
+    ...materialImports
+  ],
   template: `
-    <app-portal-dialog-shell
-      size="xl"
-      eyebrow="Course builder"
-      [title]="data.mode === 'create' ? 'Create Course' : 'Edit Course'"
-      [description]="data.mode === 'create'
+    <app-base-modal size="xl">
+      <app-modal-header
+        eyebrow="Course builder"
+        [title]="data.mode === 'create' ? 'Create Course' : 'Edit Course'"
+        [subtitle]="data.mode === 'create'
         ? 'Set up a polished course profile with the key details instructors need at a glance.'
         : 'Refine the course profile, discoverability, and presentation in one place.'"
-      (closeRequested)="dialogRef.close()">
-      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="course-editor-form" (ngSubmit)="submit()">
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Basic information</strong>
-              <p>Capture the course identity, catalog placement, and learning level.</p>
-            </div>
+        (closeRequested)="dialogRef.close()">
+      </app-modal-header>
 
-            <div class="dialog-grid">
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+      <app-modal-body>
+        <form [formGroup]="form" id="course-editor-form" (ngSubmit)="submit()">
+          <app-modal-section
+            title="Basic information"
+            description="Capture the course identity, catalog placement, and learning level.">
+            <app-modal-form-grid>
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Title</mat-label>
                 <input matInput formControlName="title" />
               </mat-form-field>
@@ -69,16 +85,13 @@ export interface CourseEditorDialogData {
                 <mat-label>Language</mat-label>
                 <input matInput formControlName="language" />
               </mat-form-field>
-            </div>
-          </section>
+            </app-modal-form-grid>
+          </app-modal-section>
 
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Catalog settings</strong>
-              <p>Control visibility, duration, and the promotional presentation shown to learners.</p>
-            </div>
-
-            <div class="dialog-grid">
+          <app-modal-section
+            title="Catalog settings"
+            description="Control visibility, duration, and the promotional presentation shown to learners.">
+            <app-modal-form-grid>
               <mat-form-field appearance="outline">
                 <mat-label>Visibility</mat-label>
                 <mat-select formControlName="visibility">
@@ -93,44 +106,42 @@ export interface CourseEditorDialogData {
                 <input matInput type="number" formControlName="estimated_duration_minutes" />
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Thumbnail URL</mat-label>
                 <input matInput formControlName="thumbnail_url" />
               </mat-form-field>
 
-              <mat-checkbox formControlName="is_featured" class="dialog-grid__full">
+              <mat-checkbox formControlName="is_featured" class="modal-form-grid__full">
                 Feature this course in the admin catalog
               </mat-checkbox>
-            </div>
-          </section>
+            </app-modal-form-grid>
+          </app-modal-section>
 
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Description & overview</strong>
-              <p>Use concise copy for discovery, then expand with the full course description.</p>
-            </div>
-
-            <div class="dialog-grid">
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+          <app-modal-section
+            title="Description & overview"
+            description="Use concise copy for discovery, then expand with the full course description.">
+            <app-modal-form-grid>
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Short Description</mat-label>
                 <textarea matInput rows="3" formControlName="short_description"></textarea>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Description</mat-label>
                 <textarea matInput rows="5" formControlName="description"></textarea>
               </mat-form-field>
-            </div>
-          </section>
-      </form>
+            </app-modal-form-grid>
+          </app-modal-section>
+        </form>
+      </app-modal-body>
 
-      <div dialogFooter class="dialog-footer-actions">
+      <app-modal-footer>
         <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
         <button mat-flat-button color="primary" type="submit" form="course-editor-form">
           {{ data.mode === 'create' ? 'Create Course' : 'Save Course' }}
         </button>
-      </div>
-    </app-portal-dialog-shell>
+      </app-modal-footer>
+    </app-base-modal>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })

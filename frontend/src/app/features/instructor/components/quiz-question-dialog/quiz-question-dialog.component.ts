@@ -4,7 +4,14 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import type { QuizQuestion, QuizQuestionPayload } from '@app/features/instructor/models/instructor.models';
-import { PortalDialogShellComponent } from '@app/shared/components/portal-dialog-shell/portal-dialog-shell.component';
+import {
+  BaseModalComponent,
+  ModalBodyComponent,
+  ModalFooterComponent,
+  ModalHeaderComponent,
+  ModalFormGridComponent,
+  ModalSectionComponent
+} from '@app/shared/components/base-modal/base-modal.component';
 import { materialImports } from '@app/shared/material/material-imports';
 
 
@@ -17,25 +24,34 @@ export interface QuizQuestionDialogData {
 @Component({
   selector: 'app-quiz-question-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, PortalDialogShellComponent, ...materialImports],
+  imports: [
+    ReactiveFormsModule,
+    BaseModalComponent,
+    ModalHeaderComponent,
+    ModalBodyComponent,
+    ModalFooterComponent,
+    ModalSectionComponent,
+    ModalFormGridComponent,
+    ...materialImports
+  ],
   template: `
-    <app-portal-dialog-shell
-      size="xl"
-      eyebrow="Question editor"
-      [title]="data.mode === 'create' ? 'Add Question' : 'Edit Question'"
-      [description]="data.mode === 'create'
+    <app-base-modal size="xl">
+      <app-modal-header
+        eyebrow="Question editor"
+        [title]="data.mode === 'create' ? 'Add Question' : 'Edit Question'"
+        [subtitle]="data.mode === 'create'
         ? 'Add a question, define the point value, and build answer options that are easy to review.'
         : 'Refine the question text, scoring, and answer choices while preserving the quiz structure.'"
-      (closeRequested)="dialogRef.close()">
-      <form dialogBody [formGroup]="form" class="dialog-grid dialog-grid--single" id="quiz-question-form" (ngSubmit)="submit()">
-          <section class="dialog-section">
-            <div class="dialog-section__title">
-              <strong>Question details</strong>
-              <p>Write the prompt, define points, and set the grading behavior.</p>
-            </div>
+        (closeRequested)="dialogRef.close()">
+      </app-modal-header>
 
-            <div class="dialog-grid">
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+      <app-modal-body>
+        <form [formGroup]="form" id="quiz-question-form" (ngSubmit)="submit()">
+          <app-modal-section
+            title="Question details"
+            description="Write the prompt, define points, and set the grading behavior.">
+            <app-modal-form-grid>
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Question</mat-label>
                 <textarea matInput rows="4" formControlName="question_text"></textarea>
               </mat-form-field>
@@ -50,24 +66,20 @@ export interface QuizQuestionDialogData {
                 <input matInput type="number" formControlName="position" />
               </mat-form-field>
 
-              <mat-checkbox formControlName="allow_multiple_answers" class="dialog-grid__full">Allow multiple correct answers</mat-checkbox>
+              <mat-checkbox formControlName="allow_multiple_answers" class="modal-form-grid__full">Allow multiple correct answers</mat-checkbox>
 
-              <mat-form-field appearance="outline" class="dialog-grid__full">
+              <mat-form-field appearance="outline" class="modal-form-grid__full">
                 <mat-label>Explanation</mat-label>
                 <textarea matInput rows="3" formControlName="explanation"></textarea>
               </mat-form-field>
-            </div>
-          </section>
+            </app-modal-form-grid>
+          </app-modal-section>
 
-          <section class="dialog-section dialog-grid__full">
-            <div class="options-toolbar">
-              <div class="dialog-section__title">
-                <strong>Answer Options</strong>
-                <p>Add at least two options and mark the correct answer(s).</p>
-              </div>
-              <button mat-stroked-button type="button" (click)="addOption()">Add Option</button>
-            </div>
-            <div formArrayName="options" class="options-list">
+          <app-modal-section
+            title="Answer options"
+            description="Add at least two options and mark the correct answer or answers that should pass grading.">
+            <button sectionAction mat-stroked-button type="button" (click)="addOption()">Add Option</button>
+            <div class="options-list" formArrayName="options">
               @for (option of options.controls; track $index) {
                 <div class="option-row" [formGroupName]="$index">
                   <mat-form-field appearance="outline">
@@ -81,35 +93,33 @@ export interface QuizQuestionDialogData {
                 </div>
               }
             </div>
-          </section>
-      </form>
+          </app-modal-section>
+        </form>
+      </app-modal-body>
 
-      <div dialogFooter class="dialog-footer-actions">
+      <app-modal-footer>
         <button mat-button type="button" (click)="dialogRef.close()">Cancel</button>
         <button mat-flat-button color="primary" type="submit" form="quiz-question-form">
           {{ data.mode === 'create' ? 'Add Question' : 'Save Question' }}
         </button>
-      </div>
-    </app-portal-dialog-shell>
+      </app-modal-footer>
+    </app-base-modal>
   `,
   styles: [`
-    .options-toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-
     .options-list {
       display: grid;
-      gap: 0.85rem;
+      gap: 0.95rem;
     }
 
     .option-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto auto;
-      gap: 0.75rem;
-      align-items: start;
+      gap: 0.85rem;
+      align-items: center;
+      padding: 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 20px;
+      background: rgba(248, 251, 255, 0.78);
     }
 
     .option-row .mat-mdc-form-field {
@@ -117,12 +127,9 @@ export interface QuizQuestionDialogData {
     }
 
     @media (max-width: 720px) {
-      .options-toolbar {
-        flex-direction: column;
-      }
-
       .option-row {
         grid-template-columns: 1fr;
+        align-items: start;
       }
 
       .option-row > :last-child {
