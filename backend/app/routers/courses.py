@@ -12,6 +12,7 @@ from app.schemas.course import (
     CourseDetailResponse,
     CourseListResponse,
     CoursePublishActionResponse,
+    CoursePublishUpdateRequest,
     CourseUpdateRequest,
 )
 from app.services.course_service import CourseService, CourseServiceError
@@ -89,6 +90,25 @@ async def publish_course(
         raise HTTPException(status_code=code, detail=detail) from exc
 
 
+@router.patch("/{course_id}/publish", response_model=CoursePublishActionResponse)
+async def update_publish_state(
+    course_id: UUID,
+    payload: CoursePublishUpdateRequest | None = None,
+    current_user: User = Depends(require_roles("instructor", "admin")),
+    session: AsyncSession = Depends(get_db_session),
+) -> CoursePublishActionResponse:
+    service = CourseService(session)
+    desired_status = (payload.status if payload else "published").strip()
+    try:
+        if desired_status == "draft":
+            return await service.unpublish_course(course_id, current_user)
+        return await service.publish_course(course_id, current_user)
+    except CourseServiceError as exc:
+        detail = str(exc)
+        code = status.HTTP_404_NOT_FOUND if "not found" in detail.lower() else status.HTTP_403_FORBIDDEN
+        raise HTTPException(status_code=code, detail=detail) from exc
+
+
 @router.post("/{course_id}/unpublish", response_model=CoursePublishActionResponse)
 async def unpublish_course(
     course_id: UUID,
@@ -102,6 +122,32 @@ async def unpublish_course(
         detail = str(exc)
         code = status.HTTP_404_NOT_FOUND if "not found" in detail.lower() else status.HTTP_403_FORBIDDEN
         raise HTTPException(status_code=code, detail=detail) from exc
+
+
+@router.get("/published", response_model=CourseListResponse)
+async def list_published_courses(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    search: str | None = Query(default=None),
+    category_id: str | None = Query(default=None),
+    level: str | None = Query(default=None),
+    language: str | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> CourseListResponse:
+    service = CourseService(session)
+    try:
+        return await service.list_published_courses(
+            current_user=current_user,
+            limit=limit,
+            offset=offset,
+            search=search,
+            category_id=category_id,
+            level=level,
+            language=language,
+        )
+    except CourseServiceError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 @router.get("", response_model=CourseListResponse)

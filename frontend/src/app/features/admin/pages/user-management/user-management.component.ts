@@ -107,21 +107,19 @@ import { chipToneForRole, chipToneForUserStatus } from '@app/shared/utils/chip-t
                 <ng-container matColumnDef="name">
                   <th mat-header-cell *matHeaderCellDef>User</th>
                   <td mat-cell *matCellDef="let user">
-                    <div class="cell-title">
+                    <div class="user-cell">
                       <strong>{{ user.first_name }} {{ user.last_name }}</strong>
                       <span>{{ user.email }}</span>
-                      <div class="user-meta">
-                        @if (user.email_verified) {
-                          <mat-chip-set>
+                      @if (user.email_verified || user.is_superuser) {
+                        <mat-chip-set class="user-badges">
+                          @if (user.email_verified) {
                             <mat-chip data-tone="success">Verified</mat-chip>
-                          </mat-chip-set>
-                        }
-                        @if (user.is_superuser) {
-                          <mat-chip-set>
+                          }
+                          @if (user.is_superuser) {
                             <mat-chip data-tone="info">Super Admin</mat-chip>
-                          </mat-chip-set>
-                        }
-                      </div>
+                          }
+                        </mat-chip-set>
+                      }
                     </div>
                   </td>
                 </ng-container>
@@ -149,7 +147,7 @@ import { chipToneForRole, chipToneForUserStatus } from '@app/shared/utils/chip-t
                 <ng-container matColumnDef="activity">
                   <th mat-header-cell *matHeaderCellDef>Activity</th>
                   <td mat-cell *matCellDef="let user">
-                    <div class="cell-title">
+                    <div class="user-cell">
                       <strong>{{ user.last_login_at ? (user.last_login_at | date:'mediumDate') : 'Never' }}</strong>
                       <span>{{ user.created_at | date:'mediumDate' }} joined</span>
                     </div>
@@ -289,11 +287,49 @@ import { chipToneForRole, chipToneForUserStatus } from '@app/shared/utils/chip-t
       justify-content: flex-end;
     }
 
-    .user-meta {
+    .user-cell {
+      display: grid;
+      gap: 0.22rem;
+      justify-items: start;
+      min-width: 0;
+      line-height: 1.3;
+    }
+
+    .user-cell strong,
+    .user-cell span {
+      display: block;
+      text-align: left;
+    }
+
+    .user-cell strong {
+      line-height: 1.2;
+    }
+
+    .user-cell span {
+      line-height: 1.25;
+    }
+
+    .user-badges {
       display: flex;
       gap: 0.35rem;
       flex-wrap: wrap;
-      margin-top: 0.5rem;
+      margin-top: 0.15rem;
+      padding: 0;
+      align-items: flex-start;
+      justify-content: flex-start;
+      align-self: flex-start;
+    }
+
+    .data-table .mat-column-name,
+    .data-table .mat-column-roles,
+    .data-table .mat-column-status,
+    .data-table .mat-column-activity {
+      vertical-align: top !important;
+    }
+
+    .data-table .mat-mdc-cell,
+    .data-table .mat-mdc-header-cell {
+      padding-block: 0.85rem !important;
     }
 
     .table-footer {

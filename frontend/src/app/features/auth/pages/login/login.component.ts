@@ -24,28 +24,43 @@ export class LoginComponent {
 
   readonly loading = signal(false);
   readonly errorMessage = signal('');
-  readonly highlights = [
+  readonly portalStats = [
     {
+      value: '120+',
+      label: 'Courses',
+      note: 'Lessons managed'
+    },
+    {
+      value: '24/7',
+      label: 'Access',
+      note: 'Portal access'
+    },
+    {
+      value: 'Role-based',
+      label: 'Security',
+      note: 'Secure sign-in'
+    }
+  ];
+  readonly portalFeatures = [
+    {
+      icon: 'insights',
+      title: 'Progress insights',
+      description: 'Track learning activity, completion, and performance at a glance.'
+    },
+    {
+      icon: 'groups',
       title: 'Role-based access',
       description: 'Admin, Instructor, and Student dashboards from one secure LMS workspace.'
     },
     {
+      icon: 'sync',
       title: 'Live learning data',
       description: 'Courses, assignments, quizzes, progress, and notifications powered by the backend.'
-    }
-  ];
-  readonly capabilities = [
-    {
-      title: 'Admin Control',
-      points: ['Review instructor approvals', 'Manage users, courses, and announcements']
     },
     {
-      title: 'Instructor Delivery',
-      points: ['Create lessons, assignments, and quizzes', 'Track student participation and performance']
-    },
-    {
-      title: 'Student Learning',
-      points: ['Continue enrolled courses', 'Submit work, take quizzes, and monitor progress']
+      icon: 'verified_user',
+      title: 'Secure sign-in',
+      description: 'Role-aware navigation and JWT-backed access keep every workspace protected.'
     }
   ];
 
@@ -85,7 +100,9 @@ export class LoginComponent {
     this.loading.set(true);
     this.errorMessage.set('');
 
-    this.authService.login(this.form.getRawValue()).subscribe({
+    const { email, password } = this.form.getRawValue();
+
+    this.authService.login({ email, password }).subscribe({
       next: () => {
         this.loading.set(false);
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');

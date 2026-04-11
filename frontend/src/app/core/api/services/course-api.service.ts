@@ -17,6 +17,7 @@ import type {
   LessonListResponse,
   LessonPayload
 } from '@app/features/instructor/models/instructor.models';
+import type { EnrollmentResponse } from '@app/features/student/models/student.models';
 import type { CourseListQuery } from '@app/features/student/models/student.models';
 
 
@@ -26,6 +27,10 @@ export class CourseApiService {
 
   listCourses(query: CourseListQuery = {}): Observable<CourseListResponse> {
     return this.api.get<CourseListResponse>('/courses', query);
+  }
+
+  listPublishedCourses(query: CourseListQuery = {}): Observable<CourseListResponse> {
+    return this.api.get<CourseListResponse>('/courses/published', query);
   }
 
   listMyCourses(query: { status?: string; limit?: number; offset?: number } = {}): Observable<CourseListResponse> {
@@ -54,6 +59,14 @@ export class CourseApiService {
 
   unpublishCourse(courseId: string): Observable<CoursePublishActionResponse> {
     return this.api.post<CoursePublishActionResponse>(`/courses/${courseId}/unpublish`, {});
+  }
+
+  setCoursePublishState(courseId: string, status: 'draft' | 'published'): Observable<CoursePublishActionResponse> {
+    return this.api.patch<CoursePublishActionResponse>(`/courses/${courseId}/publish`, { status });
+  }
+
+  assignCourse(payload: { course_id: string; student_id: string }): Observable<EnrollmentResponse> {
+    return this.api.post<EnrollmentResponse>('/assign-course', payload);
   }
 
   listCategories(): Observable<CourseCategory[]> {

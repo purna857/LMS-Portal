@@ -34,10 +34,10 @@ class ProgressService:
         if not self._has_explicit_role(current_user, "student"):
             raise ProgressServiceError("Only students can mark lessons complete")
 
-        lesson, module, course = await self._get_lesson_context_or_raise(lesson_id)
-        if module.status != "published" or course.status != "published":
+        lesson, module, _course = await self._get_lesson_context_or_raise(lesson_id)
+        if module.status != "published" or lesson.status != "published":
             raise ProgressServiceError("Only lessons from published course content can be marked complete")
-        enrollment = await self._get_active_enrollment_or_raise(current_user.id, course.id)
+        enrollment = await self._get_active_enrollment_or_raise(current_user.id, _course.id)
 
         progress = await self._get_lesson_progress(enrollment.id, lesson.id)
         if progress is None:
@@ -58,7 +58,7 @@ class ProgressService:
 
         await self._update_enrollment_progress_status(enrollment)
         await self.session.commit()
-        return await self.get_student_course_progress(course.id, current_user)
+        return await self.get_student_course_progress(_course.id, current_user)
 
     async def get_student_course_progress(self, course_id: UUID, current_user: User) -> CourseProgressResponse:
         if not self._has_explicit_role(current_user, "student"):
@@ -302,6 +302,7 @@ class ProgressService:
 
     async def _update_enrollment_progress_status(self, enrollment: Enrollment) -> None:
         progress = await self._build_course_progress(enrollment)
+        enrollment.progress = progress.progress_percentage
         if progress.progress_status == "completed":
             enrollment.status = "completed"
             if enrollment.completed_at is None:

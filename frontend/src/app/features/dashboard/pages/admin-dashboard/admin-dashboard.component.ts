@@ -227,14 +227,14 @@ import { materialImports } from '@app/shared/material/material-imports';
           </mat-card-header>
           <mat-card-content>
             @if (!loading() && pendingApprovals().length) {
-              <div class="stack-list">
+              <div class="stack-list stack-list--approval">
                 @for (approval of pendingApprovals(); track approval.request_id) {
                   <div class="stack-list__item">
                     <div>
                       <strong>{{ approval.first_name }} {{ approval.last_name }}</strong>
                       <p>{{ approval.email }}</p>
                     </div>
-                    <mat-chip-set>
+                    <mat-chip-set class="stack-list__chips">
                       <mat-chip>{{ approval.approval_status }}</mat-chip>
                     </mat-chip-set>
                   </div>
@@ -308,7 +308,6 @@ import { materialImports } from '@app/shared/material/material-imports';
 
     .hero-card__description,
     .visual-card__summary,
-    .stack-list__item p,
     .hero-insights__item p {
       margin: 0.65rem 0 0;
       color: var(--muted);
@@ -507,30 +506,33 @@ import { materialImports } from '@app/shared/material/material-imports';
       gap: 1rem;
     }
 
-    .stack-list {
+    .stack-list--approval {
+      gap: 0.68rem;
+    }
+
+    .stack-list--approval .stack-list__item {
+      padding-block: 0.85rem;
+    }
+
+    .stack-list--approval .stack-list__item > div:first-child {
       display: grid;
-      gap: 0.75rem;
+      gap: 0.14rem;
     }
 
-    .stack-list__item {
-      display: flex;
-      align-items: start;
-      justify-content: space-between;
-      gap: 1rem;
-      padding: 0.8rem 0;
-      border-bottom: 1px solid var(--border);
+    .stack-list--approval .stack-list__item p {
+      margin-top: 0.18rem;
     }
 
-    .stack-list__item strong {
-      display: block;
-      font-size: 0.84rem;
-      line-height: 1.25;
-      letter-spacing: -0.02em;
+    .stack-list--approval .stack-list__chips {
+      justify-content: flex-end;
+      align-self: start;
+      margin-top: 0.05rem;
     }
 
-    .stack-list__item:last-child {
-      border-bottom: 0;
-      padding-bottom: 0;
+    .stack-list--approval .stack-list__chips .mat-mdc-chip {
+      min-height: 2rem;
+      height: 2rem;
+      font-size: 0.7rem;
     }
 
     .mini-badges {
@@ -693,7 +695,7 @@ export class AdminDashboardComponent {
       { label: 'Monthly Activity', value: String(stats.total_enrollments), hint: `${stats.active_enrollments} active learning seats`, icon: 'monitoring' }
     ];
   });
-  readonly overviewChartData = signal<ChartConfiguration<'bar' | 'line'>['data']>({
+  readonly overviewChartData = signal<ChartConfiguration<'bar'>['data']>({
     labels: [],
     datasets: []
   });
@@ -701,7 +703,7 @@ export class AdminDashboardComponent {
     labels: [],
     datasets: []
   });
-  readonly barChartOptions = signal<ChartConfiguration<'bar' | 'line'>['options']>({
+  readonly barChartOptions = signal<ChartConfiguration<'bar'>['options']>({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -752,7 +754,6 @@ export class AdminDashboardComponent {
             labels: ['Students', 'Instructors', 'Courses', 'Enrollments', 'Assignments', 'Quizzes'],
             datasets: [
               {
-                type: 'bar',
                 data: [
                   stats.total_students,
                   stats.total_instructors,
@@ -764,22 +765,6 @@ export class AdminDashboardComponent {
                 backgroundColor: '#4e6cf0',
                 borderRadius: 14,
                 maxBarThickness: 34
-              },
-              {
-                type: 'line',
-                data: [
-                  Math.round(stats.total_students * 0.35),
-                  Math.round(stats.total_instructors * 18),
-                  Math.round(stats.total_courses * 0.45),
-                  Math.round(stats.total_enrollments * 0.22),
-                  Math.round(stats.total_assignments * 0.9),
-                  Math.round(stats.total_quizzes * 0.95)
-                ],
-                borderColor: '#18c4b8',
-                backgroundColor: 'rgba(24, 196, 184, 0.10)',
-                fill: true,
-                pointRadius: 0,
-                tension: 0.42
               }
             ]
           });

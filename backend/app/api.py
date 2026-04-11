@@ -4,6 +4,7 @@ from app.routers.assignments import router as assignments_router
 from app.routers.analytics import router as analytics_router
 from app.routers.auth import router as auth_router
 from app.routers.categories import router as categories_router
+from app.routers.course_enrollment_aliases import router as course_enrollment_aliases_router
 from app.routers.courses import router as courses_router
 from app.routers.course_modules import router as course_modules_router
 from app.routers.enrollments import router as enrollments_router
@@ -29,6 +30,7 @@ api_router.include_router(instructor_approvals_router)
 api_router.include_router(categories_router)
 api_router.include_router(courses_router)
 api_router.include_router(course_modules_router)
+api_router.include_router(course_enrollment_aliases_router)
 api_router.include_router(enrollments_router)
 api_router.include_router(lessons_router)
 api_router.include_router(notifications_router)

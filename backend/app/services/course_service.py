@@ -31,6 +31,54 @@ class CourseService:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
+    def _build_course_filters(
+        self,
+        search: str | None,
+        category_id: str | None,
+        level: str | None,
+        language: str | None,
+    ) -> list[object]:
+        filters: list[object] = []
+
+        if search:
+            term = f"%{search.strip()}%"
+            filters.append(
+                or_(
+                    Course.title.ilike(term),
+                    Course.short_description.ilike(term),
+                    Course.description.ilike(term),
+                )
+            )
+        if category_id:
+            try:
+                filters.append(Course.category_id == UUID(category_id))
+            except ValueError as exc:
+                raise CourseServiceError("Invalid category id") from exc
+        if level:
+            filters.append(Course.level == level)
+        if language:
+            filters.append(Course.language == language)
+
+        return filters
+
+    async def _load_enrollment_counts(self, course_ids: list[UUID]) -> dict[UUID, int]:
+        if not course_ids:
+            return {}
+
+        statement = (
+            select(
+                Enrollment.course_id,
+                func.count(Enrollment.id).label("total_enrollments"),
+            )
+            .where(
+                Enrollment.course_id.in_(course_ids),
+                Enrollment.status.in_(("active", "completed")),
+            )
+            .group_by(Enrollment.course_id)
+        )
+        rows = (await self.session.execute(statement)).all()
+        return {row[0]: int(row[1]) for row in rows}
+
     async def create_course(self, current_user: User, payload: CourseCreateRequest) -> CourseDetailResponse:
         if not self._has_role(current_user, "instructor"):
             raise CourseServiceError("Only instructors can create courses")
@@ -147,27 +195,8 @@ class CourseService:
         language: str | None,
         status: str | None,
     ) -> CourseListResponse:
-        filters = []
+        filters = self._build_course_filters(search, category_id, level, language)
         query_role_codes = self._role_codes(current_user)
-
-        if search:
-            term = f"%{search.strip()}%"
-            filters.append(
-                or_(
-                    Course.title.ilike(term),
-                    Course.short_description.ilike(term),
-                    Course.description.ilike(term),
-                )
-            )
-        if category_id:
-            try:
-                filters.append(Course.category_id == UUID(category_id))
-            except ValueError as exc:
-                raise CourseServiceError("Invalid category id") from exc
-        if level:
-            filters.append(Course.level == level)
-        if language:
-            filters.append(Course.language == language)
 
         if current_user.is_superuser or "admin" in query_role_codes:
             if status:
@@ -215,7 +244,47 @@ class CourseService:
             statement = statement.where(*filters)
 
         courses = (await self.session.execute(statement)).scalars().all()
-        items = [self._serialize_course_list_item(course) for course in courses]
+        enrollment_counts = await self._load_enrollment_counts([course.id for course in courses])
+        items = [
+            self._serialize_course_list_item(course, enrollment_counts.get(course.id, 0))
+            for course in courses
+        ]
+        return CourseListResponse(items=items, total=total, limit=limit, offset=offset)
+
+    async def list_published_courses(
+        self,
+        current_user: User,
+        limit: int,
+        offset: int,
+        search: str | None,
+        category_id: str | None,
+        level: str | None,
+        language: str | None,
+    ) -> CourseListResponse:
+        filters = [Course.status == "published", *self._build_course_filters(search, category_id, level, language)]
+
+        total_statement = select(func.count(Course.id))
+        if filters:
+            total_statement = total_statement.where(*filters)
+        total = (await self.session.execute(total_statement)).scalar_one()
+
+        statement = (
+            select(Course)
+            .options(
+                selectinload(Course.category),
+                selectinload(Course.instructors).selectinload(CourseInstructor.instructor),
+            )
+            .where(*filters)
+            .order_by(Course.is_featured.desc(), Course.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        courses = (await self.session.execute(statement)).scalars().all()
+        enrollment_counts = await self._load_enrollment_counts([course.id for course in courses])
+        items = [
+            self._serialize_course_list_item(course, enrollment_counts.get(course.id, 0))
+            for course in courses
+        ]
         return CourseListResponse(items=items, total=total, limit=limit, offset=offset)
 
     async def list_instructor_courses(
@@ -247,8 +316,12 @@ class CourseService:
             .offset(offset)
         )
         courses = (await self.session.execute(statement)).scalars().all()
+        enrollment_counts = await self._load_enrollment_counts([course.id for course in courses])
         return CourseListResponse(
-            items=[self._serialize_course_list_item(course) for course in courses],
+            items=[
+                self._serialize_course_list_item(course, enrollment_counts.get(course.id, 0))
+                for course in courses
+            ],
             total=total,
             limit=limit,
             offset=offset,
@@ -452,11 +525,9 @@ class CourseService:
         if self._has_role(current_user, "instructor"):
             if any(item.instructor_id == current_user.id for item in course.instructors):
                 return True
-        if course.status != "published":
-            return False
-        if course.visibility == "public":
-            return True
-        if "student" in self._role_codes(current_user):
+        if self._has_role(current_user, "student"):
+            if course.status == "published":
+                return True
             return await self._is_student_enrolled(course.id, current_user.id)
         return False
 
@@ -468,7 +539,7 @@ class CourseService:
         )
         return (await self.session.execute(statement)).scalar_one_or_none() is not None
 
-    def _serialize_course_list_item(self, course: Course) -> CourseListItemResponse:
+    def _serialize_course_list_item(self, course: Course, total_enrollments: int = 0) -> CourseListItemResponse:
         primary_instructor = next((item for item in course.instructors if item.is_primary), None)
         primary_name = None
         primary_id = None
@@ -485,12 +556,14 @@ class CourseService:
             title=course.title,
             slug=course.slug,
             short_description=course.short_description,
+            thumbnail_url=course.thumbnail_url,
             level=course.level,
             language=course.language,
             status=course.status,
             visibility=course.visibility,
             estimated_duration_minutes=course.estimated_duration_minutes,
             is_featured=course.is_featured,
+            total_enrollments=total_enrollments,
             published_at=course.published_at,
             created_at=course.created_at,
             primary_instructor_id=primary_id,

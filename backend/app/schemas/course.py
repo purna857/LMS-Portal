@@ -69,6 +69,10 @@ class CoursePublishActionResponse(BaseModel):
     status: str
 
 
+class CoursePublishUpdateRequest(BaseModel):
+    status: str = Field(default="published", pattern="^(draft|published)$")
+
+
 class CourseListItemResponse(BaseModel):
     id: str
     category_id: str | None = None
@@ -76,12 +80,14 @@ class CourseListItemResponse(BaseModel):
     title: str
     slug: str
     short_description: str | None = None
+    thumbnail_url: str | None = None
     level: str
     language: str
     status: str
     visibility: str
     estimated_duration_minutes: int | None = None
     is_featured: bool
+    total_enrollments: int = 0
     published_at: datetime | None = None
     created_at: datetime
     primary_instructor_id: str | None = None

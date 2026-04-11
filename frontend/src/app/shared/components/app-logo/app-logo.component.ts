@@ -12,16 +12,17 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       @if (!compact()) {
         <div class="logo__text">
           <span class="logo__title">LMS Portal</span>
-          <span class="logo__subtitle">Learning Workspace</span>
         </div>
       }
     </div>
   `,
   styles: [`
     .logo {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 0.85rem;
+      gap: 0.65rem;
+      min-width: 0;
+      flex: 1 1 auto;
     }
 
     .logo__mark {
@@ -42,8 +43,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     }
 
     .logo__text {
-      display: grid;
-      gap: 0.08rem;
+      display: flex;
+      align-items: center;
+      min-width: 0;
       line-height: 1.02;
     }
 
@@ -51,15 +53,11 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       font-weight: 800;
       letter-spacing: -0.03em;
       font-size: 1.16rem;
-      line-height: 1.02;
+      line-height: 1;
+      display: block;
       white-space: nowrap;
     }
 
-    .logo__subtitle {
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 0.82rem;
-      white-space: nowrap;
-    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

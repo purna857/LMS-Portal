@@ -1,6 +1,16 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel
+
+
+class CourseEnrollmentRequest(BaseModel):
+    course_id: UUID
+
+
+class CourseAssignmentRequest(BaseModel):
+    course_id: UUID
+    student_id: UUID
 
 
 class EnrollmentResponse(BaseModel):
@@ -11,6 +21,7 @@ class EnrollmentResponse(BaseModel):
     enrolled_at: datetime | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
+    progress: float | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -26,6 +37,7 @@ class EnrolledCourseItemResponse(BaseModel):
     enrolled_at: datetime | None = None
     published_at: datetime | None = None
     primary_instructor_name: str | None = None
+    progress: float | None = None
 
 
 class StudentEnrollmentItemResponse(BaseModel):
@@ -37,6 +49,7 @@ class StudentEnrollmentItemResponse(BaseModel):
     enrolled_at: datetime | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
+    progress: float | None = None
 
 
 class EnrolledCoursesListResponse(BaseModel):

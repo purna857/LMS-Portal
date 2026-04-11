@@ -9,6 +9,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { AdminActionDialogComponent } from '@app/features/admin/components/admin-action-dialog/admin-action-dialog.component';
+import { AssignCourseDialogComponent } from '@app/features/admin/components/assign-course-dialog/assign-course-dialog.component';
 import { CourseEditorDialogComponent } from '@app/features/admin/components/course-editor-dialog/course-editor-dialog.component';
 import type { CourseCategory, CourseListItem } from '@app/features/admin/models/admin.models';
 import { AdminPortalService } from '@app/features/admin/services/admin-portal.service';
@@ -170,9 +171,9 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
                 <ng-container matColumnDef="status">
                   <th mat-header-cell *matHeaderCellDef>Status</th>
                   <td mat-cell *matCellDef="let course">
-                    <mat-chip-set>
-                      <mat-chip [attr.data-tone]="chipToneForCourseStatus(course.status)">{{ course.status }}</mat-chip>
-                      <mat-chip [attr.data-tone]="chipToneForVisibility(course.visibility)">{{ course.visibility }}</mat-chip>
+                    <mat-chip-set class="course-status-set">
+                      <mat-chip [attr.data-tone]="chipToneForCourseStatus(course.status)">{{ courseStatusLabel(course.status) }}</mat-chip>
+                      <mat-chip [attr.data-tone]="chipToneForVisibility(course.visibility)">{{ visibilityLabel(course.visibility) }}</mat-chip>
                     </mat-chip-set>
                   </td>
                 </ng-container>
@@ -180,7 +181,7 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
                 <ng-container matColumnDef="actions">
                   <th mat-header-cell *matHeaderCellDef>Actions</th>
                   <td mat-cell *matCellDef="let course">
-                    <div class="action-row">
+                    <div class="action-row course-actions">
                       <button mat-stroked-button type="button" (click)="editCourse(course)">Edit</button>
                       @if (course.status === 'published') {
                         <button mat-stroked-button type="button" (click)="togglePublish(course, false)">Unpublish</button>
@@ -245,6 +246,10 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
           <span class="material-symbols-outlined">edit</span>
           <span>Edit course</span>
         </button>
+        <button mat-menu-item type="button" (click)="assignCourse(course)">
+          <span class="material-symbols-outlined">person_add</span>
+          <span>Assign to student</span>
+        </button>
         @if (course?.status === 'published') {
           <button mat-menu-item type="button" (click)="togglePublish(course, false)">
             <span class="material-symbols-outlined">unpublished</span>
@@ -270,6 +275,47 @@ import { chipToneForCourseStatus, chipToneForVisibility } from '@app/shared/util
       flex-wrap: wrap;
       align-items: center;
       justify-content: flex-end;
+    }
+
+    .action-row.course-actions {
+      align-items: flex-start;
+      gap: 0.4rem;
+    }
+
+    .action-row.course-actions button:not([mat-icon-button]) {
+      min-width: 5rem;
+      height: 2.35rem;
+      padding-inline: 0.85rem;
+      font-size: 0.84rem;
+      border-radius: 14px !important;
+    }
+
+    .action-row.course-actions button[mat-icon-button] {
+      width: 2.35rem;
+      height: 2.35rem;
+      min-width: 2.35rem;
+      min-height: 2.35rem;
+    }
+
+    .data-table .course-status-set {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 0.35rem;
+      align-items: center;
+      justify-content: flex-start;
+      min-width: 0;
+    }
+
+    .data-table .course-status-set .mat-mdc-chip {
+      min-height: 2.05rem;
+      height: 2.05rem;
+      padding-inline: 0.45rem;
+      font-size: 0.68rem;
+    }
+
+    .data-table .course-status-set .mat-mdc-chip .mat-mdc-chip-action-label,
+    .data-table .course-status-set .mat-mdc-chip .mdc-evolution-chip__text-label {
+      line-height: 1;
     }
 
     .workflow-card {
@@ -496,6 +542,22 @@ export class CourseManagementComponent {
     return this.courseEnrollmentCounts()[courseId] ?? 0;
   }
 
+  courseStatusLabel(status: string): string {
+    if (!status) {
+      return 'Unknown';
+    }
+
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  }
+
+  visibilityLabel(visibility: string): string {
+    if (!visibility) {
+      return 'Unknown';
+    }
+
+    return visibility.charAt(0).toUpperCase() + visibility.slice(1);
+  }
+
   previousPage(): void {
     this.currentPage.update((page) => Math.max(0, page - 1));
   }
@@ -582,8 +644,26 @@ export class CourseManagementComponent {
         },
         error: (error: HttpErrorResponse) => {
           this.snackBar.open(error.error?.detail ?? 'Unable to load the course editor.', 'Dismiss', { duration: 4500 });
-        }
-      });
+      }
+    });
+  }
+
+  assignCourse(course: CourseListItem): void {
+    const dialogRef = this.dialog.open(AssignCourseDialogComponent, {
+      data: {
+        courseId: course.id,
+        courseTitle: course.title
+      },
+      ...portalDialogConfig('lg')
+    });
+
+    dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+      if (!result) {
+        return;
+      }
+
+      this.loadCourses();
+    });
   }
 
   togglePublish(course: CourseListItem, publish: boolean): void {

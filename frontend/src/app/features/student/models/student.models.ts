@@ -43,6 +43,7 @@ export interface EnrolledCourseItem {
   enrolled_at?: string | null;
   published_at?: string | null;
   primary_instructor_name?: string | null;
+  progress?: number | null;
 }
 
 export interface EnrolledCourseListResponse {
@@ -58,6 +59,7 @@ export interface EnrollmentResponse {
   enrolled_at?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
+  progress?: number | null;
   created_at: string;
   updated_at: string;
 }

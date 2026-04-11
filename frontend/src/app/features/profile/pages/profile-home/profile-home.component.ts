@@ -98,13 +98,13 @@ type ProfileFact = {
         </mat-card>
 
         <mat-card class="surface-card profile-form-card">
-          <mat-card-header class="profile-form-card__header">
-            <div>
-              <mat-card-title>Profile Details</mat-card-title>
+          <div class="profile-form-card__header">
+            <div class="profile-form-card__copy">
+              <p class="profile-form-card__eyebrow">Profile Details</p>
               <p class="profile-form-card__subtitle">Update how your profile appears across the LMS.</p>
             </div>
             <span class="profile-form-card__badge">Live sync</span>
-          </mat-card-header>
+          </div>
 
           <mat-card-content>
             <form [formGroup]="profileForm" class="profile-form">
@@ -204,13 +204,13 @@ type ProfileFact = {
       </div>
 
       <mat-card class="surface-card profile-security-card">
-        <mat-card-header class="profile-security-card__header">
-          <div>
-            <mat-card-title>Security Settings</mat-card-title>
+        <div class="profile-security-card__header">
+          <div class="profile-security-card__copy">
+            <p class="profile-security-card__eyebrow">Security Settings</p>
             <p class="profile-security-card__subtitle">Keep your account protected with a strong password.</p>
           </div>
           <span class="profile-security-card__badge">Secure</span>
-        </mat-card-header>
+        </div>
 
         <mat-card-content>
           <form [formGroup]="passwordForm" class="toolbar-grid toolbar-grid--security">
@@ -504,31 +504,28 @@ type ProfileFact = {
       text-align: left;
     }
 
-    :host ::ng-deep .profile-form-card__header .mat-mdc-card-header-text,
-    :host ::ng-deep .profile-security-card__header .mat-mdc-card-header-text {
-      width: 100%;
-      margin: 0;
-      text-align: left;
-    }
-
-    .profile-form-card__header > div,
-    .profile-security-card__header > div {
+    .profile-form-card__copy,
+    .profile-security-card__copy {
       flex: 1 1 auto;
       min-width: 0;
       text-align: left;
+      display: grid;
+      gap: 0.35rem;
     }
 
-    .profile-form-card__header mat-card-title,
-    .profile-security-card__header mat-card-title {
-      display: block;
+    .profile-form-card__eyebrow,
+    .profile-security-card__eyebrow {
       margin: 0;
-      color: #172033;
-      text-align: left;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 0.76rem;
+      font-weight: 800;
     }
 
     .profile-form-card__subtitle,
     .profile-security-card__subtitle {
-      margin: 0.35rem 0 0;
+      margin: 0;
       color: var(--muted);
       font-size: 0.92rem;
       line-height: 1.45;

@@ -130,11 +130,18 @@ class LessonService:
         )
 
         if not can_manage:
-            lessons = [
-                lesson
-                for lesson in lessons
-                if lesson.status == "published" and (lesson.is_preview or await self._is_student_enrolled(course.id, current_user.id))
-            ]
+            student_enrolled = self._has_role(current_user, "student") and await self._is_student_enrolled(
+                course.id,
+                current_user.id,
+            )
+            if student_enrolled:
+                lessons = [lesson for lesson in lessons if lesson.status == "published"]
+            else:
+                lessons = [
+                    lesson
+                    for lesson in lessons
+                    if lesson.status == "published" and lesson.is_preview
+                ]
 
         return LessonListResponse(
             items=[self._serialize_lesson(lesson) for lesson in lessons],
@@ -199,9 +206,9 @@ class LessonService:
         if self._has_role(current_user, "instructor"):
             return any(item.instructor_id == current_user.id for item in course.instructors)
         if course.status != "published":
-            return False
+            return self._has_role(current_user, "student") and await self._is_student_enrolled(course.id, current_user.id)
         if self._has_role(current_user, "student"):
-            return await self._is_student_enrolled(course.id, current_user.id)
+            return True
         return False
 
     async def _is_student_enrolled(self, course_id: UUID, user_id: UUID) -> bool:

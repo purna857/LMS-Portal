@@ -149,7 +149,9 @@
 
           <div class="progress-course-list">
             @for (item of topCourses(); track item.course.course_id) {
-              <div class="progress-course-list__item">
+              <div
+                class="progress-course-list__item"
+                [attr.title]="item.course.title + ' - ' + (item.progress?.progress_percentage ?? 0) + '% complete'">
                 <div>
                   <strong>{{ item.course.title }}</strong>
                   <span>{{ item.progress?.completed_lessons ?? 0 }}/{{ item.progress?.total_lessons ?? 0 }} lessons complete</span>

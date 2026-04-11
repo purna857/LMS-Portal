@@ -16,19 +16,35 @@ import type {
 export class EnrollmentApiService {
   private readonly api = inject(ApiClientService);
 
+  enroll(courseId: string): Observable<EnrollmentResponse> {
+    return this.api.post<EnrollmentResponse>('/enroll', { course_id: courseId });
+  }
+
   enrollInCourse(courseId: string): Observable<EnrollmentResponse> {
-    return this.api.post<EnrollmentResponse>(`/enrollments/courses/${courseId}`, {});
+    return this.enroll(courseId);
+  }
+
+  listMyCourses(): Observable<EnrolledCourseListResponse> {
+    return this.api.get<EnrolledCourseListResponse>('/my-courses');
   }
 
   listEnrolledCourses(): Observable<EnrolledCourseListResponse> {
-    return this.api.get<EnrolledCourseListResponse>('/enrollments/me/courses');
+    return this.listMyCourses();
+  }
+
+  listCourseEnrollments(courseId: string): Observable<EnrolledStudentsResponse> {
+    return this.api.get<EnrolledStudentsResponse>(`/courses/${courseId}/enrollments`);
   }
 
   listCourseStudents(courseId: string): Observable<EnrolledStudentsResponse> {
-    return this.api.get<EnrolledStudentsResponse>(`/enrollments/courses/${courseId}/students`);
+    return this.listCourseEnrollments(courseId);
   }
 
   getEnrollmentStats(courseId?: string): Observable<EnrollmentStats> {
     return this.api.get<EnrollmentStats>('/enrollments/stats', { course_id: courseId });
+  }
+
+  assignCourse(payload: { course_id: string; student_id: string }): Observable<EnrollmentResponse> {
+    return this.api.post<EnrollmentResponse>('/assign-course', payload);
   }
 }

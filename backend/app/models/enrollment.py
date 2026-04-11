@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,6 +34,7 @@ class Enrollment(BaseModel):
     enrolled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    progress: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
 
     user: Mapped["User"] = relationship()
     course: Mapped["Course"] = relationship()

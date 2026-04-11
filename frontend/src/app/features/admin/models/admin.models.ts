@@ -91,12 +91,14 @@ export interface CourseListItem {
   title: string;
   slug: string;
   short_description?: string | null;
+  thumbnail_url?: string | null;
   level: 'beginner' | 'intermediate' | 'advanced';
   language: string;
   status: string;
   visibility: 'public' | 'private' | 'restricted';
   estimated_duration_minutes?: number | null;
   is_featured: boolean;
+  total_enrollments?: number;
   published_at?: string | null;
   created_at: string;
   primary_instructor_id?: string | null;

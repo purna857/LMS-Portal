@@ -45,15 +45,28 @@ async def ensure_assignment_submission_columns(connection) -> None:
     )
 
 
+async def ensure_enrollment_columns(connection) -> None:
+    await connection.execute(
+        text(
+            """
+            ALTER TABLE enrollments
+            ADD COLUMN IF NOT EXISTS progress DOUBLE PRECISION NOT NULL DEFAULT 0
+            """
+        )
+    )
+
+
 async def ensure_runtime_schema() -> None:
     async with engine.begin() as connection:
         await ensure_assignment_submission_columns(connection)
+        await ensure_enrollment_columns(connection)
 
 
 async def init_db() -> None:
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
         await ensure_assignment_submission_columns(connection)
+        await ensure_enrollment_columns(connection)
 
     async with SessionLocal() as session:
         await run_seed(session)

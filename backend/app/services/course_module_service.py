@@ -109,12 +109,19 @@ class CourseModuleService:
             raise CourseModuleServiceError("You do not have permission to view modules for this course")
 
         modules = await self._get_course_modules(course.id)
-        if not (current_user.is_superuser or self._has_role(current_user, "admin")):
-            if not (
-                self._has_role(current_user, "instructor")
-                and any(item.instructor_id == current_user.id for item in course.instructors)
-            ):
+        can_manage = current_user.is_superuser or self._has_role(current_user, "admin") or (
+            self._has_role(current_user, "instructor")
+            and any(item.instructor_id == current_user.id for item in course.instructors)
+        )
+        if not can_manage:
+            student_enrolled = self._has_role(current_user, "student") and await self._is_student_enrolled(
+                course.id,
+                current_user.id,
+            )
+            if student_enrolled:
                 modules = [module for module in modules if module.status == "published"]
+            else:
+                modules = [module for module in modules if module.status == "published" and module.is_preview]
 
         return CourseModuleListResponse(
             items=[self._serialize_module(module) for module in modules],
@@ -172,8 +179,8 @@ class CourseModuleService:
         if self._has_role(current_user, "instructor"):
             return any(item.instructor_id == current_user.id for item in course.instructors)
         if self._has_role(current_user, "student"):
-            if course.status != "published":
-                return False
+            if course.status == "published":
+                return True
             return await self._is_student_enrolled(course.id, current_user.id)
         return False
 

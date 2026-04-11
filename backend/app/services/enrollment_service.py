@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models.course import Course, CourseInstructor
 from app.models.enrollment import Enrollment
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.enrollment import (
     EnrolledCourseItemResponse,
     EnrolledCoursesListResponse,
@@ -44,6 +44,42 @@ class EnrollmentService:
             course_id=course.id,
             status="active",
             enrolled_at=utc_now(),
+            progress=0.0,
+        )
+        self.session.add(enrollment)
+        try:
+            await self.session.commit()
+        except IntegrityError as exc:
+            await self.session.rollback()
+            raise EnrollmentServiceError("Student is already enrolled in this course") from exc
+        await self.session.refresh(enrollment)
+        return self._serialize_enrollment(enrollment)
+
+    async def assign_course_to_student(
+        self,
+        course_id: UUID,
+        student_id: UUID,
+        current_user: User,
+    ) -> EnrollmentResponse:
+        if not (current_user.is_superuser or self._has_role(current_user, "admin")):
+            raise EnrollmentServiceError("Only admins can assign courses to students")
+
+        course = await self._get_course_or_raise(course_id)
+        student = await self._get_user_or_raise(student_id)
+
+        if not self._has_explicit_role(student, "student"):
+            raise EnrollmentServiceError("Selected user is not a student")
+
+        existing = await self._get_enrollment_by_user_and_course(student.id, course.id)
+        if existing is not None:
+            raise EnrollmentServiceError("Student is already enrolled in this course")
+
+        enrollment = Enrollment(
+            user_id=student.id,
+            course_id=course.id,
+            status="active",
+            enrolled_at=utc_now(),
+            progress=0.0,
         )
         self.session.add(enrollment)
         try:
@@ -72,8 +108,6 @@ class EnrollmentService:
         enrollments = (await self.session.execute(statement)).scalars().all()
         items = []
         for enrollment in enrollments:
-            if enrollment.course.status != "published":
-                continue
             primary_instructor = next(
                 (item for item in enrollment.course.instructors if item.is_primary and item.instructor),
                 None,
@@ -95,6 +129,7 @@ class EnrollmentService:
                     enrolled_at=enrollment.enrolled_at,
                     published_at=enrollment.course.published_at,
                     primary_instructor_name=instructor_name,
+                    progress=float(enrollment.progress) if enrollment.progress is not None else None,
                 )
             )
         return EnrolledCoursesListResponse(items=items, total=len(items))
@@ -120,6 +155,7 @@ class EnrollmentService:
                 enrolled_at=enrollment.enrolled_at,
                 started_at=enrollment.started_at,
                 completed_at=enrollment.completed_at,
+                progress=float(enrollment.progress) if enrollment.progress is not None else None,
             )
             for enrollment in enrollments
         ]
@@ -197,9 +233,21 @@ class EnrollmentService:
             enrolled_at=enrollment.enrolled_at,
             started_at=enrollment.started_at,
             completed_at=enrollment.completed_at,
+            progress=float(enrollment.progress) if enrollment.progress is not None else None,
             created_at=enrollment.created_at,
             updated_at=enrollment.updated_at,
         )
+
+    async def _get_user_or_raise(self, user_id: UUID) -> User:
+        statement = (
+            select(User)
+            .options(selectinload(User.roles).selectinload(UserRole.role))
+            .where(User.id == user_id)
+        )
+        user = (await self.session.execute(statement)).scalar_one_or_none()
+        if user is None:
+            raise EnrollmentServiceError("Student not found")
+        return user
 
     def _role_codes(self, current_user: User) -> set[str]:
         return {assignment.role.code for assignment in current_user.roles}

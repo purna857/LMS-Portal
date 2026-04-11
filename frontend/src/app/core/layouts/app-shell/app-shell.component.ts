@@ -146,7 +146,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['instructor']
   },
   {
-    section: 'Learning Path',
+    section: 'Student Portal',
     label: 'Learning Center',
     caption: 'Learning dashboard and progress summary',
     icon: 'menu_book',
@@ -154,7 +154,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Learning Path',
+    section: 'Student Portal',
     label: 'My Learning',
     caption: 'Continue enrolled courses',
     icon: 'cast_for_education',
@@ -162,7 +162,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Learning Path',
+    section: 'Student Portal',
     label: 'Browse Catalog',
     caption: 'Discover new courses to enroll in',
     icon: 'travel_explore',
@@ -170,7 +170,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Learning Path',
+    section: 'Student Portal',
     label: 'Assignments',
     caption: 'Due work and submissions',
     icon: 'task',
@@ -178,7 +178,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Learning Path',
+    section: 'Student Portal',
     label: 'Quizzes',
     caption: 'Attempts and results',
     icon: 'fact_check',
@@ -186,7 +186,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Learning Path',
+    section: 'Student Portal',
     label: 'Results',
     caption: 'Review quiz outcomes and attempt history',
     icon: 'assessment',
@@ -194,7 +194,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Learning Path',
+    section: 'Student Portal',
     label: 'Progress',
     caption: 'Completion and momentum',
     icon: 'timeline',
@@ -202,7 +202,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Learning Path',
+    section: 'Student Portal',
     label: 'Notifications',
     caption: 'Course and platform updates',
     icon: 'notifications',
@@ -210,7 +210,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['student']
   },
   {
-    section: 'Learning Path',
+    section: 'Student Portal',
     label: 'Certificates',
     caption: 'View earned certificates when available',
     icon: 'workspace_premium',
@@ -377,7 +377,7 @@ export class AppShellComponent {
 
     return visibleItems.find((item) => url.startsWith(item.route)) ?? visibleItems[0] ?? NAV_ITEMS[0];
   });
-  readonly pageEyebrow = computed(() => this.activeNav()?.section ?? 'Workspace');
+  readonly pageEyebrow = computed(() => this.activeNav()?.section ?? 'Portal workspace');
   readonly pageTitle = computed(() => this.activeNav()?.label ?? 'Dashboard');
   readonly pageDescription = computed(
     () => this.activeNav()?.caption ?? 'Manage your LMS workspace from a unified portal shell.'

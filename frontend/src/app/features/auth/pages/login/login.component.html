@@ -1,47 +1,51 @@
 <section class="auth-page">
   <div class="auth-shell">
     <mat-card class="auth-card auth-card--showcase">
-      <div class="auth-card__intro">
-        <p class="auth-card__eyebrow">LMS Portal Suite</p>
-        <h1>Learning operations in one connected workspace</h1>
-        <p>
-          Sign in to access the role-based LMS experience for administration, course delivery, student learning,
-          assessments, progress tracking, and announcements.
-        </p>
-      </div>
+      <div class="auth-showcase">
+        <div class="auth-portal__intro">
+          <h1>Learning workspace, simplified.</h1>
+          <p class="auth-portal__lead">
+            Manage courses, users, assessments, and progress from one secure workspace.
+          </p>
+        </div>
 
-      <div class="auth-showcase__metrics">
-        @for (item of highlights; track item.title) {
-          <article class="auth-showcase__metric">
-            <h2>{{ item.title }}</h2>
-            <p>{{ item.description }}</p>
-          </article>
-        }
-      </div>
+        <div class="auth-portal__stats">
+          @for (item of portalStats; track item.label) {
+            <article class="auth-portal__stat">
+              <strong>{{ item.value }}</strong>
+              <span>{{ item.label }}</span>
+              <small>{{ item.note }}</small>
+            </article>
+          }
+        </div>
 
-      <div class="auth-showcase__grid">
-        @for (item of capabilities; track item.title) {
-          <article class="auth-showcase__panel">
-            <h3>{{ item.title }}</h3>
-            <ul>
-              @for (point of item.points; track point) {
-                <li>{{ point }}</li>
-              }
-            </ul>
-          </article>
-        }
+        <div class="auth-portal__features">
+          @for (item of portalFeatures; track item.title; let first = $first) {
+            <article class="auth-portal__feature" [class.auth-portal__feature--lead]="first">
+              <span class="material-symbols-outlined auth-portal__feature-icon">{{ item.icon }}</span>
+              <div>
+                <strong>{{ item.title }}</strong>
+                <p>{{ item.description }}</p>
+              </div>
+            </article>
+          }
+        </div>
       </div>
     </mat-card>
 
     <mat-card class="auth-card auth-card--form">
+      <div class="auth-card__form-badge">
+        <span class="material-symbols-outlined">shield</span>
+        <span>Secure portal access</span>
+      </div>
+
       <div class="auth-card__brand">
         <div class="auth-card__brand-mark">L</div>
-        <span>LMS Portal</span>
       </div>
 
       <div class="auth-card__intro auth-card__intro--compact">
-        <h2>Sign in</h2>
-        <p>Enter your account credentials to continue into the LMS dashboard.</p>
+        <h2>Welcome back</h2>
+        <p>Sign in to continue into the LMS dashboard.</p>
       </div>
 
       <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">

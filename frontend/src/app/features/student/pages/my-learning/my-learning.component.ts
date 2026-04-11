@@ -129,6 +129,10 @@ const COURSE_VIDEO_PREVIEWS: Record<string, { url: string; label: string }> = {
                 <h2>{{ item.course.title }}</h2>
                 <p class="course-card__instructor">{{ item.course.primary_instructor_name || 'Course instructor' }}</p>
 
+                <div class="course-card__status">
+                  <span [attr.data-tone]="learningStatusTone(item)">{{ learningStatusLabel(item) }}</span>
+                </div>
+
                 <div class="course-card__meta">
                   <span>{{ item.modules.length }} sections</span>
                   <span>{{ item.videoLessonCount }} lectures</span>
@@ -410,6 +414,45 @@ const COURSE_VIDEO_PREVIEWS: Record<string, { url: string; label: string }> = {
       font-weight: 500;
     }
 
+    .course-card__status {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-top: 0.05rem;
+    }
+
+    .course-card__status span {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.36rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid #dce6f4;
+      background: #f5f8fd;
+      color: #172033;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .course-card__status span[data-tone='completed'] {
+      border-color: rgba(22, 163, 74, 0.18);
+      background: rgba(22, 163, 74, 0.08);
+      color: #15803d;
+    }
+
+    .course-card__status span[data-tone='in-progress'] {
+      border-color: rgba(37, 99, 235, 0.18);
+      background: rgba(37, 99, 235, 0.08);
+      color: #1d4ed8;
+    }
+
+    .course-card__status span[data-tone='not-started'] {
+      border-color: rgba(100, 116, 139, 0.18);
+      background: rgba(100, 116, 139, 0.06);
+      color: #475569;
+    }
+
     .course-card__meta {
       display: flex;
       gap: 0.55rem;
@@ -675,6 +718,28 @@ export class MyLearningComponent {
 
   learningActionLabel(item: LearningLibraryItem | null): string {
     return (item?.progress?.progress_percentage ?? 0) > 0 ? 'Continue learning' : 'Start learning';
+  }
+
+  learningStatusLabel(item: LearningLibraryItem): string {
+    const status = item.progress?.progress_status?.toLowerCase() ?? '';
+    if (status === 'completed' || (item.progress?.progress_percentage ?? 0) >= 100) {
+      return 'Completed';
+    }
+    if (status === 'in_progress' || (item.progress?.progress_percentage ?? 0) > 0) {
+      return 'In progress';
+    }
+    return 'Not started';
+  }
+
+  learningStatusTone(item: LearningLibraryItem): 'completed' | 'in-progress' | 'not-started' {
+    const status = item.progress?.progress_status?.toLowerCase() ?? '';
+    if (status === 'completed' || (item.progress?.progress_percentage ?? 0) >= 100) {
+      return 'completed';
+    }
+    if (status === 'in_progress' || (item.progress?.progress_percentage ?? 0) > 0) {
+      return 'in-progress';
+    }
+    return 'not-started';
   }
 
   openCourseLearning(item: LearningLibraryItem | null): void {

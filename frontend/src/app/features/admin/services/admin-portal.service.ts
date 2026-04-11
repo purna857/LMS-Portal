@@ -28,6 +28,7 @@ import type {
   PlatformAnnouncementPayload,
   UserListQuery
 } from '@app/features/admin/models/admin.models';
+import type { EnrollmentResponse } from '@app/features/student/models/student.models';
 
 
 @Injectable({ providedIn: 'root' })
@@ -147,5 +148,9 @@ export class AdminPortalService {
 
   getEnrollmentStats(courseId?: string): Observable<EnrollmentStats> {
     return this.enrollmentApi.getEnrollmentStats(courseId);
+  }
+
+  assignCourse(payload: { course_id: string; student_id: string }): Observable<EnrollmentResponse> {
+    return this.enrollmentApi.assignCourse(payload);
   }
 }

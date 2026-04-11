@@ -56,6 +56,10 @@ export class StudentPortalService {
     return this.courseApi.listCourses({ limit: 24, offset: 0, ...query });
   }
 
+  listPublishedCourses(query: CourseListQuery = {}): Observable<{ items: CourseListItem[]; total: number; limit: number; offset: number }> {
+    return this.courseApi.listPublishedCourses({ limit: 24, offset: 0, ...query });
+  }
+
   getCourse(courseId: string): Observable<CourseDetail> {
     return this.courseApi.getCourse(courseId);
   }

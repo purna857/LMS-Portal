@@ -193,8 +193,12 @@ export class ProgressComponent {
           label: 'Completion %',
           data: items.map((item) => item.progress?.progress_percentage ?? 0),
           backgroundColor: '#3b82f6',
+          hoverBackgroundColor: '#2563eb',
+          borderSkipped: false,
           borderRadius: 12,
-          maxBarThickness: 22
+          barPercentage: 0.78,
+          categoryPercentage: 0.68,
+          maxBarThickness: 26
         }
       ]
     };
@@ -341,24 +345,49 @@ export class ProgressComponent {
     responsive: true,
     maintainAspectRatio: false,
     indexAxis: 'y',
+    layout: {
+      padding: {
+        top: 8,
+        right: 18,
+        bottom: 18,
+        left: 12
+      }
+    },
     interaction: {
-      mode: 'index',
+      mode: 'nearest',
+      axis: 'y',
       intersect: false
     },
     hover: {
-      mode: 'index',
+      mode: 'nearest',
+      axis: 'y',
       intersect: false
     },
     plugins: {
       legend: { display: false },
       tooltip: {
         backgroundColor: '#162033',
+        cornerRadius: 12,
         displayColors: false,
+        padding: 10,
+        caretSize: 6,
+        caretPadding: 8,
         titleFont: { family: 'IBM Plex Sans' },
         bodyFont: { family: 'IBM Plex Sans' },
         callbacks: {
+          title: (items) => {
+            const item = items[0];
+            const course = item ? this.topCourses()[item.dataIndex] : null;
+
+            return course?.course.title ?? item?.label ?? '';
+          },
           label: (context) => `${context.dataset.label ?? 'Value'}: ${context.formattedValue}%`
         }
+      }
+    },
+    elements: {
+      bar: {
+        borderSkipped: false
       }
     },
     scales: {
@@ -374,6 +403,7 @@ export class ProgressComponent {
       },
       y: {
         grid: { display: false },
+        offset: true,
         ticks: { color: '#627187', font: { family: 'IBM Plex Sans' } }
       }
     }
@@ -463,7 +493,7 @@ export class ProgressComponent {
   }
 
   private shortLabel(value: string, maxLength: number): string {
-    return value.length <= maxLength ? value : `${value.slice(0, maxLength - 1)}…`;
+    return value.length <= maxLength ? value : `${value.slice(0, maxLength - 1)}...`;
   }
 
   private isCompleted(item: ProgressCourseItem): boolean {
